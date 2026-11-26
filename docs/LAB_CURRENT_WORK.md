@@ -6,6 +6,7 @@
 - Tests obligatoires : transactions et réouverture IndexedDB réelle, migration JSON/compressée, interruption/échec, plusieurs univers indépendants, grosses cartes multiples 80×64, écritures répétées, concurrence et relecture, Android PWA paysage, export/restauration, preview HTTPS, source Capture et publisher unique.
 - Hors lot : format de partage univers complet, distribution des assets personnalisés, version des parties existantes (issue Capture #508 à compléter). La vitrine doit être un modèle officiel immuable ; les modifications de l'éditeur ne doivent jamais invalider une partie par changement silencieux de révision. Ne pas changer les contrôles de fingerprint pour contourner le problème.
 - Ajouts : inventaire strict des clés historiques et migration par lot, détection des modifications concurrentes avant bascule, test navigateur réel de transaction/rollback/reload et gros WorldDocument 64 cartes 80×64 (>5 Mio JSON brut). Gates inchangés.
+- Extension 26/11 demandée par l'auteur : test de capacité peuplé (64 cartes 80×64, 18 176 placements catalogue, 768 références d'acteurs, 512 tracés de surface, 64 passages, deuxième sauvegarde et contrôle de révision précédente). Mesurer octets UTF-8 et durée ; ce test ne charge pas les médias personnalisés ni ne mesure le rendu en jeu. Résultat attendu, non certifié avant CI exacte.
 - NON GREEN : aucune mise en production du backend de préparation avant raccord et tests réels, aucun effacement localStorage.
 
 ## 2026-11-25 — World Builder : quota de sauvegarde « Monde_alpha » (NON GREEN)

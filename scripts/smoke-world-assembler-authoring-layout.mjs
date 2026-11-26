@@ -284,6 +284,75 @@ try{
      !large.identical||!large.inventoried||!large.noLegacyCopy)
     throw Error('Large WorldDocument capacity regression '+JSON.stringify(large));
   console.log('GREEN real IndexedDB: 64 native maps, '+large.length+' serialized characters, exact readback');
+  // Capacity with authored content, not just terrain. Use real catalog IDs,
+  // canonical normalization and the actual Portal authoring command.
+  const populated=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createBlankWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument,connectWorldAreas,addSurfacePath}=await import('./src/builder/world-builder-draft.js');
+    const {createSculptTerrain}=await import('./src/world/sculpt-height-model.js');
+    const {objectDefinitionCatalogV1}=await import('./src/objects/object-definition-catalog.js');
+    const base=createBlankWorldBuilderDraft({id:'world-idb-populated-test',width:80*28,height:64*21});
+    const original=base.areas[0];
+    const ids=['objectdef.tree.snow.broadleaf_oak_01','objectdef.building.windmill.01',
+      'objectdef.rock.desert.layered_plateau.01','objectdef.decor.genesis.crate_moss.01',
+      'objectdef.bridge.wood_rustic_2p5d.01','objectdef.stairs.stone_rustic_2p5d.01'];
+    if(ids.some(id=>!objectDefinitionCatalogV1.get(id)))throw Error('Missing official object definition');
+    let world={...base,areas:Array.from({length:64},(_,i)=>({...original,id:i===0?base.initialAreaId:'area-populated-'+i,label:'Carte chargée '+i}))};
+    // Connect before expanding the terrain/placements to avoid quadratic
+    // cloning of giant fixtures; all spawns and portals are real builder data.
+    // All cards linked in pairs, not 63 expensive full graph authoring calls.
+    for(let i=0;i<world.areas.length;i+=2)
+      world=connectWorldAreas(world,{sourceAreaId:world.areas[i].id,targetAreaId:world.areas[i+1].id,returnPortal:true});
+    let model=base;
+    for(let i=0;i<8;i++){
+      const points=Array.from({length:20},(_,j)=>({x:40+j*90,y:60+i*110+(j%3)*20}));
+      model=addSurfacePath(model,base.initialAreaId,i===7?'river':i%2?'route':'terrain',{points,width:35+i*4});
+    }
+    const surface=model.areas[0].surface;
+    const terrain=createSculptTerrain({width:80,height:64,levels:Array.from({length:80*64},(_,i)=>i%17)});
+    world={...world,areas:world.areas.map((a,i)=>({...a,sculptTerrain:terrain,surface,
+      objects:Array.from({length:i===0?2048:256},(_,j)=>({
+        id:'placement-'+(j+1),objectDefinitionId:ids[j%ids.length],
+        transform:{x:28+(j%76)*28,y:21+Math.floor(j/76)*40,rotationDeg:(j%4)*90,scaleX:0.5+(j%3)*0.25,scaleY:0.5+(j%3)*0.25},
+        overrides:{}})),
+      actors:Array.from({length:12},(_,j)=>({id:'actor-'+(j+1),actorDefinitionId:'capture:creature:crea-loup',x:90+j*90,y:120+i*10,facingX:j%2?1:-1}))
+    }))};
+    const raw=serializeWorldBuilderDraft(world);
+    const normalized=importWorldBuilderDocument(raw);
+    const counts={areas:normalized.areas.length,objects:normalized.areas.reduce((n,a)=>n+a.objects.length,0),
+      actors:normalized.areas.reduce((n,a)=>n+a.actors.length,0),
+      paths:normalized.areas.reduce((n,a)=>n+a.surface.zones.length+a.surface.routes.length+a.surface.rivers.length,0),
+      portals:normalized.portals.length};
+    const key='gensrpg.exploration.world-library.document.v1:'+normalized.id;
+    const store=createWorldDocumentIndexedDbStoreV1();
+    const start=performance.now();
+    const [saved]=await store.commit([{key,document:normalized,expectedRevision:null}]);
+    const read=await store.read(key);
+    return {...counts,bytes:new TextEncoder().encode(raw).byteLength,revision:saved.revision,
+      identical:serializeWorldBuilderDraft(read.document)===raw,noLegacyCopy:localStorage.getItem(key)===null,
+      elapsedMs:Math.round(performance.now()-start)};
+  })()`);
+  if(populated.areas!==64||populated.objects!==18176||populated.actors!==768||
+     populated.paths!==512||populated.portals!==64||populated.revision!==1||
+     !populated.identical||!populated.noLegacyCopy)
+    throw Error('Populated WorldDocument capacity regression '+JSON.stringify(populated));
+  console.log('GREEN real IndexedDB populated maps '+JSON.stringify(populated));
+  // Save a changed populated world again, on the same key, then check the
+  // previous complete revision. No artificial Storage or mocked transaction.
+  const populatedResave=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const store=createWorldDocumentIndexedDbStoreV1(),key='gensrpg.exploration.world-library.document.v1:world-idb-populated-test';
+    const first=await store.read(key);
+    const changed={...first.document,areas:first.document.areas.map((a,i)=>i===0?{...a,label:'Carte chargée modifiée'}:a)};
+    const [saved]=await store.commit([{key,document:changed,expectedRevision:first.revision}]);
+    const reopened=await store.read(key);
+    return {revision:saved.revision,current:serializeWorldBuilderDraft(reopened.document)===serializeWorldBuilderDraft(changed),
+      previous:serializeWorldBuilderDraft(reopened.previous)===serializeWorldBuilderDraft(first.document)};
+  })()`);
+  if(populatedResave.revision!==2||!populatedResave.current||!populatedResave.previous)
+    throw Error('Populated WorldDocument resave regression '+JSON.stringify(populatedResave));
+  console.log('GREEN real IndexedDB populated maps: second save and complete previous revision');
 }finally{
   // The fully isolated Chromium profile is kept mutable by browser helpers.
   // Shut down via CDP FIRST so they flush storage before the process-group
