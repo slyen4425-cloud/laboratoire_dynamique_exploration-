@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createSculptTerrain,applySculptWaterStroke,serializeSculptTerrain,importSculptTerrain,setSculptWaterAnimation,sculptWaterAt} from '../src/world/sculpt-height-model.js';
 import {sculptWaterMaterialCells,DEFAULT_SCULPT_WATER_MATERIAL} from '../src/world/sculpt-water-materials-v1.js';
-import {animatedSurfaceFrame,animatedSurfaceSprite,SURFACE_FRAME_COUNT} from '../src/render/animated-surface-sprites-v1.js';
+import {animatedSurfaceFrame,animatedSurfaceSprite,SURFACE_FRAME_COUNT,loadAnimatedSurfaceAtlas,animatedSurfaceAtlasUrl,SURFACE_TILE,surfaceMaterialFrame} from '../src/render/animated-surface-sprites-v1.js';
 import {sculptWetShoreEdges} from '../src/render/sculpt-height-renderer.js';
 const base=()=>createSculptTerrain({width:8,height:8,levels:Array(64).fill(1)});
 const stroke=(t,x,y,mode,waterMaterialId)=>applySculptWaterStroke(t,{points:[{x:x+.5,y:y+.5}],radius:.5,mode,target:4,waterMaterialId});
@@ -48,19 +48,33 @@ test('shore contact does not create foam between two wet material types',()=>{
  t=stroke(t,4,3,'water-fill','water.swamp');
  assert.deepEqual(sculptWetShoreEdges(t,3,3),['north','south','west']);
 });
-test('sprite loop uses twelve distinct frames, stable cache and bounded timing',()=>{
+test('nine actual image frames share one reusable canvas and a material clock',async()=>{
  assert.equal(animatedSurfaceFrame(0),0);assert.equal(animatedSurfaceFrame(SURFACE_FRAME_COUNT/8),0);
- assert.equal(animatedSurfaceFrame(-1/8),11);
+ assert.equal(animatedSurfaceFrame(-1/8),8);
+ assert.notEqual(surfaceMaterialFrame('water.swamp',.5,8),surfaceMaterialFrame('water.forest_stream',.5,8));
+ let requests=0;const fakeImage=()=>{requests++;return {naturalWidth:504,naturalHeight:378,set src(v){this.onload();}};};
+ const loaded=await loadAnimatedSurfaceAtlas('water.turquoise',fakeImage);
+ assert.equal(await loadAnimatedSurfaceAtlas('water.turquoise',fakeImage),loaded);assert.equal(requests,1);
+ assert.match(animatedSurfaceAtlasUrl('water.lava'),/lave\.png$/);
  let allocations=0;const canvas=()=>{allocations++;const calls=[];
-  const ctx={beginPath(){},moveTo(...v){calls.push(v)},quadraticCurveTo(...v){calls.push(v)},stroke(){}};
+  const ctx={clearRect(){},drawImage(...v){calls.push(v)}};
   return {calls,getContext(){return ctx}};
  };
  const a=animatedSurfaceSprite('water.turquoise',0,canvas);
+ assert.equal(a.width,SURFACE_TILE.width);
+ assert.equal(a.calls[0][1],0);
  const b=animatedSurfaceSprite('water.turquoise',1,canvas);
- assert.notDeepEqual(a.calls,b.calls);
- assert.equal(animatedSurfaceSprite('water.turquoise',12,canvas),a);
- assert.equal(allocations,2);
+ assert.equal(a,b);assert.equal(b.calls[1][1],SURFACE_TILE.width);
+ assert.equal(animatedSurfaceSprite('water.turquoise',9,canvas),a);
+ assert.equal(allocations,1);
  assert.equal(animatedSurfaceSprite('unknown',0,canvas),null);
+});
+test('lava is a paintable material without changing water geometry',()=>{
+ const old=stroke(base(),3,3,'water-fill','water.clear_blue');
+ const lava=stroke(old,3,3,'water-paint','water.lava');
+ assert.equal(lava.waterLevels,old.waterLevels);
+ assert.equal(sculptWaterMaterialCells(lava)[27],'water.lava');
+ assert.deepEqual(importSculptTerrain(serializeSculptTerrain(lava)),lava);
 });
 test('world area normalizer and scene export preserve visual choices',async()=>{
  const {normalizeWorldArea}=await import('../src/world/world-area-model.js');
