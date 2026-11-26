@@ -3209,6 +3209,15 @@ try{
     const interiorTab=document.querySelector('#interior-tools-toggle');
     const details=document.querySelector('#interior-controls-details');
     if(!details.open)interiorTab.click();
+    const groups=[...roomBar.querySelectorAll('.interior-tool-group')];
+    const initiallyClosed=groups.every(g=>!g.open);
+    const walls=roomBar.querySelector('.interior-wall-tools').closest('details');
+    const floorGroup=document.querySelector('#interior-floor-base').closest('details');
+    walls.querySelector('summary').click();
+    const wallsVisible=walls.open&&document.querySelector('#interior-wall-toggle').getClientRects().length>0;
+    floorGroup.querySelector('summary').click();
+    const exclusive=floorGroup.open&&!walls.open;
+    const groupGate={count:groups.length,initiallyClosed,wallsVisible,exclusive};
     const floor=document.querySelector('#interior-floor-base');
     floor.value='floor.tile.light';floor.dispatchEvent(new Event('change',{bubbles:true}));
     const original=window.__sculptLabProbe().interiorFloorId;
@@ -3237,12 +3246,13 @@ try{
     return {original,itemId,appliedFloor:applied.interiorFloorId,
       templates:applied.interiorTemplateCount,exported:exported.interiorTemplates?.length,
       savedFloor:exported.interiors?.[0]?.surface?.baseMaterialId,
-      floating,floatingInfo};
+      floating,floatingInfo,groupGate};
   })()`);
   if(v79R2.original!=='floor.tile.light'||!v79R2.itemId||
      v79R2.appliedFloor!=='floor.tile.light'||v79R2.templates!==1||
      v79R2.exported!==1||v79R2.savedFloor!=='floor.tile.light'||
-     !v79R2.floating)
+     !v79R2.floating||v79R2.groupGate.count!==6||!v79R2.groupGate.initiallyClosed||
+     !v79R2.groupGate.wallsVisible||!v79R2.groupGate.exclusive)
     throw Error('V79 R2 real Chromium native floors / reusable templates / floating bar failed: '+
       JSON.stringify(v79R2));
   console.log('V79 R2 REAL Chromium native indoor floors, reusable room and floating return:',JSON.stringify(v79R2));
