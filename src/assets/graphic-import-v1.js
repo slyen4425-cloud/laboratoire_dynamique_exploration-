@@ -1,3 +1,4 @@
+import {unpackGraphicFrameZip} from './graphic-frame-zip-v1.js';
 import {GRAPHIC_IMPORT_MAX_BYTES,GRAPHIC_IMPORT_MAX_FRAMES,GRAPHIC_IMPORT_MAX_DIMENSION,GRAPHIC_IMPORT_MAX_PIXELS,graphicAnimationFromGrid,planGraphicFrameAtlas} from './graphic-animation-v1.js';
 const allowed=new Set(['image/png','image/jpeg','image/webp']);
 const fail=message=>{throw Error(message);};
@@ -18,7 +19,11 @@ function canvasBlob(canvas){
 export async function prepareGraphicImport({files,mode='static',columns=1,rows=1,frames,fps=8}={},{
  decode=globalThis.createImageBitmap,makeCanvas=()=>document.createElement('canvas'),ImageDecoderClass=globalThis.ImageDecoder
 }={}){
- const list=Array.from(files??[]);
+ let list=Array.from(files??[]);
+ if(mode==='zip'){
+  if(list.length!==1)fail('Choisis une seule archive ZIP.');
+  list=await unpackGraphicFrameZip(list[0]);mode='frames';
+ }
  if(!list.length||list.length>GRAPHIC_IMPORT_MAX_FRAMES)fail('Choisis entre 1 et 64 images.');
  if(list.reduce((sum,f)=>sum+(f?.size??Infinity),0)>GRAPHIC_IMPORT_MAX_BYTES)fail('Import limité à 8 Mio au total.');
  if(typeof decode!=='function')fail('Décodeur d’images indisponible.');

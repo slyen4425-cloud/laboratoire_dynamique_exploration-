@@ -52,3 +52,29 @@ test('existing asset stores accept the same validated atlas descriptor without c
  assert.equal(still.animation,undefined);assert.equal(still.definitionId,obj.definitionId);
  assert.throws(()=>createUserMaterialRecord({...common,width:129,kind:'water'}),/invalide/);
 });
+
+import {unpackGraphicFrameZip} from '../src/assets/graphic-frame-zip-v1.js';
+import {deflateRawSync,inflateRawSync} from 'node:zlib';
+function zipFixture(names,{deflate=false}={}){
+ const locals=[],centrals=[];let offset=0;
+ // ASCII 'a' CRC32 e8b7be43.
+ for(const name of names){
+  const n=Buffer.from(name),data=deflate?deflateRawSync(Buffer.from('a')):Buffer.from('a'),method=deflate?8:0;
+  const local=Buffer.alloc(30);local.writeUInt32LE(0x04034b50);local.writeUInt16LE(20,4);local.writeUInt16LE(method,8);local.writeUInt32LE(0xe8b7be43,14);local.writeUInt32LE(data.length,18);local.writeUInt32LE(1,22);local.writeUInt16LE(n.length,26);
+  const central=Buffer.alloc(46);central.writeUInt32LE(0x02014b50);central.writeUInt16LE(20,4);central.writeUInt16LE(20,6);central.writeUInt16LE(method,10);central.writeUInt32LE(0xe8b7be43,16);central.writeUInt32LE(data.length,20);central.writeUInt32LE(1,24);central.writeUInt16LE(n.length,28);central.writeUInt32LE(offset,42);
+  locals.push(local,n,data);centrals.push(central,n);offset+=local.length+n.length+data.length;
+ }
+ const central=Buffer.concat(centrals),end=Buffer.alloc(22);end.writeUInt32LE(0x06054b50);end.writeUInt16LE(names.length,8);end.writeUInt16LE(names.length,10);end.writeUInt32LE(central.length,12);end.writeUInt32LE(offset,16);
+ return new Blob([...locals,central,end],{type:'application/zip'});
+}
+test('ZIP frames are ordered naturally, CRC checked and unsafe paths rejected',async()=>{
+ const z=zipFixture(['folder/frame10.png','folder/frame2.png','folder/frame1.png'],{deflate:true});
+ const out=await unpackGraphicFrameZip(z,{inflate:async b=>inflateRawSync(b)});
+ assert.deepEqual(out.map(x=>x.name),['folder/frame1.png','folder/frame2.png','folder/frame10.png']);
+ assert.equal(await out[0].text(),'a');
+ await assert.rejects(unpackGraphicFrameZip(zipFixture(['../frame.png'])),/Archive ZIP invalide/);
+ await assert.rejects(unpackGraphicFrameZip(zipFixture(['frame.png','FRAME.PNG'])),/Archive ZIP invalide/);
+ await assert.rejects(unpackGraphicFrameZip(zipFixture(['frame.exe'])),/uniquement des images/);
+ const badBytes=new Uint8Array(await zipFixture(['frame.png']).arrayBuffer());badBytes[30+'frame.png'.length]=98;
+ await assert.rejects(unpackGraphicFrameZip(new Blob([badBytes])),/Archive ZIP invalide/);
+});
