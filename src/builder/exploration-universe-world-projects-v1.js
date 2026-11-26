@@ -13,7 +13,7 @@ const SCHEMA=INDEX;
 const project=/^unv_[a-z0-9-]{8,80}$/;
 const worldId=/^world-[a-z0-9-]{8,80}$/;
 const isProject=id=>typeof id==='string'&&project.test(id);
-function validate(index){
+export function validateExplorationUniverseWorldIndexV1(index){
  if(!index||typeof index!=='object'||Array.isArray(index)||
   Object.keys(index).sort().join(',')!=='activeWorldId,projects,schema,version'||
   index.schema!==SCHEMA||index.version!==1||!Array.isArray(index.projects)||
@@ -40,9 +40,9 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
   if(raw===null)return {schema:SCHEMA,version:1,projects:[],activeWorldId:null};
   let value;
   try{value=JSON.parse(raw)}catch{throw new Error('Index des projets WorldDocument illisible; conservation intégrale');}
-  return validate(value);
+  return validateExplorationUniverseWorldIndexV1(value);
  }
- const write=index=>{storage.setItem(INDEX,JSON.stringify(validate(index)));return index};
+ const write=index=>{storage.setItem(INDEX,JSON.stringify(validateExplorationUniverseWorldIndexV1(index)));return index};
  const entry=(id,index=read())=>{
   if(!isProject(id))throw new TypeError('Identifiant de projet généré requis');
   return index.projects.find(p=>p.id===id)??null;

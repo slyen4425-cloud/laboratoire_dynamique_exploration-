@@ -2,6 +2,8 @@
 // Le serializer/importer natif reste seul propriétaire du document.
 import {serializeWorldBuilderDraft,importWorldBuilderDocument} from '../builder/world-builder-draft.js';
 import {decodeWorldDocumentStorageV1} from './world-document-web-storage-codec-v1.js';
+import {validateExplorationWorldLibraryIndexV1} from '../builder/exploration-world-document-library-v1.js';
+import {validateExplorationUniverseWorldIndexV1} from '../builder/exploration-universe-world-projects-v1.js';
 
 export const WORLD_DOCUMENT_DB_NAME='gensrpg-exploration-world-documents-v1';
 export const WORLD_DOCUMENT_STORE_NAME='documents';
@@ -9,8 +11,12 @@ const DRAFT='gensrpg.world-assembler.document.v1';
 const ARCHIVE='gensrpg.exploration.world-library.document.v1:';
 const SCOPED=/^gensrpg\.exploration\.universe\.workspace\.v1:unv_[a-z0-9-]{8,80}:gensrpg\.world-assembler\.document\.v1$/;
 
+const LIBRARY_INDEX='gensrpg.exploration.world-library.index.v1';
+const PROJECT_INDEX='gensrpg.exploration.universe-worlds.index.v1';
+const isMetadata=key=>key===LIBRARY_INDEX||key===PROJECT_INDEX;
+const isDocumentKey=key=>typeof key==='string'&&(key===DRAFT||SCOPED.test(key)||key.startsWith(ARCHIVE));
 function checkedKey(key){
- if(typeof key!=='string'||!(key===DRAFT||SCOPED.test(key)||key.startsWith(ARCHIVE)))
+ if(!isDocumentKey(key)&&!isMetadata(key))
   throw new TypeError('Clé de WorldDocument non autorisée');
  if(key.startsWith(ARCHIVE)){
   const id=decodeURIComponent(key.slice(ARCHIVE.length));
@@ -20,6 +26,10 @@ function checkedKey(key){
 }
 function checkedBytes(key,raw){
  checkedKey(key);
+ if(isMetadata(key)){
+  const validator=key===LIBRARY_INDEX?validateExplorationWorldLibraryIndexV1:validateExplorationUniverseWorldIndexV1;
+  return JSON.stringify(validator(JSON.parse(raw)));
+ }
  const document=importWorldBuilderDocument(raw);
  if(key.startsWith(ARCHIVE)&&ARCHIVE+encodeURIComponent(document.id)!==key)
   throw new Error('Identifiant de l’archive incompatible');
@@ -50,13 +60,14 @@ export function snapshotLegacyWorldDocumentsV1(storage){
 function checkedRow(key,row){
  if(row===undefined)return null;
  if(!row||row.key!==key||!Number.isSafeInteger(row.revision)||row.revision<1||
-  typeof row.serialized!=='string'||checkedBytes(key,row.serialized)!==row.serialized||
+  (row.serialized===null?(!key.startsWith(ARCHIVE)||typeof row.previous!=='string'):
+   (typeof row.serialized!=='string'||checkedBytes(key,row.serialized)!==row.serialized))||
   (row.previous!==null&&(typeof row.previous!=='string'||checkedBytes(key,row.previous)!==row.previous)))
   throw new Error('WorldDocument IndexedDB illisible : conservation');
  return row;
 }
 function publicRow(row){
- return row?Object.freeze({key:row.key,revision:row.revision,
+ return row&&row.serialized!==null&&!isMetadata(row.key)?Object.freeze({key:row.key,revision:row.revision,
   document:importWorldBuilderDocument(row.serialized),
   previous:row.previous===null?null:importWorldBuilderDocument(row.previous)}):null;
 }
@@ -103,6 +114,7 @@ export function createWorldDocumentIndexedDbStoreV1({indexedDBFactory=globalThis
   const keys=new Set();
   const validated=entries.map(e=>{
    const key=checkedKey(e.key);
+   if(isMetadata(key))throw Error('Métadonnées réservées aux commandes transactionnelles du propriétaire');
    if(keys.has(key))throw new Error('Clé WorldDocument en doublon dans le lot');
    keys.add(key);
    const serialized=checkedBytes(key,e.serialized);
@@ -124,6 +136,7 @@ export function createWorldDocumentIndexedDbStoreV1({indexedDBFactory=globalThis
       }
       if(!migration&&(old?.revision??null)!==entry.expectedRevision)
        throw new Error('Conflit de révision WorldDocument : recharger avant de sauvegarder');
+      if(old?.serialized===null)throw Error('Archive retirée : restauration explicite requise');
       if(old?.serialized===entry.serialized){result.push(publicRow(old));next(i+1);return;}
       const revision=(old?.revision??0)+1;
       if(!Number.isSafeInteger(revision))throw new Error('Révision WorldDocument hors limites');
@@ -146,7 +159,81 @@ export function createWorldDocumentIndexedDbStoreV1({indexedDBFactory=globalThis
    next(0);
   });
  }
+ // Execute the EXISTING native synchronous commands against a transaction-
+ // private memory view. No actual Web Storage writes, no live cache. The
+ // result is returned only when IndexedDB commits every touched key.
+ function executeCommand(command){
+  if(typeof command!=='function')throw TypeError('Commande WorldDocument requise');
+  return transaction('readwrite',(store,done,fail)=>{
+   const request=store.getAll();
+   request.onsuccess=()=>{
+    try{
+     const before=new Map(request.result.map(r=>[checkedKey(r.key),checkedRow(r.key,r)]));
+     const next=new Map([...before].filter(([,r])=>r.serialized!==null).map(([key,r])=>[key,r.serialized]));
+     let open=true;
+     const ensure=()=>{if(!open)throw Error('Transaction WorldDocument terminée');};
+     const view=Object.freeze({
+      get length(){ensure();return next.size;},
+      key(i){ensure();return [...next.keys()][i]??null;},
+      getItem(key){ensure();checkedKey(key);return next.get(key)??null;},
+      setItem(key,value){
+       ensure();checkedKey(key);
+       if(before.get(key)?.serialized===null)throw Error('Archive retirée : restauration explicite requise');
+       next.set(key,checkedBytes(key,isMetadata(key)?String(value):decodeWorldDocumentStorageV1(String(value))));
+      },
+      removeItem(key){ensure();checkedKey(key);if(!key.startsWith(ARCHIVE))throw Error('Retrait réservé à une archive explicite');next.delete(key);}
+     });
+     let result;
+     try{result=command(view);if(result&&typeof result.then==='function')throw TypeError('Commande synchrone requise dans la transaction');}
+     finally{open=false;}
+     const changes=[];
+     for(const key of new Set([...before.keys(),...next.keys()])){
+      const old=before.get(key),value=next.get(key)??null;
+      if((old?.serialized??null)===value)continue;
+      const revision=(old?.revision??0)+1;
+      if(!Number.isSafeInteger(revision))throw Error('Révision WorldDocument hors limites');
+      changes.push({key,revision,serialized:value,previous:old?.serialized??null});
+     }
+     function put(i){
+      if(i===changes.length){done(result);return;}
+      const row=changes[i],request=store.put(row);
+      request.onsuccess=()=>{
+       const verify=store.get(row.key);
+       verify.onsuccess=()=>{try{
+        const actual=checkedRow(row.key,verify.result);
+        if(actual.revision!==row.revision||actual.serialized!==row.serialized||actual.previous!==row.previous)
+         throw Error('Relecture transactionnelle incohérente');
+        put(i+1);
+       }catch(e){fail(e);}};
+      };
+     }
+     put(0);
+    }catch(e){fail(e);}
+   };
+  });
+ }
+ function ownerSnapshot(storage){
+  const entries=snapshotLegacyWorldDocumentsV1(storage).map(e=>({...e,serialized:prepareLegacyWorldDocumentV1(e.key,e.raw).serialized}));
+  for(const key of [LIBRARY_INDEX,PROJECT_INDEX]){
+   const raw=storage.getItem(key);
+   if(raw!==null)entries.push({key,raw,serialized:checkedBytes(key,raw)});
+  }
+  return entries.sort((a,b)=>a.key.localeCompare(b.key));
+ }
  return Object.freeze({
+  executeCommand,
+  async migrateOwnerFromStorage(storage){
+   const before=ownerSnapshot(storage);
+   await executeCommand(view=>{
+    for(const entry of before){
+     const existing=view.getItem(entry.key);
+     if(existing!==null&&existing!==entry.serialized)throw Error('Conflit de migration : versions préservées');
+     if(existing===null)view.setItem(entry.key,entry.serialized);
+    }
+   });
+   const after=ownerSnapshot(storage);
+   return Object.freeze({count:before.length,sourceUnchanged:after.length===before.length&&after.every((e,i)=>e.key===before[i].key&&e.raw===before[i].raw)});
+  },
   async read(key){
    checkedKey(key);
    return transaction('readonly',(store,done,fail)=>{
@@ -163,6 +250,7 @@ export function createWorldDocumentIndexedDbStoreV1({indexedDBFactory=globalThis
       const cursor=request.result;
       if(!cursor){done(Object.freeze(rows));return;}
       const row=checkedRow(checkedKey(cursor.key),cursor.value);
+      if(isMetadata(row.key)||row.serialized===null){cursor.continue();return;}
       const document=importWorldBuilderDocument(row.serialized);
       rows.push(Object.freeze({key:row.key,revision:row.revision,id:document.id,areaCount:document.areas.length}));
       cursor.continue();

@@ -16,7 +16,7 @@ export const EXPLORATION_WORLD_LIBRARY_SLOT_V1=
  'gensrpg.exploration.world-library.document.v1:';
 const SCHEMA='gensrpg.exploration.world-library.index.v1';
 function slotKey(value){return EXPLORATION_WORLD_LIBRARY_SLOT_V1+encodeURIComponent(id(value));}
-function indexShape(value){
+export function validateExplorationWorldLibraryIndexV1(value){
  if(!value||typeof value!=='object'||Array.isArray(value)||
     Object.keys(value).length!==3||
     value.schema!==SCHEMA||value.version!==1||
@@ -34,7 +34,7 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
  function index(){
   const content=storage.getItem(EXPLORATION_WORLD_LIBRARY_INDEX_V1);
   if(content===null)return {schema:SCHEMA,version:1,worldIds:[]};
-  try{return indexShape(JSON.parse(content));}
+  try{return validateExplorationWorldLibraryIndexV1(JSON.parse(content));}
   catch(error){throw new Error('Index de mondes invalide ou corrompu : '+error.message);}
  }
  function ids(){

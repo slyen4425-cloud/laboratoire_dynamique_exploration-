@@ -353,6 +353,32 @@ try{
   if(populatedResave.revision!==2||!populatedResave.current||!populatedResave.previous)
     throw Error('Populated WorldDocument resave regression '+JSON.stringify(populatedResave));
   console.log('GREEN real IndexedDB populated maps: second save and complete previous revision');
+  const ownerProof=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createWorldDocumentTransactionalOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
+    const {serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const store=createWorldDocumentIndexedDbStoreV1();
+    const owner=createWorldDocumentTransactionalOwnerV1({store,makeId:()=>crypto.randomUUID()});
+    const universe='unv_transaction-test-1',other='unv_transaction-test-2';
+    const first=await owner.run(({projects})=>projects.createBlank(universe));
+    const second=await owner.run(({projects})=>projects.createBlank(other));
+    const changed={...first,areas:first.areas.map(a=>({...a,label:'Carte durable'}))};
+    await owner.run(({saveDraft})=>saveDraft(changed,{universeId:universe,expectedDocument:first}));
+    let stale=false,foreign=false,rollback=false;
+    try{await owner.run(({saveDraft})=>saveDraft(first,{universeId:universe,expectedDocument:first}));}catch(e){stale=/Conflit/.test(e.message);}
+    try{await owner.run(({projects})=>projects.activate(universe,second.id));}catch(e){foreign=/étranger/.test(e.message);}
+    try{await owner.run(({projects})=>{projects.save(universe,changed);throw Error('rollback requested');});}catch(e){rollback=/rollback requested/.test(e.message);}
+    const check=await owner.run(({projects,readDraft})=>({first:serializeWorldBuilderDraft(projects.load(universe,first.id))===serializeWorldBuilderDraft(first),
+      active:serializeWorldBuilderDraft(readDraft(universe))===serializeWorldBuilderDraft(changed),
+      other:serializeWorldBuilderDraft(readDraft(other))===serializeWorldBuilderDraft(second)}));
+    await owner.run(({projects})=>projects.save(universe,changed));
+    const next=await owner.run(({projects})=>projects.addBlank(universe));
+    const reopened=createWorldDocumentTransactionalOwnerV1({store:createWorldDocumentIndexedDbStoreV1()});
+    const persisted=await reopened.run(({projects,readDraft})=>projects.list(universe).length===2&&readDraft(universe).id===next.id&&projects.load(universe,first.id).areas[0].label==='Carte durable');
+    return {...check,stale,foreign,rollback,persisted};
+  })()`);
+  if(Object.values(ownerProof).some(v=>v!==true))throw Error('Transactional native owner failed '+JSON.stringify(ownerProof));
+  console.log('GREEN IndexedDB native owner: atomic universe/archive/draft commands, rollback and conflict');
   // Exercise the real World Builder controls in Chromium. Headless cannot
   // authorize a physical OS folder interactively: use an actual structured-
   // cloneable origin-private directory handle ONLY in this isolated test.
