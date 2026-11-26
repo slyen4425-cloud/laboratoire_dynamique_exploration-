@@ -82,11 +82,13 @@ try{
     pixelInfo=await run(`(()=>{const canvas=document.querySelector('#sculpt-canvas');
        const p=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
        let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
-       return {visible,w:canvas.width,h:canvas.height};})()`);
-    if(pixelInfo.visible>=100)break;
+       const probe=window.__sculptLabProbe();
+       return {visible,w:canvas.width,h:canvas.height,waterCells:probe.waterCells,roadCells:probe.roadCells};})()`);
+    if(pixelInfo.visible>=100&&pixelInfo.waterCells>0&&pixelInfo.roadCells>0)break;
     await sleep(150);
   }
-  if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels after draw-ready window: '+JSON.stringify(pixelInfo));
+  if(pixelInfo.visible<100||pixelInfo.waterCells<1||pixelInfo.roadCells<1)
+    throw Error('Sculpt renderer did not paint real terrain, water and road after draw-ready window: '+JSON.stringify(pixelInfo));
   // V12 real Chromium feature pixels, not just toggles or SVG flags.
   const overlayGate=await run(`(async()=>{
  await new Promise(ok=>setTimeout(ok,220));
@@ -3204,6 +3206,18 @@ try{
   const v79R2=await run(`(()=>{
     const roomBar=document.querySelector('#interior-area-bar');
     const quick=document.querySelector('.sculpt-quickbar');
+    const interiorTab=document.querySelector('#interior-tools-toggle');
+    const details=document.querySelector('#interior-controls-details');
+    if(!details.open)interiorTab.click();
+    const groups=[...roomBar.querySelectorAll('.interior-tool-group')];
+    const initiallyClosed=groups.every(g=>!g.open);
+    const walls=roomBar.querySelector('.interior-wall-tools').closest('details');
+    const floorGroup=document.querySelector('#interior-floor-base').closest('details');
+    walls.querySelector('summary').click();
+    const wallsVisible=walls.open&&document.querySelector('#interior-wall-toggle').getClientRects().length>0;
+    floorGroup.querySelector('summary').click();
+    const exclusive=floorGroup.open&&!walls.open;
+    const groupGate={count:groups.length,initiallyClosed,wallsVisible,exclusive};
     const floor=document.querySelector('#interior-floor-base');
     floor.value='floor.tile.light';floor.dispatchEvent(new Event('change',{bubbles:true}));
     const original=window.__sculptLabProbe().interiorFloorId;
@@ -3219,9 +3233,12 @@ try{
       document.querySelector('#fullscreen-toggle').click();
     const floatingInfo={immersive:document.body.classList.contains('sculpt-immersive'),
       insideQuickbar:quick.contains(roomBar),position:getComputedStyle(roomBar).position,
-      panelVisible:!roomBar.hidden,quickDisplay:getComputedStyle(quick).display};
-    const floating=floatingInfo.immersive&&floatingInfo.insideQuickbar&&
-      floatingInfo.position==='static'&&floatingInfo.panelVisible;
+      panelVisible:!roomBar.hidden&&getComputedStyle(roomBar).display!=='none',
+      tabVisible:!interiorTab.hidden&&interiorTab.getClientRects().length>0,
+      expanded:interiorTab.getAttribute('aria-expanded')==='true',
+      quickDisplay:getComputedStyle(quick).display};
+    const floating=floatingInfo.immersive&&!floatingInfo.insideQuickbar&&
+      floatingInfo.position==='fixed'&&floatingInfo.panelVisible&&floatingInfo.tabVisible&&floatingInfo.expanded;
     if(document.body.classList.contains('sculpt-immersive'))
       document.querySelector('#fullscreen-toggle').click();
     document.querySelector('#scene-export').click();
@@ -3229,12 +3246,13 @@ try{
     return {original,itemId,appliedFloor:applied.interiorFloorId,
       templates:applied.interiorTemplateCount,exported:exported.interiorTemplates?.length,
       savedFloor:exported.interiors?.[0]?.surface?.baseMaterialId,
-      floating,floatingInfo};
+      floating,floatingInfo,groupGate};
   })()`);
   if(v79R2.original!=='floor.tile.light'||!v79R2.itemId||
      v79R2.appliedFloor!=='floor.tile.light'||v79R2.templates!==1||
      v79R2.exported!==1||v79R2.savedFloor!=='floor.tile.light'||
-     !v79R2.floating)
+     !v79R2.floating||v79R2.groupGate.count!==6||!v79R2.groupGate.initiallyClosed||
+     !v79R2.groupGate.wallsVisible||!v79R2.groupGate.exclusive)
     throw Error('V79 R2 real Chromium native floors / reusable templates / floating bar failed: '+
       JSON.stringify(v79R2));
   console.log('V79 R2 REAL Chromium native indoor floors, reusable room and floating return:',JSON.stringify(v79R2));
