@@ -82,11 +82,13 @@ try{
     pixelInfo=await run(`(()=>{const canvas=document.querySelector('#sculpt-canvas');
        const p=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
        let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
-       return {visible,w:canvas.width,h:canvas.height};})()`);
-    if(pixelInfo.visible>=100)break;
+       const probe=window.__sculptLabProbe();
+       return {visible,w:canvas.width,h:canvas.height,waterCells:probe.waterCells,roadCells:probe.roadCells};})()`);
+    if(pixelInfo.visible>=100&&pixelInfo.waterCells>0&&pixelInfo.roadCells>0)break;
     await sleep(150);
   }
-  if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels after draw-ready window: '+JSON.stringify(pixelInfo));
+  if(pixelInfo.visible<100||pixelInfo.waterCells<1||pixelInfo.roadCells<1)
+    throw Error('Sculpt renderer did not paint real terrain, water and road after draw-ready window: '+JSON.stringify(pixelInfo));
   // V12 real Chromium feature pixels, not just toggles or SVG flags.
   const overlayGate=await run(`(async()=>{
  await new Promise(ok=>setTimeout(ok,220));
