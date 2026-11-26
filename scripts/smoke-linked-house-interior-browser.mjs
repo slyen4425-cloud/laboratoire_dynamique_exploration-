@@ -174,8 +174,8 @@ try{
  })()`,'upper floor');
  if(!first.areaId)throw Error('Upper floor missing');
  const floorOne=first.areaId;
- const houseState=await run(`(()=>{
-  const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+ const houseState=await run(`(async()=>{
+  const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
   const base=doc?.areas.find(a=>a.id===${JSON.stringify(ground)});
   const upper=doc?.areas.find(a=>a.id===${JSON.stringify(floorOne)});
   const floorPortals=doc?.portals.filter(p=>
@@ -193,8 +193,8 @@ try{
  })()`);
  await until(`window.__sculptWorldProbe?.()?.areaId===${JSON.stringify(exterior)}`,
   'return to exterior');
- const home=await run(`(()=>{
-  const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+ const home=await run(`(async()=>{
+  const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
   return {interior:doc?.areas.find(a=>a.id===${JSON.stringify(ground)}),
    floor:doc?.areas.find(a=>a.id===${JSON.stringify(floorOne)}),
    hasHouse:doc?.areas.find(a=>a.id===${JSON.stringify(exterior)})?.objects

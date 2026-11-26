@@ -263,7 +263,7 @@ try{
     resumedScoped.session!=='ci-adventure-a')
    throw Error('Real Sculpt engine did not resume the correct GenSRPG session: '+JSON.stringify(resumedScoped));
  console.log('GREEN scoped GenSRPG AdventureSession: native Canvas, isolated checkpoints, menu and resume');
- const savedDocument=await read(`localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})`);
+ const savedDocument=await read(`(async()=> (await import('./src/storage/world-document-web-storage-codec-v1.js')).decodeWorldDocumentStorageV1(localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})))()`);
  if(savedDocument!==gameWorld)throw Error('Gameplay changed World Builder canonical document unexpectedly');
  console.log('GREEN native Jouer/Continuer: same 2.5D rendered map, collision, checkpoint, no editor');
  console.log('GREEN native 2.5D immutable checked-out source compositor and World Builder entry '+

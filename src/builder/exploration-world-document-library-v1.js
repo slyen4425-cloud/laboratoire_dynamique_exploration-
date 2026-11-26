@@ -5,6 +5,8 @@ import {serializeWorldBuilderDraft,importWorldBuilderDocument}
  from './world-builder-draft.js';
 import {readWorldAssemblerDraft,saveWorldAssemblerDraft,WORLD_ASSEMBLER_DRAFT_KEY}
  from './world-assembler-handoff.js';
+import {encodeWorldDocumentStorageV1,decodeWorldDocumentStorageV1}
+ from '../storage/world-document-web-storage-codec-v1.js';
 import {assertExplorationWorldDocumentIdV1 as id}
  from '../world/world-document-identity-v1.js';
 
@@ -58,7 +60,7 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
   const serialized=storage.getItem(key);
   if(typeof serialized!=='string')throw new Error('WorldDocument archivé manquant, sans récupération destructive');
   let document;
-  try{document=importWorldBuilderDocument(serialized);}
+  try{document=importWorldBuilderDocument(decodeWorldDocumentStorageV1(serialized));}
   catch(error){throw new Error('Document du monde corrompu : '+error.message);}
   if(document.id!==worldId)throw new Error('Identifiant du monde archivé incompatible');
   return document;
@@ -76,10 +78,18 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
   const serialized=serializeWorldBuilderDraft(document);
   const verified=importWorldBuilderDocument(serialized);
   const worldId=id(verified.id),key=slotKey(worldId);
-  const existing=storage.getItem(key);
+  const previous=storage.getItem(key);
+  // Historical uncompressed worlds and new compressed worlds share the
+  // official WorldDocument serializer; never compare a compressed storage
+  // envelope to raw JSON, or silently replace a corrupted archive.
+  const existing=previous===null?null:decodeWorldDocumentStorageV1(previous);
+  if(existing!==null){
+   const archived=importWorldBuilderDocument(existing);
+   if(archived.id!==worldId)throw Error('Archive WorldDocument incompatible : conservation');
+  }
   if(existing!==null&&existing!==serialized&&replace!==true)
    throw new Error('Ce monde existe déjà : confirmation nécessaire pour remplacer sa version archivée');
-  if(existing!==serialized)storage.setItem(key,serialized);
+  if(existing!==serialized)storage.setItem(key,encodeWorldDocumentStorageV1(serialized));
   const known=ids();
   if(!known.includes(worldId))
    throw new Error('Enregistrement du monde non retrouvé après sauvegarde');
@@ -140,7 +150,9 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
   if(current){
    const original=serializeWorldBuilderDraft(current);
    const registered=storage.getItem(slotKey(current.id));
-   if(registered!==original)
+   // Compare canonical bytes, not the optional compact Web Storage envelope.
+   // Otherwise a perfectly saved world appears unsaved after compression.
+   if(registered===null||decodeWorldDocumentStorageV1(registered)!==original)
     throw new Error('Enregistre d’abord le monde actif dans la bibliothèque pour conserver ses modifications');
   }
   // Reuse the SAME official handoff used by the World Builder and native
