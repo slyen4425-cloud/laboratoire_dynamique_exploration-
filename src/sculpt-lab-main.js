@@ -77,6 +77,7 @@ import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-dra
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {createObjectLibraryPicker} from './objects/object-library-picker-v1.js';
+import {mountSculptGraphicImport} from './assets/sculpt-graphic-import-controls-v1.js';
 import {createObjectLibraryLayoutControls} from './objects/object-library-layout-controls-v1.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
@@ -5473,6 +5474,7 @@ $('object-redo').addEventListener('click',()=>{
   objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();syncObjectSelectedControls();
 });
 refreshObjectOptions();updateObjectCount();
+if($('graphic-library-import-form'))mountSculptGraphicImport({root:$('graphic-library-import-form'),terrainFamilies:()=>sculptWorldDraft?.terrainFamilies??terrainFamilyRegistry.list()});
 if($('object-library-tree')){
   objectLibraryPicker=createObjectLibraryPicker({
     root:$('object-library-tree'),search:$('object-library-search'),summary:$('object-library-selected'),

@@ -22,6 +22,7 @@ export function createUserMaterialStore({
       list: unavailable,
       get: unavailable,
       put: unavailable,
+      add: unavailable,
       delete: unavailable
     });
   }
@@ -152,6 +153,11 @@ export function createUserMaterialStore({
         'readwrite',
         (store) => store.put(record)
       );
+    },
+    // Insert only: no overwrite on concurrent import.
+    add(record) {
+      if (!record?.id) return Promise.reject(new Error('User asset id is required'));
+      return requestWithStore('readwrite', (store) => store.add(record));
     },
     delete(id) {
       return requestWithStore(

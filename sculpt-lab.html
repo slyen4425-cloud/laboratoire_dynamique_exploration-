@@ -232,6 +232,12 @@ body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset
 #object-palette input[type=range]{accent-color:#7ee0c5}
 #object-count{color:#a7f3db}
 #object-legacy-selection[hidden]{display:none!important}
+#graphic-library-import{border:1px solid #4f8980;border-radius:9px;padding:6px;min-width:0;overflow-wrap:anywhere}
+#graphic-library-import summary{cursor:pointer;padding:7px 2px;font-weight:700}
+#graphic-library-import label{display:block;margin:5px 0}
+#graphic-library-import input,#graphic-library-import select,#graphic-library-import button{max-width:100%;min-width:0;box-sizing:border-box}
+#graphic-library-import canvas{max-width:100%;height:auto;background:repeating-conic-gradient(#233745 0% 25%,#425765 0% 50%) 0 0/16px 16px}
+#graphic-library-import output{display:block;overflow-wrap:anywhere}
 #object-library-picker{border:1px solid #4f8980;border-radius:9px;padding:6px;min-width:0;background:#173840ab}
 #object-library-picker summary{cursor:pointer;overflow-wrap:anywhere;font-weight:700;padding:7px 2px;min-height:28px}
 #object-library-picker>summary{color:#b8f3db}
@@ -1586,6 +1592,7 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
  <div id="object-controls">
  <strong>🌳 Objets et acteurs de carte</strong>
  <button type="button" id="actor-open">👥 Acteurs de map</button>
+ <details id="graphic-library-import"><summary>Importer une ressource graphique</summary><div id="graphic-library-import-form"></div></details>
  <details id="object-library-picker"><summary>Bibliothèque d’objets · <span id="object-library-selected">Choisir</span></summary>
   <label>Rechercher <input id="object-library-search" type="search" placeholder="Ex. maison neige, tonneau…" autocomplete="off"></label>
   <div id="object-library-tree" aria-label="Catégories et sous-catégories d’objets"></div>
@@ -2122,6 +2129,6 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126-object-library-tree-v1-personal-layout-v1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126-object-library-tree-v1-personal-layout-v1-graphic-import-storage-v1"></script>
 </body>
 </html>

@@ -22,6 +22,7 @@ export function createUserWorldObjectStore({
       list: unavailable,
       get: unavailable,
       put: unavailable,
+      add: unavailable,
       delete: unavailable
     });
   }
@@ -126,6 +127,11 @@ export function createUserWorldObjectStore({
         'readwrite',
         (objectStore) => objectStore.put(record)
       );
+    },
+    // Insert only: no overwrite on concurrent import.
+    add(record) {
+      if (!record?.id) return Promise.reject(new Error('User asset id is required'));
+      return requestWithStore('readwrite', (objectStore) => objectStore.add(record));
     },
     delete(id) {
       return requestWithStore(
