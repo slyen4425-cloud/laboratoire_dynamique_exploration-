@@ -103,9 +103,12 @@ export function createUserMaterialStore({
         return;
       }
 
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
+      // Resolve only after the entire transaction commits (quota/abort safety).
+      let value;
+      request.onsuccess = () => { value=request.result; };
+      transaction.oncomplete = () => resolve(value);
+      transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+      transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed'));
       request.onerror = () => {
         reject(
           request.error ??
