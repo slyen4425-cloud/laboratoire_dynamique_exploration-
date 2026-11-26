@@ -232,8 +232,8 @@ function installWorldAssembler(){
     try{
       const opened=worldProjects?worldProjects.activate(universeId,id):library.activate(id);
       draft=opened;selectedId=draft.initialAreaId;
-      persist();render();refreshWorldLibrary();
-      libraryStatus('✓ Monde '+opened.id+' chargé sans supprimer les autres.');
+      const persisted=persist();render();refreshWorldLibrary();
+      if(persisted)libraryStatus('✓ Monde '+opened.id+' chargé sans supprimer les autres.');
     }catch(error){libraryStatus(error.message,true);}
   });
   on(byId('world-library-select'),'change',()=>{
@@ -275,10 +275,12 @@ function installWorldAssembler(){
       saveWorldAssemblerDraft(worldStorage,draft);
       autosaveAvailable=true;
       byId('save-state').textContent='✓ Monde sauvegardé localement';
+      return true;
     }catch(error){
       autosaveAvailable=false;
       byId('save-state').textContent='⚠ Export JSON recommandé';
-      status('Stockage local indisponible : '+error.message+' · utilise Exporter',true);
+      status('Stockage local indisponible : '+error.message+' · utilise Exporter ou Copies de secours',true);
+      return false;
     }
   }
   on(byId('world-play-open'),'click',event=>{
@@ -327,8 +329,9 @@ function installWorldAssembler(){
       serializeWorldBuilderDraft(next);
       draft=next;
       if(!draft.areas.some(a=>a.id===selectedId))selectedId=draft.initialAreaId;
-      persist();render();status(success);
-      return true;
+      const persisted=persist();render();
+      if(persisted)status(success);
+      return persisted;
     }catch(error){status(error.message,true);return false;}
   }
   function fillSelect(select,areas,current){
@@ -897,8 +900,8 @@ function installWorldAssembler(){
           areaToOpen=to.id;
         }
       }
+      if(!persist())return;
       saveWorldAssemblerHandoff(worldSessionStorage,draft,areaToOpen);
-      persist();
       // Selection is an ephemeral UI choice, never a second WorldDocument.
       if(areaToOpen!==selectedId){selectedId=areaToOpen;render();}
       const next=url.startsWith('./sculpt-lab.html?')
@@ -1015,7 +1018,7 @@ function installWorldAssembler(){
     }catch(error){libraryStatus(error.message,true);}
   });
   if(transfer){
-    persist();status('Carte modifiée : même monde, même WorldArea et mêmes passages.');
+    if(persist())status('Carte modifiée : même monde, même WorldArea et mêmes passages.');
   }else status('Choisis une WorldArea puis utilise le panneau Carte pour la modifier.');
   render();
   try{refreshWorldLibrary();}

@@ -353,6 +353,58 @@ try{
   if(populatedResave.revision!==2||!populatedResave.current||!populatedResave.previous)
     throw Error('Populated WorldDocument resave regression '+JSON.stringify(populatedResave));
   console.log('GREEN real IndexedDB populated maps: second save and complete previous revision');
+  // Exercise the real World Builder controls in Chromium. Headless cannot
+  // authorize a physical OS folder interactively: use an actual structured-
+  // cloneable origin-private directory handle ONLY in this isolated test.
+  // This is UI/handle persistence/native-file readback proof, NOT a claim
+  // about a physical PC picker; the Node test separately exercises disk I/O.
+  await send('Page.addScriptToEvaluateOnNewDocument',{source:`
+    window.showDirectoryPicker=async()=>navigator.storage.getDirectory();
+    if(typeof FileSystemHandle.prototype.queryPermission!=='function')
+      FileSystemHandle.prototype.queryPermission=async()=> 'granted';
+    if(typeof FileSystemHandle.prototype.requestPermission!=='function')
+      FileSystemHandle.prototype.requestPermission=async()=> 'granted';
+  `});
+  await send('Page.reload',{ignoreCache:true});
+  let backupReady=false;
+  for(let i=0;i<80;i++){
+    try{backupReady=await run("typeof window.__worldAssemblerProbe==='function' && !document.querySelector('#world-external-backup-folder').disabled");}
+    catch{}if(backupReady)break;await sleep(150);
+  }
+  if(!backupReady)throw Error('External backup editor UI not mounted');
+  await run("document.querySelector('#world-external-backup-folder').click()");
+  let externalStatus='';
+  for(let i=0;i<80;i++){
+    externalStatus=await run("document.querySelector('#world-external-backup-status').textContent");
+    if(externalStatus.includes('Copie externe vérifiée')||externalStatus.includes('suspendue')||externalStatus.includes('non configuré'))break;
+    await sleep(150);
+  }
+  if(!externalStatus.includes('Copie externe vérifiée'))throw Error('Native backup panel failed '+externalStatus);
+  const backupFile=await run(`(async()=>{
+    const {importWorldBuilderDocument,serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const {readWorldAssemblerDraft}=await import('./src/builder/world-assembler-handoff.js');
+    const directory=await navigator.storage.getDirectory();
+    const names=[];
+    for await(const [name,handle] of directory.entries())if(handle.kind==='file'&&name.endsWith('.world.json'))names.push(name);
+    if(names.length!==1)return {count:names.length};
+    const file=await (await directory.getFileHandle(names[0])).getFile();
+    const restored=importWorldBuilderDocument(await file.text());
+    const draft=readWorldAssemblerDraft(localStorage);
+    return {count:names.length,worldId:restored.id,identical:serializeWorldBuilderDraft(restored)===serializeWorldBuilderDraft(draft)};
+  })()`);
+  if(backupFile.count!==1||!backupFile.identical)throw Error('Backup panel exact native file readback failed '+JSON.stringify(backupFile));
+  await run("document.querySelector('#world-external-backup-stop').click()");
+  for(let i=0;i<40;i++){
+    if((await run("document.querySelector('#world-external-backup-status').textContent")).includes('désactivées'))break;
+    await sleep(150);
+  }
+  const kept=await run(`(async()=>{
+    const directory=await navigator.storage.getDirectory();let count=0;
+    for await(const [name,handle] of directory.entries())if(handle.kind==='file'&&name.endsWith('.world.json'))count++;
+    return {count,disabled:document.querySelector('#world-external-backup-now').disabled};
+  })()`);
+  if(kept.count!==1||!kept.disabled)throw Error('Disable erased backup or left active '+JSON.stringify(kept));
+  console.log('GREEN actual World Builder backup controls: native file readback and disable preserves file (OPFS test only)');
 }finally{
   // The fully isolated Chromium profile is kept mutable by browser helpers.
   // Shut down via CDP FIRST so they flush storage before the process-group

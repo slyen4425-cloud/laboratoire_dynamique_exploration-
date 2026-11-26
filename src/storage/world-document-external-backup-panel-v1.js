@@ -52,7 +52,7 @@ export function installWorldExternalBackupPanelV1({
  }
  async function choose(){
   if(disposed||busy)return;
-  cancel();busy=true;update();const current=++epoch;
+  cancel();busy=true;update();const current=++epoch;let selected=false;
   try{
    // Picker is called synchronously in the direct click event.
    const chosen=await selectWorldBackupDirectoryV1(root);
@@ -61,10 +61,11 @@ export function installWorldExternalBackupPanelV1({
     throw Error('Écriture du dossier non autorisée');
    await preferences.remember(chosen);
    if(disposed||current!==epoch)return;
-   directory=chosen;last=null;message('Dossier autorisé : '+chosen.name);
+   directory=chosen;last=null;selected=true;message('Dossier autorisé : '+chosen.name);
   }catch(error){message('Dossier non configuré : '+(error?.message??error),true);}
   finally{busy=false;update();}
-  if(!disposed&&current===epoch&&directory)await copy(true);
+  if(!disposed&&current===epoch&&selected)await copy(true);
+  else if(!disposed&&current===epoch&&directory)schedule();
  }
  async function manual(){
   if(disposed||!directory||busy)return;
