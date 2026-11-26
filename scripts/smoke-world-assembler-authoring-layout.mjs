@@ -7,13 +7,36 @@ import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 
 const root=process.cwd();
+// Only this isolated localhost harness changes the composition root. No
+// test feature flag is shipped in the native editors or in the PWA.
+let durableFixture=false;
 const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript',
   '.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
   try{
     const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
     if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
-    const bytes=await readFile(path);
+    let bytes=await readFile(path);
+    if(durableFixture&&path===resolve(root,'src/sculpt-lab-main.js')){
+      const original=bytes.toString('utf8');
+      const anchor='const sculptWorldAccess=createWorldAuthoringAccessV1({storage:window.localStorage,';
+      if(!original.includes(anchor))throw Error('Sculpt composition root moved');
+      bytes=original.replace(anchor,
+        "const {createWorldDocumentIndexedDbStoreV1}=await import('./storage/world-document-indexeddb-store-v1.js');\n"+
+        "const {createWorldDocumentTransactionalOwnerV1}=await import('./storage/world-document-transactional-owner-v1.js');\n"+
+        'const durableStore=createWorldDocumentIndexedDbStoreV1(),durableOwner=createWorldDocumentTransactionalOwnerV1({store:durableStore});\n'+
+        'const sculptWorldAccess=createWorldAuthoringAccessV1({owner:durableOwner,store:durableStore,storage:window.localStorage,');
+    }
+    if(durableFixture&&path===resolve(root,'src/builder/world-assembler-main.js')){
+      const original=bytes.toString('utf8');
+      const anchor='export const app=await installWorldAssembler();';
+      if(!original.includes(anchor))throw Error('World composition root moved');
+      bytes=original.replace(anchor,
+        "const {createWorldDocumentIndexedDbStoreV1}=await import('../storage/world-document-indexeddb-store-v1.js');\n"+
+        "const {createWorldDocumentTransactionalOwnerV1}=await import('../storage/world-document-transactional-owner-v1.js');\n"+
+        'const durableStore=createWorldDocumentIndexedDbStoreV1(),durableOwner=createWorldDocumentTransactionalOwnerV1({store:durableStore});\n'+
+        'export const app=await installWorldAssembler({owner:durableOwner,store:durableStore});');
+    }
     res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
       'Cache-Control':'no-store'}).end(bytes);
   }catch{res.writeHead(404).end('missing');}
@@ -522,6 +545,62 @@ try{
   })()`);
   if(Object.values(durableUi).some(v=>v!==true))throw Error('Actual IndexedDB editor readback failed '+JSON.stringify(durableUi));
   console.log('GREEN actual World Builder bound to IndexedDB: add map, archive and readback without Web Storage copy');
+  // Prove the real 2.5D authoring page on the same database, via a
+  // revision-only handoff and its actual native controls. Only composition
+  // roots are substituted by the isolated test server; editor code is unchanged.
+  const sculptArea=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createWorldDocumentTransactionalOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
+    const {createWorldAuthoringAccessV1}=await import('./src/storage/world-document-authoring-access-v1.js');
+    const store=createWorldDocumentIndexedDbStoreV1(),owner=createWorldDocumentTransactionalOwnerV1({store});
+    const access=createWorldAuthoringAccessV1({storage:localStorage,sessionStorage,universeId:'unv_transaction-test-2',owner,store});
+    const draft=await access.readDraft(),area=draft.areas.find(a=>a.label==='Zone IndexedDB réelle');
+    await access.writeHandoff(draft,area.id);
+    return area.id;
+  })()`);
+  durableFixture=true;
+  await send('Page.navigate',{url:new URL('./sculpt-lab.html?worldAssembler=1&universe=unv_transaction-test-2&areaId='+encodeURIComponent(sculptArea),pageUrl).href});
+  let sculptReady=false;
+  for(let i=0;i<140;i++){
+    try{sculptReady=await run("location.pathname.endsWith('/sculpt-lab.html')&&window.__sculptWorldProbe?.().editable===true&&window.__sculptWorldProbe?.().durableStorage===true&&!!window.__sculptEncounterEditorProbe?.().available");}catch{}
+    if(sculptReady)break;await sleep(150);
+  }
+  if(!sculptReady)throw Error('Actual durable Sculpt did not mount');
+  const authored=await run(`(()=>{
+    document.querySelector('#mode-encounters').click();
+    const slider=document.querySelector('#sculpt-encounter-chance');
+    slider.value='67';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const toggle=document.querySelector('#sculpt-encounter-area-enabled');
+    toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));
+    const elements=[...document.querySelectorAll('#sculpt-encounter-elements input[data-element-id]')];
+    if(!elements.length)throw Error('Encounter element catalogue unavailable');
+    if(!elements.some(e=>e.checked)){elements[0].checked=true;elements[0].dispatchEvent(new Event('change',{bubbles:true}));}
+    return window.__sculptEncounterEditorProbe();
+  })()`);
+  if(authored.chance!==67)throw Error('Actual durable Sculpt encounter change failed '+JSON.stringify(authored));
+  let autosaved=false;
+  for(let i=0;i<180;i++){
+    try{autosaved=await run("document.querySelector('#world-storage-status').textContent.includes('Carte sauvegardée')");}catch{}
+    if(autosaved)break;await sleep(150);
+  }
+  if(!autosaved)throw Error('Actual durable Sculpt autosave failed '+await run("document.querySelector('#world-storage-status').textContent"));
+  const sculptSaved=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const store=createWorldDocumentIndexedDbStoreV1();
+    const row=await store.read('gensrpg.exploration.universe.workspace.v1:unv_transaction-test-2:gensrpg.world-assembler.document.v1');
+    const profile=row.document.encounterConfig.families.find(f=>f.terrainFamilyId===${JSON.stringify(authored.familyId)});
+    return {chance:profile?.encounterChancePercent,revision:row.revision,noLegacy:localStorage.getItem(row.key)===null};
+  })()`);
+  if(sculptSaved.chance!==67||!sculptSaved.noLegacy)throw Error('Actual durable Sculpt autosave bytes differ '+JSON.stringify(sculptSaved));
+  await run("document.querySelector('#world-area-return').click()");
+  let returned=false;
+  for(let i=0;i<140;i++){
+    try{returned=await run("location.pathname.endsWith('/world-assembler.html')&&window.__worldAssemblerProbe?.().saved===true&&window.__worldAssemblerProbe?.().selectedAreaId==="+JSON.stringify(sculptArea));}catch{}
+    if(returned)break;await sleep(150);
+  }
+  if(!returned)throw Error('Actual durable Sculpt -> World Builder return failed');
+  console.log('GREEN actual Sculpt on IndexedDB: revision handoff, authoring, autosave, exact readback, return to World Builder');
+
 
 }finally{
   // The fully isolated Chromium profile is kept mutable by browser helpers.

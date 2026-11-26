@@ -7460,7 +7460,7 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
   // The handoff is intentionally consumed once. On a page refresh we
   // restore from the SAME canonical world document saved by World Builder,
   // never from an independent Sculpt scene or parallel WorldGraph.
-  let transfer=null,initialSaved=null,loadError=null;
+  let transfer=null,initialSaved=null,loadError=null,confirmedDeparture=false;
   try{
     if(sculptUniverseId!==null&&!(await access.list()).length)
       throw Error('Univers sans WorldDocument natif : aucune scène historique ouverte');
@@ -7542,10 +7542,12 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
       await sculptWorldPersistence.transition(async save=>{
       await save(persistCurrentWorldSculpt());
       await access.writeHandoff(sculptWorldDraft,sculptWorldAreaId);
+      confirmedDeparture=true;
       window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
         (newArea?'&createArea=1':'')+(sculptUniverseId?'&universe='+encodeURIComponent(sculptUniverseId):''));
       });
     }catch(error){
+      confirmedDeparture=false;
       let message='Enregistrement bloqué : '+error.message;
       try{
         const file=downloadWorldSculptRecovery();
@@ -7738,9 +7740,10 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
       url.searchParams.delete('arrivalSpawnId');
       if(reverse)url.searchParams.set('arrivalPortalId',reverse.id);
       else url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
+      confirmedDeparture=true;
       window.location.assign(url.href);
       });
-    }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
+    }catch(error){confirmedDeparture=false;sculptWorldStatus('Zone cible : '+error.message,true);}
   });
   for(const [id,mode] of [
     ['world-area-portal-place','portal'],['world-area-spawn-place','spawn']]){
@@ -7788,11 +7791,14 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
     const edited=()=>{if(sculptWorldAreaMounted&&!sculptPlayRequested&&!navigationTesting&&!sculptWorldPersistence.transitioning)autosave.schedule();};
     for(const event of ['pointerup','change','input','click','keyup'])document.addEventListener(event,edited);
     window.addEventListener('beforeunload',event=>{
-      let dirty=autosave.pending||sculptWorldPersistence.busy;
+      // A confirmed explicit departure has saved the exact snapshot and
+      // validated the handoff. The transition blocks further input.
+      if(confirmedDeparture)return;
+      let dirty=sculptWorldPersistence.busy;
       if(!dirty&&sculptWorldAreaMounted&&!navigationTesting){
         try{dirty=JSON.stringify(snapshotCurrentSculptWorldArea())!==JSON.stringify(sculptWorldPersistence.confirmed);}
         catch{dirty=true;}
-      }
+      }else if(!dirty)dirty=autosave.pending;
       if(dirty){event.preventDefault();event.returnValue='';}
     });
     window.addEventListener('pagehide',()=>{autosave.dispose();for(const event of ['pointerup','change','input','click','keyup'])document.removeEventListener(event,edited);},{once:true});
