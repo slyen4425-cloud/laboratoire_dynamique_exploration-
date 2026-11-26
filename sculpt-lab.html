@@ -1019,6 +1019,28 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  #surface-palette .surface-settings-group>summary{padding:7px}
  #sculpt-encounter-editor{width:min(245px,58vw);max-height:70dvh}
 }
+
+/* Interior is an independent, contextual inspector, not a terrain quickbar.
+   One scroll container, no cloned commands. */
+#interior-tools-toggle[hidden]{display:none!important}
+.editor-switch #interior-tools-toggle{flex:0 0 auto;min-width:0;white-space:nowrap;font-size:.83rem}
+#interior-tools-toggle[aria-expanded="true"]{background:#28646b;border-color:#9be9db}
+#interior-area-bar,body.sculpt-immersive #interior-area-bar{
+ position:fixed;z-index:125;top:calc(env(safe-area-inset-top,0px) + 56px);
+ left:calc(env(safe-area-inset-left,0px) + 8px);right:auto;
+ width:min(350px,calc(100vw - 20px));max-height:calc(100dvh - 68px);
+ box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;
+ padding:8px;gap:6px;box-shadow:0 10px 30px #0009;
+}
+#interior-area-bar:not(:has(#interior-controls-details[open])),
+body.sculpt-play-mode #interior-area-bar,body.navigation-testing #interior-area-bar,
+body.world-area-unavailable #interior-area-bar{display:none!important}
+#interior-controls-details>summary{padding:6px 8px}
+#interior-controls-details .interior-controls-fields{max-height:none;overflow:visible}
+#interior-area-bar .interior-controls-fields select{max-width:100%;min-width:0}
+@media(max-height:550px){
+ #interior-area-bar,body.sculpt-immersive #interior-area-bar{width:min(310px,48vw);max-height:calc(100dvh - 65px)}
+}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
@@ -1070,7 +1092,8 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
-<button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
+<button type="button" id="interior-tools-toggle" hidden aria-expanded="false" aria-controls="interior-controls-details">🏠 Intérieur</button>
+ <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
 <button type="button" id="mode-waypoints" aria-controls="waypoints-palette" aria-pressed="false" title="Placer les départs, entrées et sorties sur la carte">📍 Passages</button>
 <button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
 <button type="button" id="mode-encounters" aria-pressed="false" aria-controls="sculpt-encounter-editor">🐾 Rencontres</button>
@@ -1112,6 +1135,10 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  <span id="ramp-step">1. Touche le pied de la pente, puis le sommet.</span>
  <button id="ramp-cancel" type="button" disabled>Changer le pied</button>
 </div>
+
+</section>
+<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
+
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
  <button id="interior-area-return" type="button">← Retour extérieur</button>
@@ -1221,9 +1248,6 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
   </div>
  </details>
 </section>
-</section>
-<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
-
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
  <div class="unavailable-card">
@@ -2033,6 +2057,6 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126"></script>
 </body>
 </html>
