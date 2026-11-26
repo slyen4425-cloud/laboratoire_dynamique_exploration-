@@ -609,17 +609,19 @@ try{
     const first=createBlankWorldBuilderDraft({id:'cutover-legacy'});
     const raw=serializeWorldBuilderDraft(first),map=new Map([[key,raw]]);
     const source={get length(){return map.size;},key:i=>[...map.keys()][i]??null,getItem:k=>map.get(k)??null};
-    await store.prepareOwnerCutover(source);
+    const {openMigratedWorldDocumentOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
+    const {owner}=await openMigratedWorldDocumentOwnerV1({legacyStorage:source,store});
+    const usable=await owner.run(()=>true);
     const row=await store.read(key),next=createWorldBuilderDraft({...first,areas:first.areas.map(a=>({...a,label:'Après migration'}))});
     await store.commit([{key,expectedRevision:row.revision,document:next}]);
     await createWorldDocumentIndexedDbStoreV1().prepareOwnerCutover(source);
     const current=await store.read(key);
     const unchanged=map.get(key)===raw,notReplayed=serializeWorldBuilderDraft(current.document)===serializeWorldBuilderDraft(next);
     map.set(key,serializeWorldBuilderDraft(createWorldBuilderDraft({...first,areas:first.areas.map(a=>({...a,label:'Ancien onglet'}))})));
-    let blocked=false;
-    try{await store.verifyOwnerCutover(source);}catch(error){blocked=/modifié après migration/.test(error.message);}
+    let blocked=false,commandExecuted=false;
+    try{await owner.run(()=>{commandExecuted=true;});}catch(error){blocked=/modifié après migration/.test(error.message);}
     const preserved=serializeWorldBuilderDraft((await store.read(key)).document)===serializeWorldBuilderDraft(next);
-    return {unchanged,notReplayed,blocked,preserved};
+    return {usable,unchanged,notReplayed,blocked,commandNotExecuted:!commandExecuted,preserved};
   })()`);
   if(Object.values(cutover).some(v=>v!==true))throw Error('Native IndexedDB cutover fence failed '+JSON.stringify(cutover));
   console.log('GREEN IndexedDB cutover: atomic source fingerprint, reopen without replay, late legacy writer blocked, both copies preserved');

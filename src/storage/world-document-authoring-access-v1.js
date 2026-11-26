@@ -54,7 +54,9 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
   async remove(id,options){if(universeId!==null)throw Error('Suppression de monde de projet non autorisée');return run(({library})=>library.remove(id,options));},
   async writeHandoff(document,areaId){
    if(!owner)return saveWorldAssemblerHandoff(sessions,document,areaId);
+   await owner.verifyCutover?.();
    const row=await store.read(draftKey);
+   await owner.verifyCutover?.();
    if(!row||serializeWorldBuilderDraft(row.document)!==serializeWorldBuilderDraft(document)||
       !row.document.areas.some(a=>a.id===areaId))
     throw Error('Transfert bloqué : révision WorldDocument non confirmée');
@@ -69,7 +71,9 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
    try{ref=JSON.parse(raw);}catch{throw Error('Transfert de carte illisible : conservation');}
    if(ref?.schemaVersion!==2||typeof ref.worldId!=='string'||typeof ref.areaId!=='string'||!Number.isSafeInteger(ref.revision))
     throw Error('Transfert historique incompatible : revenir au monde enregistré sans supprimer le transfert');
+   await owner.verifyCutover?.();
    const row=await store.read(draftKey);
+   await owner.verifyCutover?.();
    if(!row||row.revision!==ref.revision||row.document.id!==ref.worldId||!row.document.areas.some(a=>a.id===ref.areaId))
     throw Error('Transfert de carte périmé : recharger le monde, aucune carte écrasée');
    sessions.removeItem(WORLD_ASSEMBLER_HANDOFF_KEY);

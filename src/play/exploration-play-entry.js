@@ -1,4 +1,4 @@
-import {readWorldAssemblerDraft} from '../builder/world-assembler-handoff.js';
+import {createWorldAuthoringAccessV1} from '../storage/world-document-authoring-access-v1.js';
 import {
   createNewExplorationPlay,readExplorationPlay,explorationPlayNavigationKey
 } from './exploration-play-session.js';
@@ -6,6 +6,9 @@ import {
 const $=id=>document.getElementById(id);
 const message=(value,error=false)=>{$('play-status').textContent=value;$('play-status').dataset.error=String(error);};
 let world,playOptions;
+// The native play menu uses the same authoring reader as Sculpt and Capture.
+// The default remains legacy until the coordinated production cutover.
+const access=createWorldAuthoringAccessV1({storage:window.localStorage,sessionStorage:window.sessionStorage});
 const playUrl=()=> './sculpt-lab.html?play=1'+
   (playOptions?'&adventureSession='+encodeURIComponent(playOptions.sessionId):'');
 try{
@@ -14,7 +17,7 @@ try{
     explorationPlayNavigationKey(sessionId); // reject unsafe or empty identity
     playOptions={sessionId};
   }
-  world=readWorldAssemblerDraft(window.localStorage);
+  world=await access.readDraft();
   if(!world){
     $('play-world-name').textContent='Aucun monde enregistré';
     $('play-world-detail').textContent='Ouvre le World Builder, prépare une carte 2,5D et définis le Spawn initial.';
@@ -46,10 +49,12 @@ try{
   $('play-world-name').textContent='Monde indisponible';
   message('Impossible de lire les données du World Builder : '+error.message,true);
 }
-$('play-new').addEventListener('click',()=>{
+$('play-new').addEventListener('click',async()=>{
   if(!world)return;
   try{
     if(playOptions)throw Error('Nouvelle partie appartient à GenSRPG Aventure, pas au menu Exploration');
+    world=await access.readDraft();
+    if(!world)throw Error('Monde enregistré indisponible');
     if(window.localStorage.getItem(playOptions?
       explorationPlayNavigationKey(playOptions.sessionId):explorationPlayNavigationKey())&&
        !window.confirm('Nouvelle partie : remplacer uniquement le checkpoint de navigation précédent ?'))return;
@@ -57,8 +62,9 @@ $('play-new').addEventListener('click',()=>{
     window.location.assign(playUrl());
   }catch(error){message(error.message,true);}
 });
-$('play-continue').addEventListener('click',()=>{
+$('play-continue').addEventListener('click',async()=>{
   try{
+    world=await access.readDraft();
     if(!world||!readExplorationPlay(window.localStorage,world,playOptions))
       throw new Error('Aucune partie enregistrée');
     window.location.assign(playUrl());

@@ -6,6 +6,7 @@ import {createExplorationUniverseWorldProjectsV1} from '../builder/exploration-u
 import {readWorldAssemblerDraft,saveWorldAssemblerDraft,WORLD_ASSEMBLER_DRAFT_KEY} from '../builder/world-assembler-handoff.js';
 import {createExplorationUniverseWorkspaceStorageV1} from './exploration-universe-workspace-storage-v1.js';
 import {serializeWorldBuilderDraft} from '../builder/world-builder-draft.js';
+import {createWorldDocumentIndexedDbStoreV1} from './world-document-indexeddb-store-v1.js';
 export function createWorldDocumentTransactionalOwnerV1({store,makeId=()=>globalThis.crypto.randomUUID()}={}){
  if(typeof store?.executeCommand!=='function'||typeof makeId!=='function')
   throw TypeError('Autorité IndexedDB WorldDocument requise');
@@ -37,4 +38,30 @@ export function createWorldDocumentTransactionalOwnerV1({store,makeId=()=>global
    });
   }
  });
+}
+
+/**
+ * Explicit composition root for a coordinated cutover. A caller must opt in
+ * only when ALL consumers (including Capture) use the async owner. Never
+ * switch based on a URL, local setting, or failed legacy write.
+ *
+ * The retained legacy fingerprint is checked before/after commands, so a
+ * stale page cannot silently replace the new authority. If it changes
+ * during a commit, both versions remain and the command is not acknowledged.
+ */
+export async function openMigratedWorldDocumentOwnerV1({
+ legacyStorage,store=createWorldDocumentIndexedDbStoreV1(),makeId
+}={}){
+ if(!legacyStorage||typeof store.prepareOwnerCutover!=='function'||
+    typeof store.verifyOwnerCutover!=='function')throw TypeError('Migration WorldDocument requise');
+ await store.prepareOwnerCutover(legacyStorage);
+ const native=createWorldDocumentTransactionalOwnerV1({store,makeId});
+ const verifyCutover=()=>store.verifyOwnerCutover(legacyStorage);
+ const owner=Object.freeze({verifyCutover,async run(command){
+  await verifyCutover();
+  const result=await native.run(command);
+  await verifyCutover();
+  return result;
+ }});
+ return Object.freeze({owner,store});
 }
