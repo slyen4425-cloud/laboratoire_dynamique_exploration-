@@ -77,6 +77,7 @@ import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-dra
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {createObjectLibraryPicker} from './objects/object-library-picker-v1.js';
+import {createObjectLibraryLayoutControls} from './objects/object-library-layout-controls-v1.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
@@ -338,7 +339,7 @@ const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 let shadowControlsOwnerId=null; // UI identity only; WorldObject owns the settings.
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
-let objectLibraryPicker=null;
+let objectLibraryPicker=null,objectLibraryLayoutControls=null;
 // Frame state is owned once before image callbacks register. Decoding can
 // finish while this ES module is suspended at top-level await; never queue a
 // draw until all canvas/WorldArea/camera dependencies have initialized.
@@ -4111,7 +4112,7 @@ function refreshObjectVariants(preferred=null){
       definition.visual.defaultVariantId??variants[0].id;
     $('object-variant').value=wanted;
   }
-  objectLibraryPicker?.sync();
+  objectLibraryPicker?.sync();objectLibraryLayoutControls?.sync();
 }
 function currentSculptLighting(){
  return sculptLightingPreview!==undefined?sculptLightingPreview:
@@ -5476,6 +5477,7 @@ if($('object-library-tree')){
   objectLibraryPicker=createObjectLibraryPicker({
     root:$('object-library-tree'),search:$('object-library-search'),summary:$('object-library-selected'),
     definitions:availableObjects,getSelected:()=>$('object-definition').value,
+    getLayout:()=>objectLibraryLayoutControls?.getLayout(),
     onSelect:def=>{
       // Same controls/handlers used by existing placements and saved objects.
       // A hidden compatibility adapter, not a second authoring palette.
@@ -5486,7 +5488,10 @@ if($('object-library-tree')){
       $('object-library-picker').open=false;
     }
   });
-  if(objectLibraryPicker)$('object-legacy-selection').hidden=true;
+  if(objectLibraryPicker){
+    $('object-legacy-selection').hidden=true;
+    objectLibraryLayoutControls=createObjectLibraryLayoutControls({root:$('object-library-layout'),getSelected:()=>$('object-definition').value,onChange:()=>objectLibraryPicker.render()});
+  }
 }
 window.__sculptObjectsProbe=()=>Object.freeze({
   active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
