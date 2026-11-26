@@ -89,15 +89,23 @@ try{
     !mapCardSelection.ready||!mapCardSelection.folded||!mapCardSelection.loadOpened||
     !mapCardSelection.opened||!mapCardSelection.noDup)
     throw Error('World Builder map cards not connected to real WorldArea create action '+JSON.stringify(mapCardSelection));
-  const setup=await run(`(()=>{
-    const add=document.querySelector('#area-add-form');
-    document.querySelector('#area-name').value='Zone annexe';
-    add.requestSubmit();
+  await run("document.querySelector('#area-name').value='Zone annexe';document.querySelector('#area-add-form').requestSubmit()");
+  for(let i=0;i<100;i++){
+    if(await run("window.__worldAssemblerProbe()?.saved&&window.__worldAssemblerProbe()?.areaIds.length===2"))break;
+    if(i===99)throw Error('WorldArea creation did not commit');await sleep(100);
+  }
+  await run(`(()=>{
     const areas=window.__worldAssemblerProbe();
     const from=document.querySelector('#link-from');
     const to=document.querySelector('#link-to');
     from.value=areas.areaIds[0];to.value=areas.areaIds[1];
     document.querySelector('#connect-form').requestSubmit();
+  })()`);
+  for(let i=0;i<100;i++){
+    if(await run("window.__worldAssemblerProbe()?.saved&&window.__worldAssemblerProbe()?.portalCount===2"))break;
+    if(i===99)throw Error('Portal creation did not commit');await sleep(100);
+  }
+  const setup=await run(`(()=>{
     const probe=window.__worldAssemblerProbe();
     const node=document.querySelector('.world-node[data-area-id="area-principale"]');
     const b=node.getBoundingClientRect();
@@ -130,13 +138,14 @@ try{
     dragged.portalCount!==2||dragged.portalCountHidden!==2||
     dragged.graphEdgesBefore!==2||dragged.graphEdgesHidden!==0)
     throw Error('Real drag/Portal visual toggle failed '+JSON.stringify(dragged));
+  await run("window.__beforeWorldLayoutReload=true");
   await send('Page.reload',{ignoreCache:true});
   let recovered=null;
   for(let i=0;i<100;i++){
     recovered=await run(`(()=>{
       const p=window.__worldAssemblerProbe?.();
       const node=document.querySelector('.world-node[data-area-id="area-principale"]');
-      return p&&node?{...p,left:parseInt(node.style.left,10),
+      return !window.__beforeWorldLayoutReload&&p&&node&&p.saved?{...p,left:parseInt(node.style.left,10),
         top:parseInt(node.style.top,10)}:null;
     })()`);
     if(recovered)break;await sleep(200);
@@ -157,6 +166,11 @@ try{
     document.querySelector('#area-encounter-min-level').value='4';
     document.querySelector('#area-encounter-max-level').value='17';
     document.querySelector('#world-area-encounter-levels').requestSubmit();
+    for(let i=0;i<100;i++){
+      if(window.__worldAssemblerProbe()?.saved)break;
+      if(i===99)throw Error('Encounter configuration did not commit');
+      await new Promise(resolve=>setTimeout(resolve,100));
+    }
     const updated=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const area=updated?.areas?.find(a=>a.id==='area-principale');
     return {open:dialog.open,oneForm,

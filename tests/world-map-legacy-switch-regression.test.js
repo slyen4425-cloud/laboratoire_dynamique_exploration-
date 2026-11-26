@@ -20,8 +20,9 @@ test('World Builder offers a compatible 2.5D Area, refuses false demo handoff wh
  assert.match(main,/if\(!resolution\)\{/);
  assert.match(main,/area-name'\)\.focus\(\)/);
  assert.match(main,/window\.confirm\('La zone/);
- assert.match(main,/saveWorldAssemblerHandoff\(worldSessionStorage,draft,areaToOpen\)/);
-  assert.match(main,/const worldSessionStorage=universeId===null\?window\.sessionStorage/);
+ assert.match(main,/await access\.writeHandoff\(draft,areaToOpen\)/);
+ assert.match(main,/if\(!await persist\(\)\)return;/);
+  assert.match(main,/sessionStorage:window\.sessionStorage/);
 });
 
 test('legacy map handoff always allows return without committing the unrelated demo canvas',()=>{

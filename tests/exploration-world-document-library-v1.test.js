@@ -83,9 +83,13 @@ test('official world assembler UI uses the library and exposes a list/open/save 
  const {readFileSync}=await import('node:fs');
  const main=readFileSync(new URL('../src/builder/world-assembler-main.js',import.meta.url),'utf8');
  const html=readFileSync(new URL('../world-assembler.html',import.meta.url),'utf8');
- assert.match(main,/createExplorationWorldDocumentLibraryV1/);
- assert.match(main,/library\.save\(/);
- assert.match(main,/library\.activate\(/);
+ const access=readFileSync(new URL('../src/storage/world-document-authoring-access-v1.js',import.meta.url),'utf8');
+ assert.match(main,/createWorldAuthoringAccessV1/);
+ assert.match(main,/access\.archive\(/);
+ assert.match(main,/await access\.activate\(/);
+ assert.match(access,/createExplorationWorldDocumentLibraryV1/);
+ assert.match(access,/library\.save\(/);
+ assert.match(access,/library\.activate\(/);
  assert.match(html,/id="world-library-save"/);
  assert.match(html,/id="world-library-select"/);
  assert.match(html,/id="world-library-open"/);

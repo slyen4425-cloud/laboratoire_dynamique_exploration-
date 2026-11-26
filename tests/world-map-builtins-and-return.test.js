@@ -51,8 +51,9 @@ test('World return survives fullscreen and refresh without a parallel world-stat
   assert.match(main,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
  assert.match(main,/saveWorldAssemblerDraft\(worldStorage,sculptWorldDraft\)/);
  assert.match(assembler,/areaId=\s*'\+encodeURIComponent\(areaToOpen\)/);
- assert.match(assembler,/saveWorldAssemblerHandoff\(worldSessionStorage,draft,areaToOpen\)/);
-  assert.match(assembler,/const worldSessionStorage=universeId===null\?window\.sessionStorage/);
+ assert.match(assembler,/await access\.writeHandoff\(draft,areaToOpen\)/);
+ assert.match(assembler,/if\(!await persist\(\)\)return;/);
+  assert.match(assembler,/sessionStorage:window\.sessionStorage/);
  assert.match(html,/id="sculpt-map-preset-gallery"/);
  assert.doesNotMatch(html,/id="sculpt-map-preset-select"/);
  assert.match(assembler,/listAvailableSculptMapPresets/);
