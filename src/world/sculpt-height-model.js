@@ -70,7 +70,7 @@ export function removeSculptSphereAt(terrain,x,y){
 
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const int=(v,f)=>Number.isInteger(v)?v:f;
-export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null,ramps=null,navigationBlockedCells=null,waterMaterialRuns=null}={}){
+export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null,ramps=null,navigationBlockedCells=null,waterMaterialRuns=null,waterAnimationFps=8,waterFoamPct=60}={}){
   const w=clamp(int(width,36),8,80),h=clamp(int(height,24),8,64);
   const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,16));
   const water=Array.from({length:w*h},(_,i)=>clamp(int(waterLevels?.[i],-1),-1,10));
@@ -83,6 +83,8 @@ export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=
   const waterMaterials=normalizeSculptWaterMaterialRuns(waterMaterialRuns,w*h);
   return Object.freeze({schemaVersion:SCULPT_SCHEMA_VERSION,width:w,height:h,
     ...(waterMaterials.length?{waterMaterialRuns:waterMaterials}:{}),
+    ...(waterAnimationFps!==8?{waterAnimationFps:clamp(int(waterAnimationFps,8),1,16)}:{}),
+    ...(waterFoamPct!==60?{waterFoamPct:clamp(int(waterFoamPct,60),0,100)}:{}),
     levels:Object.freeze(data),waterLevels:Object.freeze(water),roundness:Object.freeze(contours),
     spheres:Object.freeze((Array.isArray(spheres)?spheres:[]).map(f=>Object.freeze({...f}))),
     ramps:Object.freeze((Array.isArray(ramps)?ramps:[]).map(f=>Object.freeze({...f}))),
@@ -437,6 +439,13 @@ export function applySculptWaterStroke(terrain,{
   return Object.freeze({...base,waterLevels:changed?Object.freeze(next):terrain.waterLevels,
     ...(runs?.length?{waterMaterialRuns:runs}:{})});
 }
+export function setSculptWaterAnimation(terrain,{fps=terrain?.waterAnimationFps??8,foamPct=terrain?.waterFoamPct??60}={}){
+ if(!terrain)return terrain;
+ const rate=clamp(int(fps,8),1,16),foam=clamp(int(foamPct,60),0,100);
+ if(rate===(terrain.waterAnimationFps??8)&&foam===(terrain.waterFoamPct??60))return terrain;
+ const {waterAnimationFps:oldFps,waterFoamPct:oldFoam,...base}=terrain;
+ return Object.freeze({...base,...(rate!==8?{waterAnimationFps:rate}:{}),...(foam!==60?{waterFoamPct:foam}:{})});
+}
 export function applySculptWaterBrush(terrain,options={}){
   return applySculptWaterStroke(terrain,{...options,points:[{x:options.x,y:options.y}]});
 }
@@ -470,6 +479,8 @@ export function serializeSculptTerrain(terrain){
   return JSON.stringify({schemaVersion:1,width:terrain.width,height:terrain.height,
     levels:[...terrain.levels],waterLevels:[...terrain.waterLevels],roundness:[...terrain.roundness],
     ...(terrain.waterMaterialRuns?.length?{waterMaterialRuns:terrain.waterMaterialRuns}:{}),
+    ...(terrain.waterAnimationFps!==undefined?{waterAnimationFps:terrain.waterAnimationFps}:{}),
+    ...(terrain.waterFoamPct!==undefined?{waterFoamPct:terrain.waterFoamPct}:{}),
     spheres:(terrain.spheres??[]).map(f=>({...f})),
     ramps:(terrain.ramps??[]).map(f=>({...f})),
     ...(terrain.navigationBlockedCells?.length
@@ -485,6 +496,8 @@ export function importSculptTerrain(serialized){
      (input.waterLevels!==undefined&&(!Array.isArray(input.waterLevels)||
       input.waterLevels.length!==input.width*input.height||
       !input.waterLevels.every(v=>Number.isInteger(v)&&v>=-1&&v<=10)))||
+     (input.waterAnimationFps!==undefined&&(!Number.isInteger(input.waterAnimationFps)||input.waterAnimationFps<1||input.waterAnimationFps>16))||
+     (input.waterFoamPct!==undefined&&(!Number.isInteger(input.waterFoamPct)||input.waterFoamPct<0||input.waterFoamPct>100))||
      (input.waterMaterialRuns!==undefined&&!validSculptWaterMaterialRuns(input.waterMaterialRuns,input.width*input.height))||
      (input.roundness!==undefined&&(!Array.isArray(input.roundness)||
       input.roundness.length!==input.width*input.height||
