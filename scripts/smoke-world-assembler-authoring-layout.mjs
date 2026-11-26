@@ -216,6 +216,50 @@ try{
   console.log('GREEN real Chromium: draggable WorldArea, saved position and Portal preservation '+
     JSON.stringify({dragged:dragged.point,afterReload:{x:recovered.left,y:recovered.top},
       portals:recovered.portalCount}));
+
+  // Test the replacement backend against real IndexedDB, not a Storage mock.
+  // It is still disconnected from the live editor until migration is complete.
+  const durable=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {readWorldAssemblerDraft,WORLD_ASSEMBLER_DRAFT_KEY:key}=await import('./src/builder/world-assembler-handoff.js');
+    const {serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const raw=localStorage.getItem(key),world=readWorldAssemblerDraft(localStorage);
+    const a=createWorldDocumentIndexedDbStoreV1(),b=createWorldDocumentIndexedDbStoreV1();
+    const scoped='gensrpg.exploration.universe.workspace.v1:unv_abcdefgh:'+key;
+    const [first,second]=await a.migrateLegacy([{key,raw},{key:scoped,raw}]);
+    const again=await b.migrateLegacy([{key,raw}]);
+    const change={...world,areas:world.areas.map((area,i)=>i===0?{...area,label:'Zone IndexedDB vérifiée'}:area)};
+    const [saved]=await a.commit([{key,document:change,expectedRevision:first.revision}]);
+    let stale=false,rolledBack=false,conflict=false;
+    try{await b.commit([{key,document:world,expectedRevision:first.revision}]);}catch(e){stale=/Conflit de révision/.test(e.message);}
+    try{await b.commit([{key:scoped,document:change,expectedRevision:second.revision},{key,document:world,expectedRevision:first.revision}]);}
+    catch(e){rolledBack=/Conflit de révision/.test(e.message);}
+    try{await b.migrateLegacy([{key,raw}]);}catch(e){conflict=/Conflit de migration/.test(e.message);}
+    const read=await b.read(key),other=await b.read(scoped);
+    return {initial:first.revision,again:again[0].revision,saved:saved.revision,stale,rolledBack,conflict,
+      correct:serializeWorldBuilderDraft(read.document)===serializeWorldBuilderDraft(change),
+      previous:serializeWorldBuilderDraft(read.previous)===serializeWorldBuilderDraft(world),
+      isolated:other.revision===1&&serializeWorldBuilderDraft(other.document)===serializeWorldBuilderDraft(world),
+      legacyUnchanged:localStorage.getItem(key)===raw};
+  })()`);
+  if(durable.initial!==1||durable.again!==1||durable.saved!==2||
+     !durable.stale||!durable.rolledBack||!durable.conflict||!durable.correct||
+     !durable.previous||!durable.isolated||!durable.legacyUnchanged)
+    throw Error('Real IndexedDB transaction / migration failed '+JSON.stringify(durable));
+  await send('Page.reload',{ignoreCache:true});
+  let durableReload=null;
+  for(let i=0;i<40;i++){
+    try{durableReload=await run(`(async()=>{
+      const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+      const {WORLD_ASSEMBLER_DRAFT_KEY:key}=await import('./src/builder/world-assembler-handoff.js');
+      const row=await createWorldDocumentIndexedDbStoreV1().read(key);
+      return row?{revision:row.revision,label:row.document.areas[0].label,previous:!!row.previous}:null;
+    })()`);}catch{}
+    if(durableReload)break;await sleep(150);
+  }
+  if(durableReload?.revision!==2||durableReload.label!=='Zone IndexedDB vérifiée'||!durableReload.previous)
+    throw Error('Real IndexedDB did not survive page reload '+JSON.stringify(durableReload));
+  console.log('GREEN real IndexedDB: transaction, migration, stale writer, rollback, isolation and reload');
 }finally{
   // The fully isolated Chromium profile is kept mutable by browser helpers.
   // Shut down via CDP FIRST so they flush storage before the process-group
