@@ -284,6 +284,43 @@ try{
     probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};})()`);
   if(waterRedo.json!==afterWater.json||waterRedo.probe.redoCount!==0)
     throw Error('V13 redo did not reconstruct exact water stroke: '+JSON.stringify(waterRedo.probe));
+  // Living water: a real mouse stroke changes only the painted material.
+  // Pixel motion is measured at a stationary camera and no pointer movement.
+  const livingBefore=await run(`(async()=>{
+    const $=id=>document.getElementById(id);
+    const pick=$('water-material');pick.value='water.turquoise';pick.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('[data-mode=water-paint]').click();
+    $('export').click();const json=$('json').value;
+    const c=$('sculpt-canvas'),g=c.getContext('2d',{willReadFrequently:true});
+    const snapshot=()=>Array.from(g.getImageData(0,0,c.width,c.height).data);
+    await new Promise(ok=>setTimeout(ok,180));const a=snapshot();
+    const builds=window.__sculptObjectsProbe().terrainRasterBuilds;
+    await new Promise(ok=>setTimeout(ok,260));const b=snapshot();
+    let changed=0;for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])changed++;
+    return {json,changed,builds,afterBuilds:window.__sculptObjectsProbe().terrainRasterBuilds};
+  })()`);
+  if(livingBefore.json!==afterWater.json||livingBefore.changed<10||livingBefore.afterBuilds!==livingBefore.builds)
+    throw Error('Living water must animate without mutating map or rebuilding terrain: '+JSON.stringify({changed:livingBefore.changed,builds:livingBefore.builds,afterBuilds:livingBefore.afterBuilds}));
+  const livingPoint=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:livingPoint.x,y:livingPoint.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:livingPoint.x,y:livingPoint.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:livingPoint.x,y:livingPoint.y,button:'left',clickCount:1});
+  await sleep(180);
+  const paintedWater=await run(`(()=>{document.querySelector('#export').click();return JSON.parse(document.querySelector('#json').value);})()`);
+  const oldWater=JSON.parse(afterWater.json);
+  if(!paintedWater.waterMaterialRuns?.some(r=>r[2]==='water.turquoise')||
+     JSON.stringify(paintedWater.waterLevels)!==JSON.stringify(oldWater.waterLevels)||
+     JSON.stringify(paintedWater.levels)!==JSON.stringify(oldWater.levels))
+    throw Error('Living water paint-only brush failed or changed water/land geometry');
+  const restoredWater=await run(`(()=>{
+    document.querySelector('#undo').click();
+    const pick=document.querySelector('#water-material');pick.value='water.clear_blue';pick.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('[data-mode=water-fill]').click();
+    document.querySelector('#export').click();return document.querySelector('#json').value;
+  })()`);
+  if(restoredWater!==afterWater.json)throw Error('Living water brush undo did not restore exact geometry and material');
+  console.log('Living water native canvas animation, painted material and undo:',JSON.stringify({changedPixels:livingBefore.changed,terrainRasterBuilds:livingBefore.builds,materialRuns:paintedWater.waterMaterialRuns.length}));
   // Fresh stroke after undo removes redo branch, including when changing rock profiles.
   await run("document.querySelector('#undo').click();document.querySelector('[data-mode=plateau]').click()");
   // V14 switches to the shorter Terre-only toolbar. Recalculate visible pointer
@@ -774,7 +811,8 @@ try{
       selected:window.__sculptLabProbe().waterMaterialId};
   })()`);
   if(visualsV18.forestPixels<30||visualsV18.mountainPixels<30||
-      visualsV18.turquoisePixels<30||visualsV18.swampPixels<30||
+      // Water selection is now a brush choice; real painted pixels and animation
+      // are tested independently above. Do not infer a recolor from frame motion.
       !visualsV18.forestLoaded||!visualsV18.mountainLoaded||
       !visualsV18.turquoiseLoaded||!visualsV18.swampLoaded||
       !visualsV18.mapUnchanged||visualsV18.selected!=='water.swamp')
