@@ -1,0 +1,105 @@
+// Reproducible author-asset build: native Node only, no network or dependency.
+// The original ZIP is never a browser resource. Reject unexpected layouts.
+import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
+import {join,resolve} from 'node:path';
+import {inflateRawSync,deflateSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+const SOURCE='Genesis_textures_animees_eau_lave.zip';
+const EXPECTED='cd1535c7211f80efb378f7ea57c68dab23c21c7d';
+const names=['eau_bleue_profonde','eau_turquoise','eau_riviere','eau_marais','lave'];
+export const FRAME_WIDTH=168,FRAME_HEIGHT=126,FRAME_COUNT=9;
+const crcTable=Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=(n>>>1)^((n&1)?0xedb88320:0);return n>>>0;});
+function crc(b){let n=0xffffffff;for(const v of b)n=(n>>>8)^crcTable[(n^v)&255];return (n^0xffffffff)>>>0;}
+function unzip(b){
+ let p=b.length-22;while(p>=Math.max(0,b.length-65557)&&b.readUInt32LE(p)!==0x06054b50)p--;
+ if(p<0||b.readUInt32LE(p)!==0x06054b50)throw Error('ZIP end absent');
+ const count=b.readUInt16LE(p+10);p=b.readUInt32LE(p+16);const files=new Map();
+ for(let i=0;i<count;i++){
+  if(b.readUInt32LE(p)!==0x02014b50)throw Error('ZIP directory invalid');
+  const method=b.readUInt16LE(p+10),sum=b.readUInt32LE(p+16),packed=b.readUInt32LE(p+20),size=b.readUInt32LE(p+24);
+  const n=b.readUInt16LE(p+28),extra=b.readUInt16LE(p+30),comment=b.readUInt16LE(p+32),local=b.readUInt32LE(p+42);
+  const name=b.toString('utf8',p+46,p+46+n);p+=46+n+extra+comment;
+  if(!names.some(x=>name===x+'.gif')||files.has(name)||size>2_000_000||b.readUInt32LE(local)!==0x04034b50)throw Error('Unexpected ZIP entry '+name);
+  const start=local+30+b.readUInt16LE(local+26)+b.readUInt16LE(local+28);
+  const data=b.subarray(start,start+packed);
+  const raw=method===0?data:method===8?inflateRawSync(data,{maxOutputLength:size}):null;
+  if(!raw||raw.length!==size||crc(raw)!==sum)throw Error('ZIP CRC/size '+name);
+  files.set(name,raw);
+ }
+ if(files.size!==names.length)throw Error('Incomplete author ZIP');return files;
+}
+function lzw(data,min,length){
+ const clear=1<<min,end=clear+1,table=new Array(4096);let next,bits,prev=null,bit=0,out=0;
+ const result=new Uint8Array(length);
+ const reset=()=>{for(let i=0;i<clear;i++)table[i]=Uint8Array.of(i);next=end+1;bits=min+1;prev=null;};reset();
+ while(bit+bits<=data.length*8){
+  let code=0;for(let k=0;k<bits;k++,bit++)code|=((data[bit>>3]>>(bit&7))&1)<<k;
+  if(code===clear){reset();continue;}if(code===end)break;
+  let entry=code<next?table[code]:null;
+  if(!entry&&code===next&&prev){entry=new Uint8Array(prev.length+1);entry.set(prev);entry[prev.length]=prev[0];}
+  if(!entry||out+entry.length>length)throw Error('GIF LZW invalid');
+  result.set(entry,out);out+=entry.length;
+  if(prev&&next<4096){const a=new Uint8Array(prev.length+1);a.set(prev);a[prev.length]=entry[0];table[next++]=a;if(next===(1<<bits)&&bits<12)bits++;}
+  prev=entry;
+ }
+ if(out!==length)throw Error('GIF incomplete frame '+out+'/'+length);return result;
+}
+function decodeGif(b){
+ if(!/^GIF8[79]a$/.test(b.toString('ascii',0,6)))throw Error('Invalid GIF');
+ const w=b.readUInt16LE(6),h=b.readUInt16LE(8);if(w>512||h>512||w<64||h<64)throw Error('GIF dimensions');
+ let p=13;const palette=flag=>{const n=3*(2<<(flag&7)),a=b.subarray(p,p+n);p+=n;return a;};
+ const global=b[10]&128?palette(b[10]):null,frames=[];
+ const blocks=()=>{const a=[];while(p<b.length){const n=b[p++];if(!n)return Buffer.concat(a);a.push(b.subarray(p,p+n));p+=n;}throw Error('GIF block truncated');};
+ while(p<b.length){const tag=b[p++];if(tag===0x3b)break;if(tag===0x21){p++;blocks();continue;}if(tag!==0x2c)throw Error('GIF block '+tag);
+  const x=b.readUInt16LE(p),y=b.readUInt16LE(p+2),fw=b.readUInt16LE(p+4),fh=b.readUInt16LE(p+6),flag=b[p+8];p+=9;
+  if(x||y||fw!==w||fh!==h||(flag&64))throw Error('Only complete non-interlaced approved frames accepted');
+  const colors=flag&128?palette(flag):global;if(!colors)throw Error('GIF palette absent');
+  const min=b[p++],indices=lzw(blocks(),min,w*h),rgb=Buffer.alloc(w*h*3);
+  for(let i=0;i<indices.length;i++){const c=indices[i]*3;rgb[i*3]=colors[c];rgb[i*3+1]=colors[c+1];rgb[i*3+2]=colors[c+2];}
+  frames.push(rgb);
+ }
+ if(frames.length!==FRAME_COUNT)throw Error('Expected nine author frames');return {w,h,frames};
+}
+function tile(rgb,sw,sh){
+ const w=FRAME_WIDTH,h=FRAME_HEIGHT,out=Buffer.alloc(w*h*3);
+ // Downsample the approved art, then blend opposing border strips with
+ // a smooth symmetric taper; no hard edge, no artificial moving lines.
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const sx=(x+.5)*sw/w-.5,sy=(y+.5)*sh/h-.5,x0=Math.floor(sx),y0=Math.floor(sy),a=sx-x0,b=sy-y0;
+  for(let c=0;c<3;c++){const at=(u,v)=>rgb[(Math.min(sh-1,v)*sw+Math.min(sw-1,u))*3+c];
+   out[(y*w+x)*3+c]=Math.round((1-b)*((1-a)*at(x0,y0)+a*at(x0+1,y0))+b*((1-a)*at(x0,y0+1)+a*at(x0+1,y0+1)));}
+ }
+ const blend=(horizontal)=>{const n=horizontal?w:h,other=horizontal?h:w,strip=12;
+  for(let j=0;j<other;j++)for(let d=0;d<strip;d++){const t=.5*(.5+.5*Math.cos(Math.PI*d/strip));
+   const a=(horizontal?j*w+d:d*w+j)*3,b=(horizontal?j*w+n-1-d:(n-1-d)*w+j)*3;
+   for(let c=0;c<3;c++){const v=out[a+c],u=out[b+c];out[a+c]=Math.round(v*(1-t)+u*t);out[b+c]=Math.round(u*(1-t)+v*t);}
+  }
+ };blend(true);blend(false);return out;
+}
+function pngChunk(name,data){const type=Buffer.from(name),header=Buffer.alloc(4),tail=Buffer.alloc(4);header.writeUInt32BE(data.length);tail.writeUInt32BE(crc(Buffer.concat([type,data])));return Buffer.concat([header,type,data,tail]);}
+function atlas(gif){
+ const {w:sw,h:sh,frames}=decodeGif(gif),w=FRAME_WIDTH*3,h=FRAME_HEIGHT*3,stride=w*3+1,raw=Buffer.alloc(stride*h);
+ for(let i=0;i<frames.length;i++){const img=tile(frames[i],sw,sh),x=(i%3)*FRAME_WIDTH,y=Math.floor(i/3)*FRAME_HEIGHT;
+  for(let j=0;j<FRAME_HEIGHT;j++)img.copy(raw,(y+j)*stride+1+x*3,j*FRAME_WIDTH*3,(j+1)*FRAME_WIDTH*3);}
+ // PNG Sub filter, deterministic lossless RGB.
+ for(let y=0;y<h;y++){const base=y*stride;raw[base]=1;for(let x=w*3;x>3;x--)raw[base+x]=(raw[base+x]-raw[base+x-3])&255;}
+ const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(w);ihdr.writeUInt32BE(h,4);ihdr[8]=8;ihdr[9]=2;
+ return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',ihdr),pngChunk('IDAT',deflateSync(raw,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
+}
+export function buildLivingWaterAtlases(root=process.cwd()){
+ const dir=join(root,'assets/exploration/materials/forest/water/animated');
+ const source=join(root,SOURCE);
+ if(!existsSync(source)){
+  if(names.every(n=>existsSync(join(dir,n+'.png'))))return null;
+  throw Error('Missing approved source ZIP and built water atlases');
+ }
+ const zip=readFileSync(source),sha=createHash('sha1').update('blob '+zip.length+'\0').update(zip).digest('hex');
+ if(sha!==EXPECTED)throw Error('Water author ZIP revision mismatch '+sha);
+ const entries=unzip(zip);mkdirSync(dir,{recursive:true});const sizes={};
+ for(const name of names){const data=atlas(entries.get(name+'.gif'));writeFileSync(join(dir,name+'.png'),data);sizes[name]=data.length;}
+ const total=Object.values(sizes).reduce((a,b)=>a+b,0);
+ if(total>2*1024*1024)throw Error('Water atlas budget exceeded '+total);
+ console.log('LIVING WATER ATLAS BUILD '+JSON.stringify({sourceSha:sha,frames:45,dimensions:[504,378],bytes:total,sizes}));return {total,sizes};
+}
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))buildLivingWaterAtlases(resolve(process.argv[2]??'.'));
