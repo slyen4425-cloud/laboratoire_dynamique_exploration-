@@ -349,9 +349,10 @@ export function sculptRockToeSegments(terrain,row,from,to){
   }
   return Object.freeze(segments);
 }
-function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,timeSeconds=null}){
+function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,timeSeconds=null,foamPct=60}){
   const edges=sculptWetShoreEdges(terrain,col,row);
-  if(!edges.length)return;
+  if(!edges.length||foamPct===0)return;
+  const gain=foamPct/60;
   const phase=(hash(col,row,83)%100)/100;
   const pulse=timeSeconds===null?0:Math.sin(timeSeconds*2.8+phase*Math.PI*2);
   const jitter=(hash(col,row,84)%5-2)*.18+pulse*.6;
@@ -368,14 +369,14 @@ function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,timeSeconds=null})
     else if(edge==='west'){a=[x+1.8,y-.8];b=[x+2.9+jitter,y+h/2];c=[x+1.8,y+h+.8];d=[1,0];}
     else {a=[x+w-1.8,y-.8];b=[x+w-2.9-jitter,y+h/2];c=[x+w-1.8,y+h+.8];d=[-1,0];}
     ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...b,...c);
-    ctx.globalAlpha=.27+pulse*.06;ctx.strokeStyle=rim;ctx.lineWidth=4.2+pulse*.5;ctx.stroke();
-    ctx.globalAlpha=.58+pulse*.15;ctx.lineWidth=1.4+pulse*.35;ctx.stroke();
+    ctx.globalAlpha=Math.min(1,(.27+pulse*.06)*gain);ctx.strokeStyle=rim;ctx.lineWidth=4.2+pulse*.5;ctx.stroke();
+    ctx.globalAlpha=Math.min(1,(.58+pulse*.15)*gain);ctx.lineWidth=1.4+pulse*.35;ctx.stroke();
     // A small second broken froth arc adds sparkle without a solid outline.
     ctx.beginPath();
     const dotT=.26+phase*.45;
     const px=a[0]+(c[0]-a[0])*dotT,py=a[1]+(c[1]-a[1])*dotT;
     ctx.moveTo(px,py);ctx.lineTo(px+d[0]*1.6,py+d[1]*1.6);
-    ctx.globalAlpha=.45+pulse*.13;ctx.lineWidth=1;ctx.stroke();
+    ctx.globalAlpha=Math.min(1,(.45+pulse*.13)*gain);ctx.lineWidth=1;ctx.stroke();
   }
   ctx.restore();
 }
@@ -435,7 +436,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
         x+w*.61,y+h*.60,x+w-3,y+h*.41);ctx.stroke();
     }
     ctx.restore();
-    if(!waterMask)drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim});
+    if(!waterMask)drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,foamPct:overlay.living?(terrain.waterFoamPct??60):60});
     if(waterMask){
       waterMask.save();waterMask.clearRect(x,y,w+.65,h+.65);
       if(shore.edges.length){sculptWetShorePath(waterMask,x,y,w,h,shore);waterMask.clip();}
@@ -464,14 +465,16 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
 // Preview uses the EXACT same footprint weights as applySculptStroke.
 // Each tinted tile is a cell that a click here would really affect.
 export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftness=0,
-  mode='dig',target=3,strength=1,shape='circle',rockRoundness=null,tile=SCULPT_TILE,zoom=1}={}){
+  mode='dig',target=3,strength=1,shape='circle',rockRoundness=null,tile=SCULPT_TILE,zoom=1,waterMaterialId=null}={}){
   if(!ctx||!terrain||!points.length)return Object.freeze({cells:0,centerHeight:null});
   const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness,mode,shape});
   const waterMode=mode.startsWith('water-');
   const candidate=waterMode
-    ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape})
+    ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape,waterMaterialId})
     :applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape,rockRoundness});
   const w=tile.width,h=tile.height,rise=tile.rise;
+  const beforeMaterials=mode==='water-paint'?sculptWaterMaterialCells(terrain):null;
+  const afterMaterials=mode==='water-paint'?sculptWaterMaterialCells(candidate):null;
   const tint=mode.startsWith('water-')?'#6be9ff':mode==='dig'?'#ffc181':mode==='raise'?'#9ee2ff':
     mode==='plateau'?'#b2ffb0':mode==='cliff-round'?'#ffdbaa':'#f4e6ba';
   ctx.save();
@@ -480,11 +483,12 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
     const profileMode=mode==='cliff-round',mi=m.y*terrain.width+m.x;
     const next=profileMode?candidate.roundness[mi]:waterMode?sculptWaterAt(candidate,m.x,m.y):sculptHeightAt(candidate,m.x,m.y);
     const before=profileMode?terrain.roundness[mi]:waterMode?sculptWaterAt(terrain,m.x,m.y):level;
-    const x=m.x*w,y=m.y*h-level*rise;
+    if(mode==='water-paint'&&!sculptWaterAt(terrain,m.x,m.y))continue;
+    const x=m.x*w,y=m.y*h-(mode==='water-paint'?terrain.waterLevels[mi]:level)*rise;
     ctx.globalAlpha=.12+.29*m.weight;
     ctx.fillStyle=tint;ctx.fillRect(x+.7,y+.7,w-1.4,h-1.4);
     ctx.globalAlpha=.30+.50*m.weight;
-    ctx.strokeStyle=next!==before?'#f5ffff':'#d1d9dd';
+    ctx.strokeStyle=next!==before||beforeMaterials?.[mi]!==afterMaterials?.[mi]?'#f5ffff':'#d1d9dd';
     ctx.lineWidth=Math.max(.65,1/Math.max(.32,zoom));
     ctx.strokeRect(x+.9,y+.9,w-1.8,h-1.8);
   }
@@ -498,7 +502,7 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
     ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=1.5/Math.max(.32,zoom);
     ctx.beginPath();ctx.moveTo(px-6,py);ctx.lineTo(px+6,py);
     ctx.moveTo(px,py-6);ctx.lineTo(px,py+6);ctx.stroke();
-    const label=mode==='cliff-round'?'Arrondi '+after+' %':waterMode?'Eau '+after+' blocs':
+    const label=mode==='water-paint'?'Texture d’eau':mode==='cliff-round'?'Arrondi '+after+' %':waterMode?'Eau '+after+' blocs':
       mode==='plateau'?'Niveau '+after:centerLevel+' → '+after;
     ctx.font='bold 12px system-ui,sans-serif';
     const labelW=ctx.measureText(label).width+18;
@@ -1021,7 +1025,7 @@ function visibleWaterCells(terrain,tile){
  }
  wetCellCache.set(terrain,groups);return groups;
 }
-export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSeconds=0,fps=8,viewport,foam=true}){
+export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSeconds=0,fps=8,viewport,foamPct=60}){
  const groups=visibleWaterCells(terrain,tile),{width:w,height:h}=tile;
  const frame=animatedSurfaceFrame(timeSeconds,fps);
  let visible=0;
@@ -1032,8 +1036,8 @@ export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSec
   ctx.save();ctx.fillStyle=pattern;ctx.beginPath();
   for(const cell of cells)if(inView(cell)){ctx.rect(cell.x,cell.y,w+.65,h+.65);visible++;}
   ctx.fill();ctx.restore();
-  if(foam)for(const cell of cells)if(cell.shore&&inView(cell)){
-   drawSculptShoreFoam(ctx,{terrain,col:cell.col,row:cell.row,x:cell.x,y:cell.y,w,h,rim:'#f1fff9',timeSeconds});
+  if(foamPct>0)for(const cell of cells)if(cell.shore&&inView(cell)){
+   drawSculptShoreFoam(ctx,{terrain,col:cell.col,row:cell.row,x:cell.x,y:cell.y,w,h,rim:'#f1fff9',timeSeconds,foamPct});
   }
  }
  return visible;
