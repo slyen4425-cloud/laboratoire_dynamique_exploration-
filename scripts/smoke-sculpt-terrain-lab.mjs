@@ -7,7 +7,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import {checkSculptWaterPassage} from './check-sculpt-water-passage.mjs';
 
+import {buildLivingWaterAtlases} from './build-living-water-atlases.mjs';
 const root = process.cwd();
+buildLivingWaterAtlases(root);
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json',
   '.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
