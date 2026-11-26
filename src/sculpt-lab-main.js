@@ -4,10 +4,9 @@ import {projectDefeatedPlacedWildV1} from './actors/npc-wild-defeat-projection-v
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
-import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
+import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-v1';
+import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-v1';
 import {SCULPT_WATER_MATERIAL_IDS,DEFAULT_SCULPT_WATER_MATERIAL} from './world/sculpt-water-materials-v1.js';
-import {setSculptWaterAnimation} from './world/sculpt-height-model.js?rev=living-water-20261126';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
@@ -972,7 +971,7 @@ function navigationBackground(){
   imageContext.scale(scale,scale);
   imageContext.translate(paddingX,paddingY);
   const material=registry.require(materialId,'surface');
-  const waterMask=livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain)?document.createElement('canvas'):null;
+  const waterMask=livingWaterControls&&ribbonTextures.water?.living&&ribbonTextures.water.visible&&terrainHasWater(terrain)?document.createElement('canvas'):null;
   if(waterMask){waterMask.width=Math.ceil(raster.width/scale);waterMask.height=Math.ceil(raster.height/scale);}
   const waterMaskContext=waterMask?.getContext('2d');
   waterMaskContext?.translate(paddingX,paddingY);
@@ -995,15 +994,14 @@ function navigationBackground(){
 // Reuse one CSS-pixel viewport canvas; never rebuild terrain to animate water.
 let waterLayerCanvas=null,waterLayerKey='',waterLayerSnapshot=null;
 function compositeLivingWater(snapshot){
-  if(!snapshot.waterMask)return;
-  const width=Math.ceil(canvas.width/(Math.min(2,window.devicePixelRatio||1))),height=Math.ceil(canvas.height/(Math.min(2,window.devicePixelRatio||1)));
-  // Use the actual canvas backing-to-CSS ratio from draw(), not device DPR assumptions.
+  if(!snapshot.waterMask){waterLayerSnapshot=null;waterLayerKey='';return;}
   const dpr=Math.min(2,window.devicePixelRatio||1);
+  const width=Math.ceil(canvas.width/dpr),height=Math.ceil(canvas.height/dpr);
   if(!waterLayerCanvas)waterLayerCanvas=document.createElement('canvas');
   if(waterLayerCanvas.width!==width||waterLayerCanvas.height!==height){waterLayerCanvas.width=width;waterLayerCanvas.height=height;waterLayerKey='';}
   const transform=ctx.getTransform(),fps=terrain.waterAnimationFps??8,foamPct=terrain.waterFoamPct??60;
   const tick=Math.floor(performance.now()*fps/1000),timeSeconds=tick/fps;
-  const key=[tick,transform.a,transform.b,transform.c,transform.d,transform.e,transform.f,width,height,foamPct].join('|');
+  const key=[tick,fps,transform.a,transform.b,transform.c,transform.d,transform.e,transform.f,width,height,foamPct].join('|');
   if(key!==waterLayerKey||waterLayerSnapshot!==snapshot){
     const layer=waterLayerCanvas.getContext('2d');layer.setTransform(1,0,0,1,0,0);layer.clearRect(0,0,width,height);
     layer.setTransform(transform.a/dpr,transform.b/dpr,transform.c/dpr,transform.d/dpr,transform.e/dpr,transform.f/dpr);
@@ -1772,7 +1770,9 @@ function animatedSceneryPresent(){const l=currentSculptLighting();return waterfa
   !!(l?.cloudsEnabled&&l.cloudOpacityPct&&l.cloudSpeed&&!activeInteriorId&&!sculptWorldCurrentInterior());}
 function pumpWaterfallFrame(now){
   if(!animatedSceneryPresent()){waterfallPumpHandle=0;return;}
-  if(now-waterfallLastPaintMs>=83){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
+  const waterActive=livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain);
+  const interval=waterActive?Math.min(83,1000/(terrain.waterAnimationFps??8)):83;
+  if(now-waterfallLastPaintMs>=interval){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
   waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function ensureWaterfallPump(){
@@ -1833,6 +1833,7 @@ function recordDecorativeFringe(previous){
 }
 function paintDecorativeFringeCell(cell){
   const mode=selectedMode;
+  if(mode==='water-paint'){status('Texture d’eau : peindre dans la zone jouable.');return false;}
   if(!['raise','dig','flatten','smooth','plateau',
         'water-fill','water-rise','water-lower','water-erase','water-smooth'].includes(mode)){
     status('Décor extérieur : choisis un pinceau Terre ou Eau, sans pente ni sphère pour le moment.');
