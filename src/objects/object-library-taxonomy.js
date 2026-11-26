@@ -166,7 +166,7 @@ export function buildObjectLibraryTree(definitions=[],query=''){
  for(const def of definitions){
   if(!def?.id||seen.has(def.id))continue;seen.add(def.id);
   const path=objectLibraryDisplayPath(def);
-  if(search&&!normalize([def.label??'',...path].join(' ')).includes(search))continue;
+  if(search&&!search.split(/\s+/).every(word=>normalize([def.label??'',...path].join(' ')).includes(word)))continue;
   let node=root;
   for(const label of path){
    if(!node.children.has(label))node.children.set(label,{label,children:new Map(),definitions:[]});

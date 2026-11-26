@@ -76,6 +76,7 @@ import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,norm
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
+import {createObjectLibraryPicker} from './objects/object-library-picker-v1.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
@@ -337,6 +338,7 @@ const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 let shadowControlsOwnerId=null; // UI identity only; WorldObject owns the settings.
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
+let objectLibraryPicker=null;
 // Frame state is owned once before image callbacks register. Decoding can
 // finish while this ES module is suspended at top-level await; never queue a
 // draw until all canvas/WorldArea/camera dependencies have initialized.
@@ -4109,6 +4111,7 @@ function refreshObjectVariants(preferred=null){
       definition.visual.defaultVariantId??variants[0].id;
     $('object-variant').value=wanted;
   }
+  objectLibraryPicker?.sync();
 }
 function currentSculptLighting(){
  return sculptLightingPreview!==undefined?sculptLightingPreview:
@@ -4273,6 +4276,7 @@ function syncObjectSelectedControls(){
   $('object-category').value=def.kind;refreshObjectOptions();
   $('object-definition').value=def.id;
   refreshObjectVariants(selected.overrides.visualVariantId);
+  objectLibraryPicker?.sync({reveal:true});
   $('object-scale').value=String(Math.round(selected.transform.scaleX*100));
   $('object-scale-value').textContent=$('object-scale').value+' %';
   $('object-bridge-length').value=String(Math.round((['stairs','ramp'].includes(def.kind)?selected.transform.scaleY:selected.transform.scaleX)*100));
@@ -5468,6 +5472,22 @@ $('object-redo').addEventListener('click',()=>{
   objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();syncObjectSelectedControls();
 });
 refreshObjectOptions();updateObjectCount();
+if($('object-library-tree')){
+  objectLibraryPicker=createObjectLibraryPicker({
+    root:$('object-library-tree'),search:$('object-library-search'),summary:$('object-library-selected'),
+    definitions:availableObjects,getSelected:()=>$('object-definition').value,
+    onSelect:def=>{
+      // Same controls/handlers used by existing placements and saved objects.
+      // A hidden compatibility adapter, not a second authoring palette.
+      $('object-category').value=def.kind;
+      $('object-category').dispatchEvent(new Event('change',{bubbles:true}));
+      $('object-definition').value=def.id;
+      $('object-definition').dispatchEvent(new Event('change',{bubbles:true}));
+      $('object-library-picker').open=false;
+    }
+  });
+  if(objectLibraryPicker)$('object-legacy-selection').hidden=true;
+}
 window.__sculptObjectsProbe=()=>Object.freeze({
   active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
   terrainRasterBuilds,cachedGround:!!navTerrainCache,

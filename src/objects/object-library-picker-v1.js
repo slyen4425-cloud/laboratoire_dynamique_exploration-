@@ -3,7 +3,7 @@ import {buildObjectLibraryTree} from './object-library-taxonomy.js';
 // selected definition/kind. No separate object selection model is maintained.
 export function createObjectLibraryPicker({root,search,summary,definitions,onSelect,getSelected}){
  if(!root||!search||!summary)return null;
- let buttons=new Map(),previousOpen=new Set();
+ let buttons=new Map(),previousOpen=new Set(),lastQuery='';
  function sync({reveal=false}={}){
   const id=getSelected(),selected=definitions.find(d=>d.id===id);
   summary.textContent=selected?.label??'Choisir un objet';
@@ -17,7 +17,8 @@ export function createObjectLibraryPicker({root,search,summary,definitions,onSel
  }
  function render(){
   const query=search.value.trim();
-  if(!query)previousOpen=new Set([...root.querySelectorAll('details[open]')].map(d=>d.dataset.libraryPath));
+  if(!lastQuery)previousOpen=new Set([...root.querySelectorAll('details[open]')].map(d=>d.dataset.libraryPath));
+  lastQuery=query;
   const tree=buildObjectLibraryTree(definitions,query);
   buttons=new Map();
   const create=(node,path)=>{
