@@ -78,6 +78,7 @@ import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=scul
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {createObjectLibraryPicker} from './objects/object-library-picker-v1.js';
 import {mountSculptGraphicImport} from './assets/sculpt-graphic-import-controls-v1.js';
+import {loadSculptGraphicCatalog} from './assets/sculpt-graphic-catalog-v1.js';
 import {createObjectLibraryLayoutControls} from './objects/object-library-layout-controls-v1.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
@@ -229,6 +230,15 @@ document.addEventListener('pointerdown',retryExplorationAudioFromGesture,{captur
 document.addEventListener('keydown',retryExplorationAudioFromGesture,{capture:true});
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
+let sculptGraphics=null;
+const activeSculptObjectCatalog=()=>sculptGraphics?.catalog??objectDefinitionCatalogV1;
+const activeSculptCollisionCatalog=()=>sculptGraphics?.collisionCatalog??sculptPreviewCollisionCatalog;
+const sculptGraphicContext=()=>({catalog:activeSculptObjectCatalog(),materialRegistry:sculptGraphics?.materialRegistry??registry});
+const sculptObjectAsset=id=>sculptGraphics?.resolveObjectAsset(id)??resolveWorldObjectAsset(id);
+// Until the shared world archive/transport owners accept local references,
+// do not expose placements that the world storage cannot save.
+const localGraphicPlacementEnabled=()=>!sculptWorldDraft&&!sculptPlayRequested&&
+ new URLSearchParams(location.search).get('worldAssembler')!=='1'&&!activeInteriorId;
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 // V79: one active area at a time. Detached exterior snapshot is a temporary
 // editor view of the SAME scene while an interior is open, not a second terrain.
@@ -339,7 +349,7 @@ let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 let shadowControlsOwnerId=null; // UI identity only; WorldObject owns the settings.
-const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
+const objectImages=new Map(),availableObjects=[...listSculptPlaceableDefinitions()];
 let objectLibraryPicker=null,objectLibraryLayoutControls=null;
 // Frame state is owned once before image callbacks register. Decoding can
 // finish while this ES module is suspended at top-level await; never queue a
@@ -356,7 +366,7 @@ for(const visual of [...INTERIOR_DOOR_ASSETS,...INTERIOR_CONNECTOR_ASSETS]){
 }
 function objectImage(assetId){
   if(objectImages.has(assetId))return objectImages.get(assetId);
-  const resolved=resolveWorldObjectAsset(assetId);
+  const resolved=sculptObjectAsset(assetId);
   if(!resolved)return null;
   const picture=new Image();
   const sourceCleaned2p5d=resolved.kind==='bridge-visual'&&
@@ -1392,7 +1402,7 @@ function drawDecorativeFringeObjects(layer='back'){
   const fringe=visualDecorativeFringe();
   if(!fringe)return;
   const view=cameraView();
-  const objects=resolveWorldObjectPlacements(fringe.objects,objectDefinitionCatalogV1)
+  const objects=resolveWorldObjectPlacements(fringe.objects,activeSculptObjectCatalog())
     .filter(o=>(layer==='front'
       ?o.transform.y>=terrain.height*SCULPT_TILE.height:o.transform.y<0)&&
       o.transform.x>=0&&o.transform.x<terrain.width*SCULPT_TILE.width)
@@ -1790,7 +1800,7 @@ function draw(){
 // One 12 FPS redraw pump only while animated decorations are placed.
 // The existing Sculpt renderer remains the sole drawing path.
 let waterfallPumpHandle=0,waterfallLastPaintMs=0;
-function waterfallPresent(){return placedObjects.some(o=>Boolean(resolveWorldObjectAsset(o.visual?.assetId)?.animation));}
+function waterfallPresent(){return sculptPlayObjectDrawCache.get(placedObjects,{playing:navigationTesting}).some(o=>Boolean(sculptObjectAsset(o.visual?.assetId)?.animation));}
 function animatedSceneryPresent(){const l=currentSculptLighting();return waterfallPresent()||
   !!(livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain))||
   !!(l?.cloudsEnabled&&l.cloudOpacityPct&&l.cloudSpeed&&!activeInteriorId&&!sculptWorldCurrentInterior());}
@@ -1910,7 +1920,7 @@ function handleDecorativeFringeObject(cell,event){
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
   const before=decorativeFringe,action=$('object-action').value;
   if(action==='select'){
-    const hit=findSculptPreviewObjectNear(before.objects,x,y);
+    const hit=findSculptPreviewObjectNear(before.objects,x,y,50,activeSculptObjectCatalog());
     fringeObjectDrag=hit?{pointerId:event.pointerId,id:hit.id,
       start:screenToWorldPoint(event),origin:{...hit.transform},
       before,client:{x:event.clientX,y:event.clientY},active:false}:null;
@@ -1919,18 +1929,19 @@ function handleDecorativeFringeObject(cell,event){
     return;
   }
   if(action==='remove'){
-    const hit=findSculptPreviewObjectNear(before.objects,x,y);
+    const hit=findSculptPreviewObjectNear(before.objects,x,y,50,activeSculptObjectCatalog());
     if(hit)decorativeFringe=normalizeSculptDecorativeFringeV1({
-      ...before,objects:removeSculptPreviewObject(before.objects,hit.id)
+      ...before,objects:removeSculptPreviewObject(before.objects,hit.id,activeSculptObjectCatalog())
     },decorativeFringeArea());
     else status('Aucun décor à retirer dans la frange');
   }else if(action==='place'){
     const definitionId=$('object-definition').value;
+    if(definitionId.startsWith('user.objectdef.')){status('Objets personnels : pose sur la carte principale uniquement pour le moment.');return;}
     const candidate=appendSculptPreviewObject(before.objects,{
       definitionId,x,y,scale:Number($('object-scale').value)/100,
       rotationDeg:Number($('object-rotation').value),
       variantId:$('object-variant-wrap').hidden?null:$('object-variant').value
-    });
+    },activeSculptObjectCatalog());
     if(candidate.length>before.objects.length){
       decorativeFringe=normalizeSculptDecorativeFringeV1({
         ...before,objects:candidate
@@ -2382,7 +2393,7 @@ function begin(event){
     const hit=findSculptVisualObjectAtPoint(placedObjects,terrain,at,{zoom});
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     if($('object-action').value==='remove'){
-      if(hit&&objectCommit(removeSculptPreviewObject(placedObjects,hit.id))){
+      if(hit&&objectCommit(removeSculptPreviewObject(placedObjects,hit.id,activeSculptObjectCatalog()))){
         syncObjectSelectedControls();status('Objet supprimé');
       }else if(!hit)status('Aucun objet sous le doigt');
       return;
@@ -2504,7 +2515,7 @@ function stroke(event){
       if(!sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),
         Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height)))return;
       try{
-        const objects=updateSculptPreviewObject(decorativeFringe.objects,drag.id,{x,y});
+        const objects=updateSculptPreviewObject(decorativeFringe.objects,drag.id,{x,y},activeSculptObjectCatalog());
         decorativeFringe=normalizeSculptDecorativeFringeV1({...decorativeFringe,objects},
           decorativeFringeArea());
         drag.active=true;scheduleDraw();
@@ -2577,10 +2588,10 @@ function stroke(event){
     // repositioned on wet cells, all other kinds must stay on dry ground.
     const current=placedObjects.find(o=>o.id===source.id);
     if(!current||!sculptObjectCanOccupyCell(terrain,current.objectDefinitionId,
-      Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height)))return;
+      Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height),activeSculptObjectCatalog()))return;
     if(!current||Math.abs(current.transform.x-x)<.0001&&
        Math.abs(current.transform.y-y)<.0001)return;
-    const next=updateSculptPreviewObject(placedObjects,source.id,{x,y});
+    const next=updateSculptPreviewObject(placedObjects,source.id,{x,y},activeSculptObjectCatalog());
     objectDrag.active=true;
     canvas.classList.add('object-dragging');
     placedObjects=next;scheduleDraw();
@@ -2705,7 +2716,7 @@ function stop(event){
       scheduleDraw();return;
     }
     const selected=placedObjects.find(o=>o.id===stairTraceOwnerId);
-    if(!selected||objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind!=='stairs'){
+    if(!selected||activeSculptObjectCatalog().get(selected.objectDefinitionId)?.kind!=='stairs'){
       stairTraceMode=false;stairTraceStart=null;status('Sélectionne un escalier valide.');return;
     }
     const from=rampPointFromCell(foot),to=rampPointFromCell(end);
@@ -2713,15 +2724,15 @@ function stop(event){
     const low=level(foot)<level(end)?from:to;
     const high=level(foot)<level(end)?to:from;
     const width=Math.max(12,Math.min(448,
-      (objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.baseSize?.width??210)*
+      (activeSculptObjectCatalog().get(selected.objectDefinitionId)?.baseSize?.width??210)*
       selected.transform.scaleX*.68));
     const traversal={
       footOffsetX:low.x-selected.transform.x,footOffsetY:low.y-selected.transform.y,
       headOffsetX:high.x-selected.transform.x,headOffsetY:high.y-selected.transform.y,width
     };
     const next=updateSculptPreviewObject(placedObjects,selected.id,
-      {stairTraversal:traversal});
-    const resolved=resolveWorldObjectPlacements(next,objectDefinitionCatalogV1)
+      {stairTraversal:traversal},activeSculptObjectCatalog());
+    const resolved=resolveWorldObjectPlacements(next,activeSculptObjectCatalog())
       .find(o=>o.id===selected.id);
     const corridor=resolved&&sculptStairCorridor(terrain,resolved);
     if(!corridor||level(foot)===level(end)||next===placedObjects){
@@ -2953,9 +2964,9 @@ function resolvedSculptBridges(){
   if(navBridgePlacements!==placedObjects||navBridgeTerrain!==terrain){
     navBridgeTerrain=terrain;
     navBridgePlacements=placedObjects;
-    navBridgeProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
+    navBridgeProjection=resolveWorldObjectPlacements(placedObjects,activeSculptCollisionCatalog())
       .filter(o=>o.kind==='bridge').concat(sculptNavigationWaterSupports(terrain));
-    navStairProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
+    navStairProjection=resolveWorldObjectPlacements(placedObjects,activeSculptCollisionCatalog())
       .filter(o=>o.kind==='stairs'||o.kind==='ramp');
   }
   return navBridgeProjection;
@@ -2969,7 +2980,7 @@ function activeSculptBridge(){
 }
 function navigationContext(){
   const maxStep=navigationMaxStep();
-  return {objectCatalog:sculptPreviewCollisionCatalog,
+  return {objectCatalog:activeSculptCollisionCatalog(),
     sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
       cellHeight:SCULPT_TILE.height,projectionRise:SCULPT_TILE.rise,
        maxStepUp:maxStep,maxStepDown:maxStep,
@@ -4022,7 +4033,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   // Contact shadows are drawn at the grounded WorldObject foot by the same
   // visual renderer, before the image. No phantom collision or second decal.
   // Foreground rails must never stamp an extra shadow on top of the actor.
-  const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
+  const waterfallArt=sculptObjectAsset(object.visual?.assetId);
   const visualAssetId=object.visual?.assetId;
   const modelShadow=worldObjectShadowProfileForAssetV1(currentWorldShadowProfiles(),visualAssetId);
   const inspecting=objectEditing&&$('object-shadow-details')&&objectSelectedId;
@@ -4057,7 +4068,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
 // WorldArea / Sculpt scene is the ONLY object owner. Cache only derived
 // depth order during play, and always recalculate live editor placements.
 const sculptPlayObjectDrawCache=createSculptPlayObjectDrawCacheV1(
-  placements=>resolveWorldObjectPlacements(placements,objectDefinitionCatalogV1));
+  placements=>resolveWorldObjectPlacements(placements,activeSculptObjectCatalog()));
 function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipStairId=null){
   const objects=sculptPlayObjectDrawCache.get(placedObjects,{playing:navigationTesting});
   for(const object of objects){
@@ -4068,7 +4079,8 @@ function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipS
 }
 function refreshObjectOptions(){
   const current=$('object-definition').value;
-  const definitions=availableObjects.filter(o=>o.kind===$('object-category').value);
+  const definitions=availableObjects.filter(o=>o.kind===$('object-category').value&&
+    (!o.id.startsWith('user.objectdef.')||localGraphicPlacementEnabled()));
   $('object-definition').replaceChildren(...definitions.map(o=>{
     const option=document.createElement('option');
     option.value=o.id;option.textContent=o.label;return option;
@@ -4101,8 +4113,8 @@ function refreshObjectOptions(){
 }
 function refreshObjectVariants(preferred=null){
   const definitionId=$('object-definition').value;
-  const definition=objectDefinitionCatalogV1.get(definitionId);
-  const variants=sculptPreviewVariants(definitionId);
+  const definition=activeSculptObjectCatalog().get(definitionId);
+  const variants=sculptPreviewVariants(definitionId,activeSculptObjectCatalog());
   $('object-variant-wrap').hidden=variants.length===0;
   $('object-variant').replaceChildren(...variants.map(v=>{
     const option=document.createElement('option');
@@ -4159,7 +4171,7 @@ function currentWorldShadowProfiles(){
 function selectedShadowVisualAssetId(){
  const selected=placedObjects.find(item=>item.id===objectSelectedId);
  if(!selected)return null;
- return resolveWorldObjectPlacements([selected],objectDefinitionCatalogV1)[0]?.visual?.assetId??null;
+ return resolveWorldObjectPlacements([selected],activeSculptObjectCatalog())[0]?.visual?.assetId??null;
 }
 function changeWorldShadowProfiles(next){
  if(sculptWorldDraft){
@@ -4206,7 +4218,7 @@ function refreshSelectedObjectShadowControlsV1(selected){
  const details=$('object-shadow-details');
  // V80 is a frozen legacy editor which intentionally has no new panel.
  if(!details)return;
- const kind=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind:null;
+ const kind=selected?activeSculptObjectCatalog().get(selected.objectDefinitionId)?.kind:null;
  const allowed=!!selected&&!['bridge','stairs','ramp','waterfall','water','ground','portal'].includes(kind);
  details.hidden=!allowed;
  if(shadowControlsOwnerId!==selected?.id){
@@ -4219,7 +4231,7 @@ function refreshSelectedObjectShadowControlsV1(selected){
  const modelValue=worldObjectShadowProfileForAssetV1(currentWorldShadowProfiles(),assetId);
  const shadow=model?modelValue:normalizeWorldObjectShadowSettingsV1(selected?.overrides?.shadow);
  const matches=assetId?placedObjects.filter(o=>
-  resolveWorldObjectPlacements([o],objectDefinitionCatalogV1)[0]?.visual?.assetId===assetId):[];
+  resolveWorldObjectPlacements([o],activeSculptObjectCatalog())[0]?.visual?.assetId===assetId):[];
  const exceptions=matches.filter(o=>!!o.overrides?.shadow).length;
  $('object-shadow-scope-info').textContent=model
   ?'Tous les objets de ce visuel dans le monde ('+matches.length+
@@ -4243,7 +4255,7 @@ function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   refreshSelectedObjectShadowControlsV1(selected);
   const stairSelected=!!selected&&
-    objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind==='stairs';
+    activeSculptObjectCatalog().get(selected.objectDefinitionId)?.kind==='stairs';
   if(stairTraceMode&&(!stairSelected||stairTraceOwnerId!==objectSelectedId)){
     stairTraceMode=false;stairTraceStart=null;stairTraceGesture=null;
   }
@@ -4254,7 +4266,7 @@ function syncObjectSelectedControls(){
     $('object-stair-path-status').textContent=selected.overrides.stairTraversal
       ?'Passage ajusté sur cet escalier.':'Passage automatique du visuel actif.';
   }
-  const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
+  const selectedDef=selected?activeSculptObjectCatalog().get(selected.objectDefinitionId):null;
   const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
   $('object-open-interior').hidden=!buildingSelected;
   $('object-interior-link').hidden=!buildingSelected;
@@ -4292,7 +4304,7 @@ function syncObjectSelectedControls(){
 }
 function editSelectedObject(patch){
   if(!$('object-palette').hidden&&objectSelectedId){
-    const changed=updateSculptPreviewObject(placedObjects,objectSelectedId,patch);
+    const changed=updateSculptPreviewObject(placedObjects,objectSelectedId,patch,activeSculptObjectCatalog());
     if(objectCommit(changed)){
       syncObjectSelectedControls();
       status('Objet modifié · Annuler disponible · Exporter scène pour conserver');
@@ -4321,7 +4333,7 @@ function worldLinkedBuildingWouldDisappear(next){
       .map(spawn=>spawn.anchor.objectId)
   ]);
   if(!linkedIds.size)return null;
-  const buildings=resolveWorldObjectPlacements(next,objectDefinitionCatalogV1)
+  const buildings=resolveWorldObjectPlacements(next,activeSculptObjectCatalog())
     .filter(object=>object.kind==='building');
   return [...linkedIds].find(id=>!buildings.some(object=>object.id===id))??null;
 }
@@ -5323,27 +5335,30 @@ function applyObjectAtCell(cell){
   if(!objectEditing||waypointsEditing)return;
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
   if($('object-action').value==='select'){
-    const found=findSculptPreviewObjectNear(placedObjects,x,y);
+    const found=findSculptPreviewObjectNear(placedObjects,x,y,50,activeSculptObjectCatalog());
     objectSelectedId=found?.id??null;
     syncObjectSelectedControls();scheduleDraw();
     status(found?'Objet sélectionné : garde le doigt appuyé et glisse pour le déplacer':'Aucun objet proche à sélectionner');
     return;
   }
   if($('object-action').value==='remove'){
-    const found=findSculptPreviewObjectNear(placedObjects,x,y);
+    const found=findSculptPreviewObjectNear(placedObjects,x,y,50,activeSculptObjectCatalog());
     if(!found){status('Aucun objet proche à supprimer');return;}
-    if(objectCommit(removeSculptPreviewObject(placedObjects,found.id))){
+    if(objectCommit(removeSculptPreviewObject(placedObjects,found.id,activeSculptObjectCatalog()))){
       syncObjectSelectedControls();
-      status('Objet supprimé : '+objectDefinitionCatalogV1.get(found.objectDefinitionId)?.label);
+      status('Objet supprimé : '+activeSculptObjectCatalog().get(found.objectDefinitionId)?.label);
     }
     return;
   }
   const definitionId=$('object-definition').value;
+  if(definitionId.startsWith('user.objectdef.')&&!localGraphicPlacementEnabled()){
+    status('Objet personnel : raccordement de la sauvegarde du monde encore requis.');return;
+  }
   // Placement and drag use one Scene Preview authoring permission.
-  if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y)){
+  if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y,activeSculptObjectCatalog())){
     status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
   }
-  const kind=objectDefinitionCatalogV1.get(definitionId)?.kind;
+  const kind=activeSculptObjectCatalog().get(definitionId)?.kind;
   const bridgeMode=kind==='bridge',stairMode=kind==='stairs'||kind==='ramp';
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
     scale:Number($('object-scale').value)/100,
@@ -5353,8 +5368,8 @@ function applyObjectAtCell(cell){
       stairMode?Number($('object-bridge-length').value)/100:undefined,
     rotationDeg:Number($('object-rotation').value),
     flipX:$('object-flip-x')?.checked===true,
-    variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
-  if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
+    variantId:$('object-variant-wrap').hidden?null:$('object-variant').value},activeSculptObjectCatalog());
+  if(objectCommit(next))status('Objet placé : '+activeSculptObjectCatalog().get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
   else status('Limite de '+SCULPT_OBJECT_LIMIT+' objets atteinte');
 }
@@ -5422,7 +5437,7 @@ $('object-shadow-profile-redo').addEventListener('click',()=>{
 }
 $('object-stair-trace')?.addEventListener('click',()=>{
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
-  if(!selected||objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind!=='stairs')return;
+  if(!selected||activeSculptObjectCatalog().get(selected.objectDefinitionId)?.kind!=='stairs')return;
   stairTraceMode=!stairTraceMode;
   stairTraceOwnerId=stairTraceMode?selected.id:null;
   stairTraceStart=null;stairTraceGesture=null;
@@ -5435,7 +5450,7 @@ $('object-stair-reset')?.addEventListener('click',()=>{
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   if(!selected||!selected.overrides.stairTraversal)return;
   stairTraceMode=false;stairTraceStart=null;stairTraceGesture=null;
-  const next=updateSculptPreviewObject(placedObjects,selected.id,{stairTraversal:null});
+  const next=updateSculptPreviewObject(placedObjects,selected.id,{stairTraversal:null},activeSculptObjectCatalog());
   if(objectCommit(next)){
     syncObjectSelectedControls();
     status('Passage automatique restauré sur cet escalier · Annuler disponible.');
@@ -5474,7 +5489,25 @@ $('object-redo').addEventListener('click',()=>{
   objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();syncObjectSelectedControls();
 });
 refreshObjectOptions();updateObjectCount();
-if($('graphic-library-import-form'))mountSculptGraphicImport({root:$('graphic-library-import-form'),terrainFamilies:()=>sculptWorldDraft?.terrainFamilies??terrainFamilyRegistry.list()});
+let graphicCatalogReload=Promise.resolve();
+function refreshLocalSculptGraphics(){
+  const run=async()=>{
+    const next=await loadSculptGraphicCatalog(),previous=sculptGraphics;
+    const refs=[...placedObjects,...(decorativeFringe?.objects??[]),...(outsideAreaSnapshot?.objects??[]),
+      ...sculptInteriors.flatMap(i=>i.objects??[]),...objectHistory.flat(),...objectRedo.flat()];
+    if(refs.some(o=>o.objectDefinitionId?.startsWith('user.objectdef.')&&!next.catalog.get(o.objectDefinitionId))){
+      next.dispose();throw Error('Une ressource personnelle utilisée a disparu. La carte reste ouverte sans modification.');
+    }
+    sculptGraphics=next;
+    availableObjects.splice(0,availableObjects.length,...listSculptPlaceableDefinitions(activeSculptObjectCatalog()).filter(o=>
+      !o.id.startsWith('user.objectdef.')||localGraphicPlacementEnabled()));
+    for(const id of objectImages.keys())if(id.startsWith('user.object.asset.'))objectImages.delete(id);
+    sculptPlayObjectDrawCache.invalidate();navBridgePlacements=null;navStairProjection=null;
+    previous?.dispose();refreshObjectOptions();objectLibraryPicker?.render();scheduleDraw();
+  };
+  graphicCatalogReload=graphicCatalogReload.catch(()=>{}).then(run);return graphicCatalogReload;
+}
+if($('graphic-library-import-form'))mountSculptGraphicImport({root:$('graphic-library-import-form'),terrainFamilies:()=>sculptWorldDraft?.terrainFamilies??terrainFamilyRegistry.list(),onLibraryChanged:refreshLocalSculptGraphics});
 if($('object-library-tree')){
   objectLibraryPicker=createObjectLibraryPicker({
     root:$('object-library-tree'),search:$('object-library-search'),summary:$('object-library-selected'),
@@ -5508,7 +5541,7 @@ window.__sculptObjectsProbe=()=>Object.freeze({
   objects:placedObjects.map(o=>{
     // Read the SAME cached Image the native object painter actually consumes;
     // PerformanceResourceTiming can be absent for already cached WebPs.
-    const placement=resolveWorldObjectPlacements([o],objectDefinitionCatalogV1)[0];
+    const placement=resolveWorldObjectPlacements([o],activeSculptObjectCatalog())[0];
     const art=objectImage(placement?.visual?.assetId);
     return {id:o.id,definition:o.objectDefinitionId,
       x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
@@ -5520,7 +5553,7 @@ window.__sculptObjectsProbe=()=>Object.freeze({
     !$('object-bridge-width-wrap').hidden,
   bridgeLengthPercent:Number($('object-bridge-length').value),
   bridgeWidthPercent:Number($('object-bridge-width').value),
-  exportsIncludeObjects:JSON.parse(serializeSculptPreviewScene(terrain,placedObjects)).objects.length===placedObjects.length
+  exportsIncludeObjects:JSON.parse(serializeSculptPreviewScene(terrain,placedObjects,undefined,[],null,[],null,sculptGraphicContext())).objects.length===placedObjects.length
 });
 
 canvas.addEventListener('pointerdown',begin);
@@ -6208,7 +6241,7 @@ function updateSculptAreaControls(){
       :option.value.startsWith('floor.');
   $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
-    objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
+    activeSculptObjectCatalog().get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
   updateInteriorWallControls();updateInteriorDoorControls();updateInteriorConnectorControls();
@@ -6512,7 +6545,7 @@ $('scene-export').addEventListener('click',()=>{
       outdoors.objects,outdoors.surface,outdoors.actors,{
         encounterConfig:sculptEncounterConfig,
         exteriorEncounters:sculptExteriorEncounters
-      },currentWorldShadowProfiles(),currentSculptLighting()));
+      },currentWorldShadowProfiles(),currentSculptLighting(),sculptGraphicContext()));
   }catch(error){
     status('Export bloqué : '+error.message);
     return;
@@ -6529,7 +6562,7 @@ $('export').addEventListener('click',()=>{
  status('JSON de hauteur généré : copiez-le pour conserver votre test');
 });
 $('import').addEventListener('click',()=>{
- try{const imported=importSculptPreviewScene($('json').value);
+ try{const imported=importSculptPreviewScene($('json').value,sculptGraphicContext());
   const raw=JSON.parse($('json').value);
   const nextInteriors=importSculptInteriors(raw.interiors??[],imported.objects);
   const incomingTemplates=normalizeSculptInteriorTemplates(raw.interiorTemplates??[]);
@@ -8057,6 +8090,10 @@ sculptBootReady=true;fit();
 // Frozen V80 does not include the WorldArea Portal button. Modern Sculpt
 // keeps its canonical action; the legacy editor must still boot completely.
 $('world-portal-traverse')?.addEventListener('click',traverseSculptWorldPortal);
+if($('graphic-library-import-form')||sculptPlayRequested){
+  try{await refreshLocalSculptGraphics();}
+  catch(error){status('Bibliothèque personnelle indisponible : '+error.message);}
+}
 installSculptWorldAreaEditing();
 installSculptPlayMode();
 installSculptMapPresetPalette();
