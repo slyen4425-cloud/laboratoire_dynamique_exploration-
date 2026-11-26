@@ -117,6 +117,29 @@ const server = createServer(async(req,res)=>{
             const r = arena.getBoundingClientRect();
             const h = local.getBoundingClientRect();
             const c = controls.getBoundingClientRect();
+            const project=new URL(location.href).searchParams;
+            const configured=project.has('adventureSession')||project.has('projectTester');
+            // Combat main #396 projects the saved legacy offsets through
+            // its new rectangle owner, not CSS translate. Verify the native
+            // node and its actual measured position, without dropping the
+            // requirement for a saved layout or skill slots.
+            const translated=local.style.translate!==''&&local.style.translate!=='none';
+            const box=local.dataset.hudBox==='local-status';
+            const parent=local.offsetParent;
+            const p=parent?.getBoundingClientRect();
+            const left=parseFloat(local.style.left),top=parseFloat(local.style.top);
+            const width=parseFloat(local.style.width),height=parseFloat(local.style.height);
+            const positioned=box&&p&&getComputedStyle(local).position==='absolute'&&
+              [left,top,width,height].every(Number.isFinite)&&
+              Math.abs(h.left-(p.left+parent.clientLeft-parent.scrollLeft+left))<2&&
+              Math.abs(h.top-(p.top+parent.clientTop-parent.scrollTop+top))<2&&
+              Math.abs(h.width-width)<2&&Math.abs(h.height-height)<2&&
+              h.left>=r.left-1&&h.top>=r.top-1&&h.right<=r.right+1&&h.bottom<=r.bottom+1;
+            const moved=translated||positioned;
+            const slot=!!document.querySelector('[data-combat-hud-skill-role^="skill-slot-"]');
+            document.documentElement.dataset.nativeAuthoredHudProof=configured
+              ?(moved&&slot?'OK':'layout-or-slot-missing:'+local.style.translate+':'+box+':'+positioned+':'+slot)
+              :(!translated&&!box?'OK':'unexpected-layout');
             const ok = getComputedStyle(stage).position === 'fixed' &&
               getComputedStyle(banner).display === 'none' &&
               r.width > 500 && r.height > 260 &&
@@ -268,6 +291,7 @@ try {
   const jsError=dom.match(/data-encounter-bootstrap-error="([^"]+)"/)?.[1]??'';
   const layoutProof=dom.match(/data-native-layout-proof="([^"]+)"/)?.[1]??'missing';
   const skillProof=dom.match(/data-encounter-skill-proof="([^"]+)"/)?.[1]??'missing';
+  const hudProof=dom.match(/data-native-authored-hud-proof="([^"]+)"/)?.[1]??'missing';
   const fullscreenProof=dom.match(/data-encounter-fullscreen-proof="([^"]+)"/)?.[1]??'missing';
   const audioProof=dom.match(/data-encounter-audio-proof="([^"]+)"/)?.[1]??'missing';
   const skillCount=[...dom.matchAll(/data-combat-skill="/g)].length;
@@ -283,6 +307,7 @@ try {
     if(!hp.includes('/ '+universeFixture.expectedHp+' PV'))throw Error('PV du projet absents du HUD : '+hp);
   }
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
+  if(hudProof!=='OK')throw Error('Saved universe HUD not projected in native encounter: '+hudProof);
   if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
   if(fullscreenProof!=='OK')throw Error('Encounter has no usable Android fullscreen control: '+fullscreenProof);
   if(audioProof!=='OK')throw Error('Unexpected audio activation button: '+audioProof);

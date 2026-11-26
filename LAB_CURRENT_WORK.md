@@ -7,3 +7,10 @@
 - **Sécurité** : les deux extrémités doivent être de vraies surfaces sèches aux niveaux différents ; longueur/largeur/rise sont validés par le modèle de pente existant. Le vol, les murs hors corridor, les falaises, le niveau 16, l'eau, et les anciennes cartes gardent les règles natives. **Gué, passerelle/pont sur eau et outils avancés pied/sommet des escaliers latéraux ne font pas partie de ce lot** ; ne PAS fermer les tickets #530 et #525.
 - **Tests** : `tests/sculpt-navigation-authorize-corridors-20261123.test.mjs` (montée, descente, hors corridor, dessin inversé, masques, refus eau, save) et extension du vrai navigateur `scripts/smoke-sculpt-terrain-lab.mjs` (deux taps, persistance, Undo/Redo). Les sentinelles #537 ne sont pas supprimées.
 - **Publication** : validation PR CI + Pages au SHA exact, puis fusion dans Exploration `main` et contrôle CI/HTTPS, **ensuite seulement** repin Capture V2 et publication PWA dans un lot distinct.
+
+
+# Ergonomie Exploration — lot initial (NON GREEN)
+
+Base c3dd13358b1f4f3c8a2e8b29e40a1b5134061901; branche work/exploration-editor-ergonomie-20261126. Périmètre: présentation du panneau Intérieur uniquement, aucune donnée, sauvegarde, animation, moteur, asset ou autre dépôt modifié. Tous les contrôles existants sont déplacés sans changer leurs identifiants ou gestionnaires. Le bouton contextuel Intérieur ouvre le même details hors de la quickbar; fermeture quand on change d'outil, quitte l'intérieur ou place murs/porte/connexion. Aucun nouvel état métier. La déduplication des outils terrain et le menu Capture sont des étapes ultérieures, pas incluses ici.
+
+Validation requise: inventaire des IDs, tests existants et nouveau test; vrai navigateur en modes normal/plein écran, PC et Android paysage, entrée/sortie, murs (dont diagonale et undo/redo), portes, étages, escaliers, sols, modèles, textures, objets, test jeu; confirmer que tous les contrôles sont accessibles et aucune régression stockage. Vérifier CI/Pages et SHA exact avant GREEN. Les autres PR actives restent intactes.

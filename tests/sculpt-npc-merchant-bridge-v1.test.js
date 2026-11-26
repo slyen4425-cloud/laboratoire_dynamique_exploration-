@@ -37,17 +37,48 @@ test('authored merchant link survives native actor normalization without a secon
 test('Explorer links Capture merchants only by names and scoped messages',async()=>{
  const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- for(const id of ['npc-merchant-editor','npc-merchant-picker','npc-merchant-reload',
-  'npc-merchant-clear','npc-merchant-status','npc-dialogue-trade'])assert.match(html,new RegExp('id="'+id+'"'));
+ for(const id of ['npc-merchant-editor','npc-merchant-configure','npc-merchant-frame',
+  'npc-merchant-close','npc-merchant-status','npc-dialogue-trade'])assert.match(html,new RegExp('id="'+id+'"'));
  assert.doesNotMatch(html,/id="actor-npc-merchant"/);
- assert.match(main,/gensrpg.exploration.npc.merchant.catalog.request.v1/);
- assert.match(main,/gensrpg.capture.v2.npc.merchant.catalog.response.v1/);
+ assert.doesNotMatch(html,/id="npc-merchant-picker"|id="npc-merchant-clear"/);
+ assert.match(main,/function openMapMerchantEditor\(\)/);
+ assert.match(main,/npcApplyAuthoringPatch\(\{merchantId\}\)/);
+ assert.match(main,/data\.merchantId!==context\.merchantId/);
  assert.match(main,/gensrpg.exploration.npc.merchant.open.v1/);
  assert.match(main,/npcDialogueMerchant=canShop\?npc:null/);
  assert.match(main,/requestNpcMerchantShop\(actor\)/);
  assert.match(main,/gensrpg.capture.v2.npc.merchant.open-ack.v1/);
  assert.match(main,/gensrpg.capture.v2.npc.merchant.closed.v1/);
  assert.match(main,/event.origin!==window.location.origin\|\|event.source!==window.parent/);
- assert.match(main,/new Option\(shop.name,shop.id\)/);
+ assert.match(main,/actor\.npc\.merchantId\|\|'merchant-'\+crypto\.randomUUID\(\)/);
+ assert.match(main,/npcId:actor\.id,npcName:actor\.npc\.name/);
  assert.doesNotMatch(main,/localStorage\.setItem\(.*merchant/i);
+});
+
+test('canonical merchant references up to 130 characters survive placement',()=>{
+ const id='merchant-'+'n'.repeat(121);
+ assert.equal(id.length,130);
+ assert.equal(actor('long-shop',42,npc('merchant',id)).npc.merchantId,id);
+});
+
+
+test('the last merchant dialogue line leads to the same scoped shop request, not a silent close',async()=>{
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(main,/const offersTrade=!hasNextLine&&npcDialogueMerchant!==null/);
+ assert.match(main,/\$\('npc-dialogue-trade'\)\.hidden=!npcDialogueMerchant\|\|offersTrade/);
+ assert.match(main,/offersTrade\?'🛒 Commercer':'Terminer'/);
+ assert.match(main,/const trainer=npcDialogueTrainer,merchant=npcDialogueMerchant;\s*closeNpcDialogue\(\);\s*if\(trainer\)startSculptTrainerBattle\(trainer\);\s*else if\(merchant\)requestNpcMerchantShop\(merchant\)/);
+});
+
+test('Tester requests the same Capture shop UI in a temporary iframe, not a real adventure session',async()=>{
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ assert.ok(main.includes("if(!adventureSessionId){\n    openEditorMerchantTest(actor);"));
+ assert.ok(main.includes("url.searchParams.set('merchantTest',actor.npc.merchantId)"));
+ assert.ok(main.includes("url.searchParams.set('merchantTestNonce',editorMerchantTestNonce)"));
+ assert.ok(main.includes("event.source!==frame?.contentWindow"));
+ assert.ok(main.includes("event.data.nonce!==editorMerchantTestNonce"));
+ assert.ok(main.includes("npcDialogueOpen=false;updateNpcInteraction()"));
+ assert.equal(html.split('id="npc-merchant-test-frame"').length-1,1);
+ assert.doesNotMatch(main,/merchantTestStock|merchantTestInventory/);
 });

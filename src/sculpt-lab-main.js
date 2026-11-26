@@ -1,10 +1,13 @@
 import {mountNpcWildBehaviorControlsV1} from './actors/npc-wild-behavior-controls-v1.js';
+import {projectDefeatedPlacedWildV1} from './actors/npc-wild-defeat-projection-v1.js';
 // Self-contained optional heightfield experiment. Never changes the live 2D Builder.
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
-import {drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
+import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-author-atlas-v1';
+import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1';
+import {loadAnimatedSurfaceAtlas} from './render/animated-surface-sprites-v1.js';
+import {SCULPT_WATER_MATERIAL_IDS,DEFAULT_SCULPT_WATER_MATERIAL} from './world/sculpt-water-materials-v1.js';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
@@ -67,6 +70,8 @@ import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1}
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
+import {normalizeWorldLightingV1,WORLD_LIGHTING_DEFAULT_V1} from './world/world-lighting-v1.js';
+import {drawSculptWarmLightV1,drawSculptWorldCloudShadowsV1} from './render/sculpt-world-lighting-v1.js';
 import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,normalizeWorldObjectShadowProfilesV1,worldObjectShadowProfileForAssetV1,setWorldObjectShadowProfileV1} from './world/world-object-shadow-settings-v1.js?rev=shadow-model-profiles-20261115';
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
@@ -109,7 +114,7 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
 import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
-import {findTriggeredPortal,findPortalEnteredDuringMove,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
+import {findTriggeredPortal,findPortalEnteredDuringMove,applyPortalTransition,resolvePortalTriggerPoint,buildingDoorCounterpart,isManualBuildingPortal,resolvePortalWaypoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset,
   deleteSculptMapPreset,clearPersonalSculptMapPresets} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
@@ -153,6 +158,27 @@ if(sculptSettingsPanel&&sculptSettingsToggle){
   sculptSettingsPanel.addEventListener('toggle',syncSculptSettingsToggle);
   syncSculptSettingsToggle();
 }
+
+const interiorToolsToggle=$('interior-tools-toggle');
+const interiorToolsDetails=$('interior-controls-details');
+function setInteriorInspectorOpen(open){
+  if(!interiorToolsToggle||!interiorToolsDetails)return; // V80 frozen markup has no contextual toggle.
+  interiorToolsDetails.open=Boolean(open&&!$('interior-area-bar').hidden);
+  interiorToolsToggle.setAttribute('aria-expanded',String(interiorToolsDetails.open));
+}
+if(interiorToolsToggle&&interiorToolsDetails){
+interiorToolsToggle.addEventListener('click',()=>{
+  if(sculptSettingsPanel)sculptSettingsPanel.open=false;
+  setInteriorInspectorOpen(!interiorToolsDetails.open);
+});
+interiorToolsDetails.addEventListener('toggle',()=>{
+  interiorToolsToggle.setAttribute('aria-expanded',String(interiorToolsDetails.open));
+});
+for(const id of ['mode-ground','mode-water','mode-objects','mode-waypoints','mode-surface','mode-encounters','navigation-toggle','sculpt-settings-toggle','new-map-toggle']){
+  $(id)?.addEventListener('click',()=>setInteriorInspectorOpen(false));
+}
+}
+
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
 const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
  storage:window.localStorage,makeId:()=>crypto.randomUUID()
@@ -228,14 +254,20 @@ let stairTraceMode=false,stairTraceOwnerId=null,stairTraceStart=null,stairTraceG
  // A standalone Sculpt preview can export the same official profile format;
  // the WorldBuilder path instead edits its ONE canonical world record.
  let sculptStandaloneShadowProfiles=Object.freeze([]);
+ let sculptStandaloneLighting=null,sculptLightingPreview=undefined;
  let shadowProfileHistory=[],shadowProfileRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 // A single transient runtime projection; WorldArea.actors is never advanced by gameplay.
 const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
 let npcWanderElapsed=0,npcWanderAggressiveNearId=null;
 function npcActorsWithDefinitions(){
-  return resolvePlacedNpcDefinitionsV1(placedActors,
+  const authored=resolvePlacedNpcDefinitionsV1(placedActors,
     captureActorProvider?.resolveDefinition??(()=>null));
+  // Victory is a Capture-owned receipt; hide only defeated wild actors in
+  // this authenticated game/area, never in the author's editable WorldArea.
+  return projectDefeatedPlacedWildV1(authored,
+    scopedEncounter?.party?.wildVictories??[],
+    activeInteriorId??sculptWorldAreaId);
 }
 function gameplayPlacedActors(){
   const actors=npcActorsWithDefinitions();
@@ -248,7 +280,7 @@ const authoredNpcStore=createUserNpcStoreV1();
 let authoredNpcRecords=Object.freeze([]),npcCatalogRefreshPending=false;
 let npcOfficialCreatures=Object.freeze([]);
 let npcCatalogLoading=false;
-let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
+let npcMerchantEditorContext=null;
 let npcRewardChoices=Object.freeze([]),npcRewardRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // Same WorldArea authoring data; fringe cells are never passed to Collision World.
@@ -940,7 +972,7 @@ function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigat
    camera and height data retain their existing owners and update separately. */
 function navigationBackground(){
   const rockPalette=$('rock').value,materialId=displayedBaseMaterialId();
-  const signature=[rockPalette,materialId,
+  const signature=[rockPalette,materialId,currentSculptLighting()?.ambientOcclusionPct??'legacy',
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
      sphereTexturesLoaded,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
@@ -961,20 +993,52 @@ function navigationBackground(){
   imageContext.scale(scale,scale);
   imageContext.translate(paddingX,paddingY);
   const material=registry.require(materialId,'surface');
+  const waterMask=livingWaterControls&&ribbonTextures.water?.living&&ribbonTextures.water.visible&&terrainHasWater(terrain)?document.createElement('canvas'):null;
+  if(waterMask){waterMask.width=Math.ceil(raster.width/scale);waterMask.height=Math.ceil(raster.height/scale);}
+  const waterMaskContext=waterMask?.getContext('2d');
+  waterMaskContext?.translate(paddingX,paddingY);
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
     rockPalette,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
     overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
-    drawOuterSouthRim:false});
+    ambientOcclusionPct:currentSculptLighting()?.ambientOcclusionPct??null,
+    waterMask:waterMaskContext,drawOuterSouthRim:false});
   // Pre-#468 paint order: cache one native terrain raster, then draw
   // objects/actors normally. Never build an extra cliff alpha overlay.
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
-    paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
+    paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result,waterMask};
   return navTerrainCache;
+}
+// Reuse one CSS-pixel viewport canvas; never rebuild terrain to animate water.
+let waterLayerCanvas=null,waterLayerKey='',waterLayerSnapshot=null;
+function compositeLivingWater(snapshot){
+  if(!snapshot.waterMask){waterLayerSnapshot=null;waterLayerKey='';return;}
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const width=Math.ceil(canvas.width/dpr),height=Math.ceil(canvas.height/dpr);
+  if(!waterLayerCanvas)waterLayerCanvas=document.createElement('canvas');
+  if(waterLayerCanvas.width!==width||waterLayerCanvas.height!==height){waterLayerCanvas.width=width;waterLayerCanvas.height=height;waterLayerKey='';}
+  const transform=ctx.getTransform(),fps=terrain.waterAnimationFps??8,foamPct=terrain.waterFoamPct??60;
+  const tick=Math.floor(performance.now()*fps/1000),timeSeconds=tick/fps;
+  const key=[tick,fps,transform.a,transform.b,transform.c,transform.d,transform.e,transform.f,width,height,foamPct].join('|');
+  if(key!==waterLayerKey||waterLayerSnapshot!==snapshot){
+    const layer=waterLayerCanvas.getContext('2d');layer.setTransform(1,0,0,1,0,0);layer.clearRect(0,0,width,height);
+    layer.setTransform(transform.a/dpr,transform.b/dpr,transform.c/dpr,transform.d/dpr,transform.e/dpr,transform.f/dpr);
+    // Conservative visible world bounds under the actual affine camera.
+    const inverse=layer.getTransform().inverse();
+    const corners=[[0,0],[width,0],[0,height],[width,height]].map(([x,y])=>inverse.transformPoint({x,y}));
+    const viewport={minX:Math.min(...corners.map(p=>p.x))-28,maxX:Math.max(...corners.map(p=>p.x))+28,
+      minY:Math.min(...corners.map(p=>p.y))-21,maxY:Math.max(...corners.map(p=>p.y))+21};
+    drawSculptLivingWaterLayer(layer,{terrain,timeSeconds,fps,viewport,foamPct});
+    layer.globalCompositeOperation='destination-in';
+    layer.drawImage(snapshot.waterMask,-snapshot.paddingX,-snapshot.paddingY);
+    layer.globalCompositeOperation='source-over';
+    waterLayerKey=key;waterLayerSnapshot=snapshot;
+  }
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.drawImage(waterLayerCanvas,0,0);ctx.restore();
 }
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
 let navigationActorVisual=normalizeMapActorVisual({
@@ -1072,8 +1136,12 @@ const sculptGroundMaterials=Object.freeze(registry.list()
   .filter(material=>material.kind==='surface'&&material.assets?.base
     &&!material.id.startsWith('floor.')&&!['ground.sea','ground.road'].includes(material.id))
   .map(material=>material.id));
-const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
-  'water.forest_stream','water.swamp']);
+const sculptWaterMaterials=SCULPT_WATER_MATERIAL_IDS;
+const livingWaterControls=Boolean($('water-fps'));
+const waterBrushMaterial=()=>livingWaterControls?$('water-material').value:null;
+const terrainHasWater=(()=>{let last=null,wet=false;return t=>{
+ if(last!==t){last=t;wet=t.waterLevels.some((v,i)=>v>t.levels[i]);}return wet;
+};})();
 const images=new Map();
 const themes=sculptGroundMaterials;
 const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
@@ -1107,6 +1175,14 @@ async function loadSphereWallImages(){
   }
 }
 async function setWaterMaterial(){
+  if(livingWaterControls){
+    if(ribbonTextures.water?.living){const id=$('water-material').value;status('Texture du pinceau d’eau : '+$('water-material').selectedOptions[0]?.textContent);await loadAnimatedSurfaceAtlas(id);waterLayerKey='';scheduleDraw();return;}
+    const materials=new Map(sculptWaterMaterials.map(id=>[id,{material:registry.require(id,'water'),texture:null}]));
+    const previous=ribbonTextures.water;
+    ribbonTextures.water={...materials.get(DEFAULT_SCULPT_WATER_MATERIAL),visible:previous?.visible??$('show-water').checked,living:true,materials};
+    await Promise.all([loadAnimatedSurfaceAtlas(DEFAULT_SCULPT_WATER_MATERIAL),...sculptWaterMaterials.map(async id=>{materials.get(id).texture=await imageFor(id,'water');})]);
+    navTerrainCache=null;scheduleDraw();return;
+  }
   const id=$('water-material').value;
   if(!sculptWaterMaterials.includes(id))return;
   const revision=++waterMaterialRevision;
@@ -1382,6 +1458,7 @@ function draw(){
     if(navigationTesting){ctx.save();ctx.transform(1,view.shear,0,view.pitch,0,0);}
     ctx.drawImage(snapshot.image,-snapshot.paddingX,-snapshot.paddingY,
       snapshot.image.width/snapshot.scale,snapshot.image.height/snapshot.scale);
+    compositeLivingWater(snapshot,view);
     if(navigationTesting)ctx.restore();
     result=snapshot.result;
   }else{
@@ -1390,6 +1467,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
+      ambientOcclusionPct:currentSculptLighting()?.ambientOcclusionPct??null,
       drawOuterSouthRim:false});
   }
   lastRenderStats=result;
@@ -1427,10 +1505,12 @@ function draw(){
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     const worldExit=sculptWorldCurrentInterior()?
-      worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point'):null;
+      (worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId)?.rootAreaId===sculptWorldAreaId
+        ?worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId).exit:
+        worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point')):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??worldExit?.trigger,
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??(worldExit?{kind:'point',...resolvePortalWaypoint(sculptWorldDraft,worldExit)}:null),
       stairPortals:interiorConnectorPortals()
         .map(p=>interiorConnectorPreview?.id===p.id?
           {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),
@@ -1498,6 +1578,16 @@ function draw(){
   // WorldArea. Composite it after hero/objects so trees do not sink behind
   // the playable scene. No saved Y position, mask or collision is changed.
   drawDecorativeFringeObjects('front');
+  const lighting=currentSculptLighting();
+  if(lighting){
+    if(!activeInteriorId&&!sculptWorldCurrentInterior()){
+      ctx.save();if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+      drawSculptWorldCloudShadowsV1(ctx,{lighting,width:terrain.width*SCULPT_TILE.width,
+        height:terrain.height*SCULPT_TILE.height,timeSeconds:performance.now()/1000,viewport:previewObjectViewport,camera:view});
+      ctx.restore();
+    }
+    drawSculptWarmLightV1(ctx,{lighting,width,height,dpr});
+  }
   // Author-approved rollback: the terrain has already been fully painted.
   // Keep the original object/actor Y-order above it (before PR #468).
   // No later cliff-mask replay may cut a tree, building or the hero.
@@ -1672,7 +1762,7 @@ function draw(){
     }else previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
       shape:$('brush-shape').value,edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,
-      zoom});
+      zoom,waterMaterialId:waterBrushMaterial()});
   }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
@@ -1697,13 +1787,18 @@ function draw(){
 // The existing Sculpt renderer remains the sole drawing path.
 let waterfallPumpHandle=0,waterfallLastPaintMs=0;
 function waterfallPresent(){return placedObjects.some(o=>Boolean(resolveWorldObjectAsset(o.visual?.assetId)?.animation));}
+function animatedSceneryPresent(){const l=currentSculptLighting();return waterfallPresent()||
+  !!(livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain))||
+  !!(l?.cloudsEnabled&&l.cloudOpacityPct&&l.cloudSpeed&&!activeInteriorId&&!sculptWorldCurrentInterior());}
 function pumpWaterfallFrame(now){
-  if(!waterfallPresent()){waterfallPumpHandle=0;return;}
-  if(now-waterfallLastPaintMs>=83){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
+  if(!animatedSceneryPresent()){waterfallPumpHandle=0;return;}
+  const waterActive=livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain);
+  const interval=waterActive?Math.min(83,1000/(terrain.waterAnimationFps??8)):83;
+  if(now-waterfallLastPaintMs>=interval){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
   waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function ensureWaterfallPump(){
-  if(!waterfallPumpHandle&&waterfallPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
+  if(!waterfallPumpHandle&&animatedSceneryPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function scheduleDraw(){
   if(!sculptBootReady)return; // The single boot boundary, not a retry loop.
@@ -1760,6 +1855,7 @@ function recordDecorativeFringe(previous){
 }
 function paintDecorativeFringeCell(cell){
   const mode=selectedMode;
+  if(mode==='water-paint'){status('Texture d’eau : peindre dans la zone jouable.');return false;}
   if(!['raise','dig','flatten','smooth','plateau',
         'water-fill','water-rise','water-lower','water-erase','water-smooth'].includes(mode)){
     status('Décor extérieur : choisis un pinceau Terre ou Eau, sans pente ni sphère pour le moment.');
@@ -1996,7 +2092,7 @@ function precisionApply(){
     radius:Number($('radius').value),strength:Number($('strength').value),
     shape:$('brush-shape').value,mode:selectedMode,target:water?Number($('water-target').value):
        selectedMode==='plateau'?Number($('target').value):sculptHeightAt(previous,cell.x,cell.y),
-    edgeSoftness:Number($('edge').value)/100};
+    edgeSoftness:Number($('edge').value)/100,waterMaterialId:waterBrushMaterial()};
   if(selectedMode.startsWith('sphere-')){
     const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
     terrain=selectedMode==='sphere-erase'?removeSculptSphereAt(previous,x,y):
@@ -2127,7 +2223,8 @@ function selectMode(mode){
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
     'water-lower':'Eau : abaisser sa surface','water-erase':'Eau : enlever le volume peint',
-    'water-smooth':'Eau : égaliser les hauteurs voisines'}[mode]);
+    'water-smooth':'Eau : égaliser les hauteurs voisines',
+    'water-paint':'Eau : peindre uniquement le matériau des cases immergées'}[mode]);
 }
 function commitUndo(previous){
   if(previous===terrain)return;
@@ -2136,6 +2233,7 @@ function commitUndo(previous){
 }
 function updateHistoryButtons(){
   updateNavigationZoneCount();
+  syncLivingWaterControls();
   const past=fringeEditing?fringeHistory:history;
   const future=fringeEditing?fringeRedo:redoHistory;
   $('undo').disabled=past.length===0;
@@ -2201,7 +2299,7 @@ function begin(event){
       selectedWaypointKey=waypointKey(marker);
       syncObjectWaypoints();
       const anchor=marker.kind==='exit'
-        ?sculptWorldDraft.portals.find(p=>p.id===marker.portalId)?.trigger?.kind!=='point'
+        ?!marker.door&&sculptWorldDraft.portals.find(p=>p.id===marker.portalId)?.trigger?.kind!=='point'
         :!!sculptWorldArea()?.spawns.find(p=>p.id===marker.spawnId)?.anchor;
       if(anchor){sculptWorldStatus('Ce point appartient à une porte : déplace le bâtiment ou sa porte.');return;}
       waypointDrag={pointerId:event.pointerId,key:selectedWaypointKey,
@@ -2578,7 +2676,7 @@ function stroke(event){
     : sculptHeightAt(strokeUndo,Math.floor(first.x),Math.floor(first.y));
   const options={points:strokePoints,radius:Number($('radius').value),
     shape:$('brush-shape').value,strength:Number($('strength').value),mode:selectedMode,target,
-    edgeSoftness:Number($('edge').value)/100};
+    edgeSoftness:Number($('edge').value)/100,waterMaterialId:waterBrushMaterial()};
   terrain=waterMode ?applySculptWaterStroke(strokeUndo,options):
     applySculptStroke(strokeUndo,options);
   scheduleDraw();
@@ -3286,10 +3384,51 @@ function updateNpcInteraction(){
     placeNpcScreenUi(npc,$('npc-talk'));
   }
 }
+// Editor Tester has no AdventureSession. Capture renders and owns its
+// temporary transaction state; Exploration only hosts the scoped iframe.
+let editorMerchantTestNonce=null;
+function openEditorMerchantTest(actor){
+  const dialog=$('npc-merchant-test-dialog'),frame=$('npc-merchant-test-frame');
+  let owner=null;
+  try{owner=window.parent!==window?window.parent.GensCaptureV2?.status?.().view:null;}catch{}
+  if(!navigationTesting||sculptPlayRequested||!dialog||!frame||
+     !['builder','world'].includes(owner)){
+    status('Pour tester le commerce, ouvre le World Builder depuis Monster Capture.');
+    return;
+  }
+  if(dialog.open)return;
+  const url=new URL('../../assets/gensrpg/capture-v2/adventure.html',window.location.href);
+  if(url.origin!==window.location.origin)return;
+  const universe=new URLSearchParams(window.location.search).get('universe');
+  if(universe)url.searchParams.set('universe',universe);
+  editorMerchantTestNonce=crypto.randomUUID();
+  url.searchParams.set('merchantTest',actor.npc.merchantId);
+  url.searchParams.set('merchantTestNonce',editorMerchantTestNonce);
+  frame.src=url.href;
+  npcDialogueOpen=true;dialog.showModal();updateNpcInteraction();
+}
+$('npc-merchant-test-close')?.addEventListener('click',()=>$('npc-merchant-test-dialog').close());
+$('npc-merchant-test-dialog')?.addEventListener('close',()=>{
+  editorMerchantTestNonce=null;
+  $('npc-merchant-test-frame').removeAttribute('src');
+  npcDialogueOpen=false;updateNpcInteraction();
+});
+window.addEventListener('message',event=>{
+  const frame=$('npc-merchant-test-frame'),dialog=$('npc-merchant-test-dialog');
+  if(!dialog?.open||event.origin!==window.location.origin||
+     event.source!==frame?.contentWindow||!editorMerchantTestNonce||
+     event.data?.schema!=='gensrpg.capture.v2.npc.merchant.test.closed.v1'||
+     event.data.nonce!==editorMerchantTestNonce)return;
+  dialog.close();
+});
 function requestNpcMerchantShop(actor){
   if(!actor?.npc?.merchantId)return;
-  if(!adventureSessionId||window.parent===window){
-    status('Cette boutique est utilisable depuis une partie Monster Capture.');
+  if(!adventureSessionId){
+    openEditorMerchantTest(actor);
+    return;
+  }
+  if(window.parent===window){
+    status('Ouvre cette partie depuis Monster Capture.');
     return;
   }
   window.parent.postMessage({
@@ -3311,11 +3450,14 @@ $('npc-talk')?.addEventListener('click',()=>{
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
   // Missing links are a visible local interaction error, never a fallback shop.
   if(npc.npc.kind==='merchant'&&!canShop)
-    npcDialogueLines.unshift('Aucune boutique associée à ce marchand. Associe une boutique dans l’éditeur PNJ et enregistre la liaison.');
+    npcDialogueLines.unshift('Aucune boutique associée à ce marchand : ouvre sa fiche PNJ, configure ses articles et enregistre. Aucune association séparée nécessaire.');
+  // Do not silently drop the click when this NPC used to offer a duel but
+  // its roster/session/victory conditions now prevent combat.
+  if(trainer&&!canChallenge&&!npcDialogueLines.length)
+    npcDialogueLines.push('Combat indisponible pour ce dresseur.');
   if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
-  if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
   npcDialogueIndex=0;npcDialogueOpen=true;npcDialogueAnchor=npc;
   $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
   renderNpcDialogueStep();
@@ -3338,7 +3480,11 @@ function renderNpcDialogueStep(){
     notice.textContent=offersDuel?'Ce dresseur te propose un duel.':npcDialogueTrainerNotice;
     notice.hidden=hasNextLine||!notice.textContent;
   }
-  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':'Terminer';
+  const offersTrade=!hasNextLine&&npcDialogueMerchant!==null;
+  // The last line leads to the existing merchant request, not a dead end.
+  // Keep the shortcut during multi-line dialogue, never duplicate it at the end.
+  $('npc-dialogue-trade').hidden=!npcDialogueMerchant||offersTrade;
+  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':offersTrade?'🛒 Commercer':'Terminer';
   $('npc-dialogue-close').textContent=offersDuel?'Refuser':'Fermer';
   if(npcDialogueOpen&&!$('npc-dialogue-overlay').hidden)
     requestAnimationFrame(placeActiveNpcDialog);
@@ -3347,9 +3493,10 @@ $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
   npcDialogueIndex+=1;
   if(npcDialogueIndex>=npcDialogueLines.length){
-    const trainer=npcDialogueTrainer;
+    const trainer=npcDialogueTrainer,merchant=npcDialogueMerchant;
     closeNpcDialogue();
     if(trainer)startSculptTrainerBattle(trainer);
+    else if(merchant)requestNpcMerchantShop(merchant);
     updateNpcInteraction();
     return;
   }
@@ -3445,14 +3592,16 @@ function navigationTick(time){
       }
     }
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
-      navInputElapsedMs+=elapsed;
       const previousX=navActor.x,previousY=navActor.y;
       const world=navigationWorld(),context=navigationContext();
       // Critical V21: retain elapsed time during dropped frames, but apply
       // movement with short steps so Collision World still stops cliffs/water.
-      for(const dt of sculptNavigationFrameSteps(elapsed))
+      // Measure the actual capped simulation steps, not discarded RAF time.
+      for(const dt of sculptNavigationFrameSteps(elapsed)){
+        navInputElapsedMs+=dt*1000;
         stepMovement(world,navActor,intent,dt,
           {maxSpeed:navSpeed()*intent.speedMultiplier},undefined,context);
+      }
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navMetricDistance+=moved;
       navBlocked=moved<.001;
@@ -3883,9 +4032,10 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
     kind:object.kind,width,height,footOffset:artShift,
     pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
+    lighting:currentSculptLighting(),objectAngle:rect.angle,flipX:object.transform?.flipX===true,
     shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
       ($('object-shadow-scope').value==='object'?
-        readSelectedObjectShadowControlsV1():sharedShadow):sharedShadow
+        (readSelectedObjectShadowControlsV1()??modelShadow):sharedShadow):sharedShadow
   });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
@@ -3960,6 +4110,44 @@ function refreshObjectVariants(preferred=null){
     $('object-variant').value=wanted;
   }
 }
+function currentSculptLighting(){
+ return sculptLightingPreview!==undefined?sculptLightingPreview:
+  (sculptWorldDraft?sculptWorldDraft.lighting??null:sculptStandaloneLighting);
+}
+const lightingFieldNames=Object.keys(WORLD_LIGHTING_DEFAULT_V1);
+function syncSculptLightingControls(){
+ if(!$('world-light-enabled'))return;
+ const l=currentSculptLighting(),values=l??WORLD_LIGHTING_DEFAULT_V1;
+ $('world-light-enabled').checked=!!l;$('world-light-fields').hidden=!l;
+ for(const name of lightingFieldNames){const input=$('world-light-'+name);
+  if(input.type==='checkbox')input.checked=values[name];else input.value=String(values[name]);
+  const output=$('world-light-'+name+'-value');if(output)output.textContent=input.value+(name.endsWith('Deg')?'°':name.endsWith('Pct')?' %':'');
+ }
+}
+function readSculptLightingControls(){
+ const raw={enabled:$('world-light-enabled').checked};
+ for(const name of lightingFieldNames){const input=$('world-light-'+name);
+  raw[name]=input.type==='checkbox'?input.checked:input.type==='range'?Number(input.value):input.value;
+  const output=$('world-light-'+name+'-value');if(output)output.textContent=input.value+(name.endsWith('Deg')?'°':name.endsWith('Pct')?' %':'');
+ }
+ return normalizeWorldLightingV1(raw);
+}
+function commitSculptLighting(next){
+ if(sculptPlayActive)return;
+ sculptLightingPreview=undefined;
+ if(sculptWorldDraft)sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,lighting:next});
+ else sculptStandaloneLighting=next;
+ syncSculptLightingControls();scheduleDraw();
+}
+if($('world-light-enabled')){
+ $('world-light-enabled').addEventListener('change',()=>commitSculptLighting(readSculptLightingControls()));
+ for(const name of lightingFieldNames){const input=$('world-light-'+name);
+  input.addEventListener('input',()=>{if(sculptPlayActive)return;sculptLightingPreview=readSculptLightingControls();scheduleDraw();});
+  input.addEventListener('change',()=>commitSculptLighting(readSculptLightingControls()));
+ }
+ $('world-light-reset').addEventListener('click',()=>commitSculptLighting(null));
+ syncSculptLightingControls();
+}
 function currentWorldShadowProfiles(){
  return sculptWorldDraft?(sculptWorldDraft.objectShadowProfiles??[]):sculptStandaloneShadowProfiles;
 }
@@ -4005,7 +4193,8 @@ function readSelectedObjectShadowControlsV1(){
   heightPct:Number($('object-shadow-height').value),
   offsetXPct:Number($('object-shadow-x').value),
   offsetYPct:Number($('object-shadow-y').value),
-  opacityPct:Number($('object-shadow-opacity').value)
+  opacityPct:Number($('object-shadow-opacity').value),
+  rotationDeg:Number($('object-shadow-rotation').value)
  });
 }
 function refreshSelectedObjectShadowControlsV1(selected){
@@ -4035,11 +4224,11 @@ function refreshSelectedObjectShadowControlsV1(selected){
  $('object-shadow-mode').value=shadow?'custom':'auto';
  for(const [control,key] of [
   ['width','widthPct'],['height','heightPct'],['x','offsetXPct'],
-  ['y','offsetYPct'],['opacity','opacityPct']
+  ['y','offsetYPct'],['opacity','opacityPct'],['rotation','rotationDeg']
  ]){
   const input=$('object-shadow-'+control);
-  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]);
-  $('object-shadow-'+control+'-value').textContent=input.value+' %';
+  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]??0);
+  $('object-shadow-'+control+'-value').textContent=input.value+(control==='rotation'?'°':' %');
  }
  $('object-shadow-fields').hidden=!shadow;
  $('object-shadow-summary').textContent=(model?'Modèle · ':'')+(shadow?'Personnalisée':(!model&&modelValue?'Héritée du modèle':'Auto'));
@@ -4466,18 +4655,55 @@ function npcCreatureName(creatureId){
   return npcOfficialCreatures.find(creature=>creature.id===creatureId)?.name??
     'Créature non trouvée dans le bestiaire officiel';
 }
-function npcMerchantPickerRefresh(){
-  const picker=$('npc-merchant-picker');if(!picker)return;
-  const npc=npcSelectedActor()?.npc,selected=npc?.merchantId??'';
-  const found=npcMerchantChoices.some(shop=>shop.id===selected);
-  picker.replaceChildren(new Option('Aucune boutique associée',''),
-    ...npcMerchantChoices.map(shop=>new Option(shop.name,shop.id)));
-  if(selected&&!found)
-    picker.append(new Option('Boutique précédente indisponible (liaison conservée)',selected));
-  picker.value=selected;
-  picker.disabled=!npcSelectedActor()||!npcMerchantChoices.length;
-  $('npc-merchant-clear').disabled=!npcSelectedActor()||!selected;
+function npcMerchantEditorRefresh(){
+  const button=$('npc-merchant-configure');if(!button)return;
+  const selected=npcSelectedActor();
+  button.disabled=!selected||selected.npc?.kind!=='merchant';
+  if(!npcMerchantEditorContext)$('npc-merchant-status').textContent=
+    selected?.npc?.merchantId?'Modifier les articles, tarifs et stocks de ce PNJ.':
+    'Configure les articles de ce PNJ directement ici.';
 }
+function closeMapMerchantEditor(){
+  npcMerchantEditorContext=null;
+  const holder=$('npc-merchant-inline'),frame=$('npc-merchant-frame');
+  if(holder)holder.hidden=true;
+  if(frame?.getAttribute('src'))frame.src='about:blank';
+  npcMerchantEditorRefresh();
+}
+function openMapMerchantEditor(){
+  const actor=npcSelectedActor(),frame=$('npc-merchant-frame');
+  if(!actor||actor.npc?.kind!=='merchant'||!frame)return;
+  if(window.parent===window){status('Ouvre ce World Builder depuis Monster Capture pour configurer ce PNJ.');return;}
+  // Reserve the reference in the existing placement, using the normal ID
+  // generator. Reopening after interruption cannot mint a competing shop.
+  const merchantId=actor.npc.merchantId||'merchant-'+crypto.randomUUID();
+  if(!actor.npc.merchantId)npcApplyAuthoringPatch({merchantId});
+  if(npcSelectedActor()?.npc?.merchantId!==merchantId)return;
+  const url=new URL('../../assets/gensrpg/capture-v2/adventure.html',window.location.href);
+  if(url.origin!==window.location.origin)return;
+  const universe=new URLSearchParams(window.location.search).get('universe');
+  if(universe)url.searchParams.set('universe',universe);
+  const nonce=crypto.randomUUID();
+  npcMerchantEditorContext={actorId:actor.id,merchantId,nonce,areaId:sculptWorldAreaId,interiorId:activeInteriorId};
+  for(const [key,value] of Object.entries({editor:'merchant',embed:'npc',npcBridgeNonce:nonce,
+    npcId:actor.id,npcName:actor.npc.name||'Marchand',merchantId}))url.searchParams.set(key,value);
+  $('npc-merchant-inline').hidden=false;
+  frame.src=url.href;
+  $('npc-merchant-status').textContent='Choisis les articles et enregistre les paramètres de ce PNJ.';
+}
+window.addEventListener('message',event=>{
+  const context=npcMerchantEditorContext,data=event.data;
+  if(!context||event.origin!==window.location.origin||
+    event.source!==$('npc-merchant-frame')?.contentWindow||
+    data?.schema!=='gensrpg.capture.v2.npc.merchant.saved.v1'||
+    data.nonce!==context.nonce||data.npcId!==context.actorId||
+    data.merchantId!==context.merchantId||sculptWorldAreaId!==context.areaId||
+    activeInteriorId!==context.interiorId)return;
+  const actor=npcSelectedActor();
+  if(actor?.id!==context.actorId||actor.npc?.merchantId!==context.merchantId)return;
+  $('npc-merchant-status').textContent='Articles et tarifs enregistrés. Enregistre la carte comme d’habitude.';
+  status('Marchand configuré dans sa fiche, sans association de boutique séparée.');
+});
 function npcRewardCatalogRefresh(){
  const picker=$('npc-reward-item');
  if(!picker)return;
@@ -4525,36 +4751,8 @@ function requestNpcRewardCatalog(){
  },window.location.origin);
  $('npc-reward-status').textContent='Lecture des objets depuis Monster Capture…';
 }
-function requestNpcMerchantCatalog(){
-  if(!$('npc-merchant-picker'))return;
-  if(window.parent===window){
-    $('npc-merchant-status').textContent=
-      'Ouvre cet éditeur depuis Monster Capture dans GenSRPG pour choisir une boutique.';
-    return;
-  }
-  npcMerchantRequestId=crypto.randomUUID();
-  window.parent.postMessage({
-    schema:'gensrpg.exploration.npc.merchant.catalog.request.v1',
-    requestId:npcMerchantRequestId
-  },window.location.origin);
-  $('npc-merchant-status').textContent='Lecture des marchands depuis Monster Capture…';
-}
 window.addEventListener('message',event=>{
   if(event.origin!==window.location.origin||event.source!==window.parent)return;
-  if(event.data?.schema==='gensrpg.capture.v2.npc.merchant.catalog.response.v1'&&
-     event.data.requestId===npcMerchantRequestId){
-    npcMerchantRequestId=null;
-    const incoming=event.data.merchants;
-    npcMerchantChoices=Object.freeze(Array.isArray(incoming)?
-      incoming.filter(shop=>typeof shop?.id==='string'&&
-        /^[a-z0-9][a-z0-9_:.-]{0,119}$/i.test(shop.id)&&
-        typeof shop.name==='string'&&shop.name.length>0&&shop.name.length<=80)
-        .map(shop=>Object.freeze({id:shop.id,name:shop.name})):[]);
-    $('npc-merchant-status').textContent=event.data.error
-      ?'Catalogue indisponible : '+String(event.data.error).slice(0,150)
-      :npcMerchantChoices.length+' marchand(s) disponibles depuis Monster Capture.';
-    npcMerchantPickerRefresh();
-  }
   if(event.data?.schema==='gensrpg.capture.v2.npc.reward.catalog.response.v1'&&
      npcRewardRequestId&&event.data.requestId===npcRewardRequestId){
     npcRewardRequestId=null;
@@ -4625,6 +4823,7 @@ function npcApplyAuthoringPatch(patch){
 }
 function closeNpcAuthoringDialog(){
   const dialog=$('npc-authoring-dialog');
+  closeMapMerchantEditor();
   if(dialog?.open)dialog.close();
 }
 function openNpcAuthoringDialog(){
@@ -4649,7 +4848,8 @@ function npcRoleEditorRefresh(){
   }
   const flee=$('npc-trainer-allow-flee');
   if(flee){flee.checked=npc?.allowFlee!==false;flee.disabled=!selected;}
-  npcMerchantPickerRefresh();
+  if(npcMerchantEditorContext&&npcMerchantEditorContext.actorId!==selected?.id)closeMapMerchantEditor();
+  npcMerchantEditorRefresh();
   npcRewardCatalogRefresh();
   const roster=npc?.trainerRoster??[];
   $('npc-team-summary').textContent=!selected
@@ -4963,13 +5163,9 @@ function applyActorAtCell(cell){
   }
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
-$('npc-merchant-reload')?.addEventListener('click',requestNpcMerchantCatalog);
-$('npc-merchant-picker')?.addEventListener('change',()=>{
-  npcApplyAuthoringPatch({merchantId:$('npc-merchant-picker').value});
-});
-$('npc-merchant-clear')?.addEventListener('click',()=>{
-  npcApplyAuthoringPatch({merchantId:''});
-});
+$('npc-merchant-configure')?.addEventListener('click',openMapMerchantEditor);
+$('npc-merchant-close')?.addEventListener('click',closeMapMerchantEditor);
+$('npc-authoring-dialog')?.addEventListener('close',closeMapMerchantEditor);
 for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-dialogue','npc-trainer-engagement','npc-trainer-allow-flee','npc-wild-creature','npc-wild-level']){
   $(id)?.addEventListener('change',()=>{
     try{editSelectedActor({npc:npcSettingsFromControls()});}
@@ -5061,7 +5257,6 @@ window.__sculptActorsProbe=()=>Object.freeze({
 loadCaptureActorCatalog();
 loadNpcOfficialCreatureChoices();
 $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatureChoices();});
-requestNpcMerchantCatalog();
 requestNpcRewardCatalog();
 function setObjectEditing(active,{waypoints=false}={}){
   if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
@@ -5188,10 +5383,10 @@ $('object-shadow-mode').addEventListener('change',()=>{
  $('object-shadow-summary').textContent=$('object-shadow-mode').value==='custom'?'Personnalisée':'Auto';
  applySelectedShadowControl();
 });
-for(const id of ['width','height','x','y','opacity']){
+for(const id of ['width','height','x','y','opacity','rotation']){
  const input=$('object-shadow-'+id);
  input.addEventListener('input',()=>{
-  $('object-shadow-'+id+'-value').textContent=input.value+' %';
+  $('object-shadow-'+id+'-value').textContent=input.value+(id==='rotation'?'°':' %');
   scheduleDraw();
  });
  input.addEventListener('change',applySelectedShadowControl);
@@ -5500,6 +5695,20 @@ $('material').addEventListener('change',()=>{
   setTheme();
 });
 $('water-material').addEventListener('change',setWaterMaterial);
+function syncLivingWaterControls(){
+ if(!livingWaterControls)return;
+ $('water-fps').value=String(terrain.waterAnimationFps??8);$('water-foam').value=String(terrain.waterFoamPct??60);
+ $('water-fps-value').textContent=$('water-fps').value+' FPS';$('water-foam-value').textContent=$('water-foam').value+' %';
+}
+if(livingWaterControls){
+ for(const [id,suffix] of [['water-fps',' FPS'],['water-foam',' %']]){
+  $(id).addEventListener('input',()=>{$(id+'-value').textContent=$(id).value+suffix;});
+  $(id).addEventListener('change',()=>{if(sculptPlayActive)return;const previous=terrain;
+   terrain=setSculptWaterAnimation(terrain,{fps:Number($('water-fps').value),foamPct:Number($('water-foam').value)});
+   commitUndo(previous);syncLivingWaterControls();scheduleDraw();});
+ }
+ syncLivingWaterControls();
+}
 $('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('show-water').addEventListener('change',()=>toggleRibbon('water'));
@@ -5839,9 +6048,10 @@ function captureSculptArea(){
   return {terrain,objects:placedObjects,actors:placedActors,surface,
     ...(!sculptWorldDraft&&sculptStandaloneShadowProfiles.length
       ?{objectShadowProfiles:sculptStandaloneShadowProfiles}:{}),
+    ...(!sculptWorldDraft&&sculptStandaloneLighting?{lighting:sculptStandaloneLighting}:{}),
     ...(decorativeFringe?{decorativeFringe}:{})};
 }
-function mountSculptArea(snapshot){
+function mountSculptArea(snapshot,{preserveSharedLighting=false}={}){
   // One read-only presentation label; WorldArea/WorldSurface remains sole
   // source of the loaded map and gameplay settings.
   if($('sculpt-map-preset-loaded'))
@@ -5854,7 +6064,11 @@ function mountSculptArea(snapshot){
   if(!sculptWorldDraft&&(!activeInteriorId||snapshot.objectShadowProfiles!==undefined))
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
       snapshot.objectShadowProfiles);
-  if(!sculptWorldDraft){shadowProfileHistory=[];shadowProfileRedo=[];}
+  if(!sculptWorldDraft){shadowProfileHistory=[];shadowProfileRedo=[];
+    if(!preserveSharedLighting&&(!activeInteriorId||snapshot.lighting!==undefined))
+      sculptStandaloneLighting=normalizeWorldLightingV1(snapshot.lighting);
+  }
+  sculptLightingPreview=undefined;syncSculptLightingControls();
   decorativeFringe=snapshot.decorativeFringe??null;
   fringeEditing=false;fringeGesture=null;fringeHistory=[];fringeRedo=[];
   fringeRasterCache.clear();
@@ -5885,6 +6099,8 @@ function updateSculptAreaControls(){
   const worldInterior=!entry&&sculptWorldCurrentInterior();
   const inInterior=!!entry||worldInterior;
   $('interior-area-bar').hidden=!inInterior;
+  if(interiorToolsToggle)interiorToolsToggle.hidden=!inInterior;
+  if(!inInterior)setInteriorInspectorOpen(false);
   $('interior-area-return').textContent=worldInterior&&
     !worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId)
       ?'🌍 Retour au Monde':'← Retour extérieur';
@@ -5992,13 +6208,13 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   }
   if(nextAreaId===SCULPT_EXTERIOR_AREA_ID){
     if(!outsideAreaSnapshot)throw Error('Extérieur non chargé');
-    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot);
+    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot,{preserveSharedLighting:true});
     outsideAreaSnapshot=null;
   }else{
     const entry=sculptInteriors.find(e=>e.area.id===nextAreaId);
     if(!entry)throw Error('Intérieur introuvable');
     activeInteriorId=entry.area.id;
-    mountSculptArea(entry);
+    mountSculptArea(entry,{preserveSharedLighting:true});
   }
   updateSculptAreaControls();refreshSculptEncounterEditor();fit();
   if(wasTesting){
@@ -6269,7 +6485,7 @@ $('scene-export').addEventListener('click',()=>{
       outdoors.objects,outdoors.surface,outdoors.actors,{
         encounterConfig:sculptEncounterConfig,
         exteriorEncounters:sculptExteriorEncounters
-      },currentWorldShadowProfiles()));
+      },currentWorldShadowProfiles(),currentSculptLighting()));
   }catch(error){
     status('Export bloqué : '+error.message);
     return;
@@ -6303,6 +6519,7 @@ $('import').addEventListener('click',()=>{
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;
   if(!sculptWorldDraft){
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(imported.objectShadowProfiles);
+    sculptStandaloneLighting=normalizeWorldLightingV1(imported.lighting);sculptLightingPreview=undefined;syncSculptLightingControls();
     shadowProfileHistory=[];shadowProfileRedo=[];
   }
   updateObjectCount();syncObjectSelectedControls();
@@ -6439,7 +6656,7 @@ function syncObjectWaypoints(){
   const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{testing:false,showHidden:true});
   const selected=$('object-waypoint-select'),old=selectedWaypointKey??selected.value;
   selected.replaceChildren(...markers.map(marker=>{
-    const label=marker.kind==='exit'?'🟡 Sortie vers '+marker.label:
+    const label=marker.kind==='exit'?(marker.door?'🚪 Entrée / sortie · ':'🟡 Sortie vers ')+marker.label:
       marker.isInitial?'🟣 Départ du monde':'🔵 Arrivée depuis '+marker.label;
     return new Option(label,waypointKey(marker));
   }));
@@ -6454,6 +6671,7 @@ function syncObjectWaypoints(){
       portal.visual.marker==='shadow'?'shadow':
       portal.visual.marker==='texture'?'texture':'ring';
     $('object-waypoint-marker-mode').value=mode;
+    $('object-waypoint-marker-radius').value=String(portal.trigger.radius);
     $('object-waypoint-marker-texture-row').hidden=mode!=='texture';
     const texture=$('object-waypoint-marker-texture');
     const preferred=portal?.visual?.textureMaterialId;
@@ -6472,7 +6690,7 @@ function syncObjectWaypoints(){
       ?'✕ Annuler le placement':'📍 Placer le repère sur la carte';
   $('object-waypoint-place').disabled=!current||
     (current.kind==='exit'
-      ?sculptWorldDraft.portals.find(p=>p.id===current.portalId)?.trigger?.kind!=='point'
+      ?!current.door&&sculptWorldDraft.portals.find(p=>p.id===current.portalId)?.trigger?.kind!=='point'
       :!!sculptWorldArea()?.spawns.find(p=>p.id===current.spawnId)?.anchor);
   $('object-waypoint-destination').disabled=current?.kind!=='exit';
   // Every incoming Portal is selectable, even when historical maps reused
@@ -6540,7 +6758,7 @@ function refreshSculptWorldPanel(){
   }));
   if(choices.some(p=>p.id===previous))portalSelect.value=previous;
   const portal=currentWorldPortal(),hasPortal=!!portal;
-  const portalIsFree=hasPortal&&portal.trigger.kind==='point';
+  const portalIsFree=hasPortal&&(portal.trigger.kind==='point'||!!buildingDoorCounterpart(sculptWorldDraft,portal));
   for(const id of ['world-area-portal-place','world-area-portal-save',
     'world-area-portal-x','world-area-portal-y'])$(id).disabled=!portalIsFree;
   for(const id of ['world-area-portal-label','world-area-portal-label-save'])
@@ -6554,10 +6772,9 @@ function refreshSculptWorldPanel(){
       (portalIsFree?' · position libre':' · passage attaché à une porte')
     :'Aucun passage ici. Choisis une carte de destination, puis place la sortie sur le terrain.';
   $('world-area-edit-destination').disabled=!destination;
-  $('world-area-portal-x').value=portal?.trigger.kind==='point'?
-    String(Math.round(portal.trigger.x)):'';
-  $('world-area-portal-y').value=portal?.trigger.kind==='point'?
-    String(Math.round(portal.trigger.y)):'';
+  const waypoint=portalIsFree?resolvePortalWaypoint(sculptWorldDraft,portal):null;
+  $('world-area-portal-x').value=waypoint?String(waypoint.x):'';
+  $('world-area-portal-y').value=waypoint?String(waypoint.y):'';
   $('world-area-portal-label').value=portal?.visual?.label??'';
   const spawnOptions=describeWorldAreaSpawnsForEditorV1(sculptWorldDraft,sculptWorldAreaId);
   const selector=$('world-area-spawn-select'),selected=selector.value;
@@ -6608,13 +6825,15 @@ function validSculptWorldAuthoringPoint(point){
 function commitSculptWorldPortal(point){
   const portal=currentWorldPortal();
   if(!portal)throw Error('Aucun passage à placer dans cette zone');
-  if(portal.trigger.kind!=='point')
+  if(portal.trigger.kind!=='point'&&!buildingDoorCounterpart(sculptWorldDraft,portal))
     throw Error('Ce passage est ancré à une porte : modifie son bâtiment propriétaire');
+  const existingPoint=resolvePortalWaypoint(sculptWorldDraft,portal);
+  if(existingPoint&&point.x===existingPoint.x&&point.y===existingPoint.y)return;
   const position=validSculptWorldAuthoringPoint(point);
   sculptWorldDraft=placeSculptWorldPortal(sculptWorldDraft,portal.id,position);
   refreshSculptWorldPanel();
   sculptWorldStatus('Sortie enregistrée à X '+position.x+', Y '+position.y+
-    ' · destination et arrivée inchangées.');
+    (buildingDoorCounterpart(sculptWorldDraft,portal)?' · même point pour le retour.':' · destination et arrivée inchangées.'));
 }
 function commitSculptWorldSpawn(point){
   const spawn=selectedWorldSpawn();
@@ -6742,7 +6961,11 @@ function updateSculptWorldPortalAction(){
       }
       return;
     }
-    button.hidden=true; // Real crossing enters on contact; no second click.
+    if(isManualBuildingPortal(sculptWorldDraft,portal)){
+      button.hidden=false;button.disabled=false;
+      button.textContent=target.kind==='interior'?'🚪 Entrer':'🚪 Sortir';
+      button.title='Clique pour franchir cette porte';
+    }else button.hidden=true; // Inter-map crossing remains automatic.
     return;
   }else{
     button.hidden=true;
@@ -6771,7 +6994,7 @@ function drawSculptWorldPortalMarkers(){
     const viewY=y-level*SCULPT_TILE.rise;
     const exit=marker.kind==='exit',arrival=marker.kind==='arrival'&&!marker.isInitial;
     const color=exit&&!marker.visibleInPlay?'#93a2ae':exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
-    const title=exit&&!marker.visibleInPlay?'SORTIE MASQUÉE → ':exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
+    const title=marker.door?'PORTE · ':exit&&!marker.visibleInPlay?'SORTIE MASQUÉE → ':exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
     const name=(marker.label??'').slice(0,35);
     const caption=title+name;
     // Authoring still shows the real hitbox; Jouer only shows the chosen art.
@@ -7319,6 +7542,7 @@ function installSculptWorldAreaEditing(){
   $('world-area-portal-panel').hidden=false;
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
+  $('new-map-toggle').textContent='🗺 Réinitialiser carte';
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
   // This is a *download*, never a second saved world, autosave key or
   // alternative Portal graph. Even an invalid Portal must not cost an hour
@@ -7414,12 +7638,14 @@ function installSculptWorldAreaEditing(){
       const mode=$('object-waypoint-marker-mode').value;
       sculptWorldDraft=setSculptWorldPortalAppearance(sculptWorldDraft,
         selectedWaypointKey.slice(7),{
-          mode,textureMaterialId:$('object-waypoint-marker-texture').value
+          mode,textureMaterialId:$('object-waypoint-marker-texture').value,
+          radius:Number($('object-waypoint-marker-radius').value)
         });
       refreshSculptWorldPanel();scheduleDraw();
       sculptWorldStatus('Apparence enregistrée : '+(mode==='hidden'?'invisible en jeu':
         mode==='shadow'?'ombre noire':mode==='texture'?'texture du catalogue':'cercle classique')+
-        '. Le passage automatique reste actif.');
+        (isManualBuildingPortal(sculptWorldDraft,sculptWorldDraft.portals.find(p=>p.id===selectedWaypointKey.slice(7)))
+          ?'. Passage manuel à proximité.':'. Le passage automatique reste actif.'));
     }catch(error){sculptWorldStatus(error.message,true);}
   });
   $('object-waypoint-select').addEventListener('change',()=>{
@@ -7544,9 +7770,12 @@ function installSculptWorldAreaEditing(){
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
-      // Read-only editor focus: the real destination remains the existing
-      // Portal.targetSpawnId in the document du monde, not a new arrival marker.
-      url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
+      // Editor focus only: the paired door is the effective arrival owner.
+      const reverse=buildingDoorCounterpart(sculptWorldDraft,portal);
+      url.searchParams.delete('arrivalPortalId');
+      url.searchParams.delete('arrivalSpawnId');
+      if(reverse)url.searchParams.set('arrivalPortalId',reverse.id);
+      else url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
       window.location.assign(url.href);
     }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
   });
@@ -7592,9 +7821,18 @@ function installSculptWorldAreaEditing(){
   },{once:true});
   try{
     mountWorldSculptArea(transfer.areaId);
-    const arrivalId=new URL(window.location.href).searchParams.get('arrivalSpawnId');
+    const arrivalParams=new URL(window.location.href).searchParams;
+    const arrivalId=arrivalParams.get('arrivalSpawnId');
+    const arrivalPortal=worldOutboundPortals().find(p=>p.id===arrivalParams.get('arrivalPortalId')&&buildingDoorCounterpart(sculptWorldDraft,p));
     const selectedArrival=sculptWorldArea().spawns.find(p=>p.id===arrivalId);
-    if(selectedArrival&&!selectedArrival.anchor){
+    if(arrivalPortal){
+      $('world-area-portal-select').value=arrivalPortal.id;
+      selectedWaypointKey='portal:'+arrivalPortal.id;
+      sculptWorldPortalPlacement='portal';
+      $('world-area-portal-panel').open=false;
+      refreshSculptWorldPanel();
+      sculptWorldStatus('Touche le terrain pour déplacer le repère partagé de la porte (entrée et sortie).');
+    }else if(selectedArrival&&!selectedArrival.anchor){
       $('world-area-spawn-select').value=selectedArrival.id;
       sculptWorldPortalPlacement='spawn';
       $('world-area-portal-panel').open=false;

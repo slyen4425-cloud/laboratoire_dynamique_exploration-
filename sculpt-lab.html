@@ -241,7 +241,7 @@ body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset
 /* Compact native shadow settings, collapsed by default and touch-friendly. */
 #object-shadow-details{border:1px solid #4f8980;border-radius:9px;
  background:#173840ab;padding:5px 7px;min-width:0}
-#object-shadow-details[hidden],#object-shadow-fields[hidden]{display:none!important}
+#object-shadow-details[hidden],#object-shadow-fields[hidden],#world-light-fields[hidden]{display:none!important}
 #object-shadow-details summary{cursor:pointer;min-height:34px;display:flex;
  align-items:center;gap:5px;font-weight:750;touch-action:manipulation}
 #object-shadow-details summary::marker{color:#92e7ce}
@@ -441,14 +441,16 @@ body.terrain-ramp-authoring .precision-toggle{display:none!important}
 body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
 /* Door interaction belongs to the PLAYFIELD, not the editor's options HUD. */
 #navigation-area-door.in-game-door-action{position:absolute;z-index:19;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
-  right:calc(env(safe-area-inset-right,0px) + 16px);
+  /* In Tester the hero is camera-centered: keep the interaction directly
+     below the hero, rather than in the distant bottom-right control corner. */
+  top:62%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);
+  max-width:min(280px,84%);text-align:center;
   min-height:54px;min-width:174px;padding:10px 16px;
   border:2px solid #ecc58c;border-radius:14px;
   background:rgba(52,34,22,.95);color:#fff5df;font-size:1rem;font-weight:850;
   box-shadow:0 5px 22px #000a;touch-action:manipulation}
 #navigation-area-door[hidden]{display:none!important}
-body.sculpt-immersive #navigation-area-door{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+body.sculpt-immersive #navigation-area-door.in-game-door-action{top:62%;left:50%;right:auto;bottom:auto}
 .interior-wall-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
 .interior-wall-tools strong{flex:1 1 100%}
 .interior-wall-tools button{flex:1 1 100px}
@@ -457,8 +459,12 @@ body.interior-wall-authoring .sculpt-quickbar>.quick-tool-label,
 body.interior-wall-authoring .sculpt-quickbar>.quick-size,
 body.interior-wall-authoring .sculpt-quickbar>.quick-level{display:none!important}
 body.sculpt-immersive .interior-wall-tools{grid-column:1/-1}
-@media(max-width:600px){#navigation-area-door.in-game-door-action{min-width:144px;min-height:50px;
- right:8px;bottom:12px;padding:8px;font-size:.88rem}}
+@media(max-width:600px){
+ #navigation-area-door.in-game-door-action,
+ body.sculpt-immersive #navigation-area-door.in-game-door-action{
+  min-width:144px;min-height:50px;top:43%;left:50%;right:auto;bottom:auto;
+  padding:8px 12px;font-size:.88rem}
+}
 /* V79 R3A2: interior construction tools stay compact and finger-friendly. */
 .interior-door-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%}
 .interior-door-tools strong{width:100%;font-size:.82rem}
@@ -619,15 +625,15 @@ body.world-area-editing .world-area-portal-panel:not([open]){
 .world-area-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 #world-area-portal-status{color:#b2ece2;line-height:1.4;font-size:.7rem}
 #world-portal-traverse{
- z-index:22;right:7px;left:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 77px);
- width:auto;max-width:220px;
+ z-index:22;top:62%;left:50%;right:auto;bottom:auto;
+ transform:translate(-50%,-50%);width:auto;max-width:min(280px,84%);
 }
 /* Traversal action must be on the 2.5D playfield, not in document flow.
    Reuse the original interior door styling without adding an alternate hitbox. */
 #world-portal-traverse.in-game-door-action{
- position:absolute;z-index:22;right:calc(env(safe-area-inset-right,0px) + 9px);
- bottom:calc(env(safe-area-inset-bottom,0px) + 77px);
- min-height:48px;max-width:min(220px,48vw);padding:8px 11px;
+ position:absolute;z-index:22;top:62%;left:50%;right:auto;bottom:auto;
+ transform:translate(-50%,-50%);text-align:center;
+ min-height:48px;max-width:min(280px,84%);padding:8px 11px;
  border:2px solid #ecc58c;border-radius:12px;
  background:#352719f5;color:#fff5df;font-weight:800;font-size:.78rem;
  touch-action:manipulation;box-shadow:0 5px 20px #000a;
@@ -720,7 +726,9 @@ body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([o
 
 #sculpt-map-preset-import{max-width:100%}
 @media(max-width:720px){
- #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
+ #world-portal-traverse.in-game-door-action{
+  top:43%;left:50%;right:auto;bottom:auto;
+  max-width:84%;font-size:.78rem;min-height:48px}
  #sculpt-map-preset-panel{width:min(205px,calc(100% - 16px))}
 }
 /* The header intentionally disappears in immersive test. This independently
@@ -1011,6 +1019,43 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  #surface-palette .surface-settings-group>summary{padding:7px}
  #sculpt-encounter-editor{width:min(245px,58vw);max-height:70dvh}
 }
+
+/* The quickbar is the sole visible terrain/water mode picker. Existing
+   data-mode buttons remain the option registry read by syncQuickToolbar;
+   the frozen V80 HTML is unchanged. Reset and precise levels stay in Atelier. */
+#sculpt-settings #ground-tools>button[data-mode],
+#sculpt-settings #water-tools>button[data-mode]{display:none!important}
+#sculpt-settings .sculpt-tool-group:has(> .sculpt-tool-group-content > .tool-panel[hidden]){display:none}
+/* Interior is an independent, contextual inspector, not a terrain quickbar.
+   One scroll container, no cloned commands. */
+#interior-tools-toggle[hidden]{display:none!important}
+.editor-switch #interior-tools-toggle{flex:0 0 auto;min-width:0;white-space:nowrap;font-size:.83rem}
+#interior-tools-toggle[aria-expanded="true"]{background:#28646b;border-color:#9be9db}
+#interior-area-bar,body.sculpt-immersive #interior-area-bar{
+ position:fixed;z-index:125;top:calc(env(safe-area-inset-top,0px) + 56px);
+ left:calc(env(safe-area-inset-left,0px) + 8px);right:auto;
+ width:min(350px,calc(100vw - 20px));max-height:calc(100dvh - 68px);
+ box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;
+ padding:8px;gap:6px;box-shadow:0 10px 30px #0009;
+}
+#interior-area-bar:not(:has(#interior-controls-details[open])),
+body.sculpt-play-mode #interior-area-bar,body.navigation-testing #interior-area-bar,
+body.world-area-unavailable #interior-area-bar{display:none!important}
+#interior-controls-details>summary{padding:6px 8px}
+#interior-controls-details .interior-controls-fields{max-height:none;overflow:visible}
+#interior-area-bar .interior-controls-fields select{max-width:100%;min-width:0}
+@media(max-height:550px){
+ #interior-area-bar,body.sculpt-immersive #interior-area-bar{width:min(310px,48vw);max-height:calc(100dvh - 65px)}
+}
+
+/* Compact interior groups: native accordion, one visible section at a time. */
+#interior-area-bar .interior-controls-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;padding:6px}
+.interior-tool-group{min-width:0;border:1px solid #766b56;border-radius:6px}
+.interior-tool-group>summary{cursor:pointer;padding:8px;min-height:28px;font-weight:750;box-sizing:border-box}
+.interior-tool-group>section,.interior-tool-group>.interior-tool-fields{box-sizing:border-box;padding:7px;min-width:0;max-width:100%}
+.interior-tool-fields{display:grid;gap:7px}
+.interior-tool-fields>label{display:grid;gap:4px;min-width:0}
+.interior-tool-group:has(>section[hidden]){display:none!important}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
@@ -1062,7 +1107,8 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
-<button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
+<button type="button" id="interior-tools-toggle" hidden aria-expanded="false" aria-controls="interior-controls-details">🏠 Intérieur</button>
+ <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
 <button type="button" id="mode-waypoints" aria-controls="waypoints-palette" aria-pressed="false" title="Placer les départs, entrées et sorties sur la carte">📍 Passages</button>
 <button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
 <button type="button" id="mode-encounters" aria-pressed="false" aria-controls="sculpt-encounter-editor">🐾 Rencontres</button>
@@ -1104,48 +1150,18 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  <span id="ramp-step">1. Touche le pied de la pente, puis le sommet.</span>
  <button id="ramp-cancel" type="button" disabled>Changer le pied</button>
 </div>
+
+</section>
+<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
+
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
  <button id="interior-area-return" type="button">← Retour extérieur</button>
  <details id="interior-controls-details" class="interior-controls-details">
   <summary>🧱 Aménager l’intérieur · murs, étages, porte et sol</summary>
   <div class="interior-controls-fields">
- <section class="interior-floor-tools" aria-label="Étages du bâtiment">
-  <strong>🪜 Étages liés</strong>
-  <label>Étage actif <select id="interior-level-select"><option value="0">Rez-de-chaussée</option></select></label>
-  <button id="interior-level-add" type="button">+ Ajouter un étage</button>
-  <label>Passage <select id="interior-connector-link" aria-label="Niveau à relier"><option value="">Créer un étage d'abord</option></select></label>
-  <label>Escalier ou échelle <select id="interior-connector-asset">
-    <option value="stairs.wood">Escalier bois</option>
-    <option value="stairs.stone">Escalier pierre</option>
-    <option value="ladder.wood">Échelle bois</option>
-  </select></label>
-  <label>Orientation <output id="interior-connector-rotation-value">0°</output>
-    <input id="interior-connector-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Orientation de l’escalier ou de l’échelle en degrés">
-  </label>
-  <div class="object-actions">
-    <button id="interior-connector-turn-left" type="button">↶ 45°</button>
-    <button id="interior-connector-turn-right" type="button">↷ 45°</button>
-  </div>
-  <button id="interior-connector-place" type="button" aria-pressed="false">📍 Positionner le passage sur la carte</button>
-  <small id="interior-connector-hint">Choisis un étage relié et place le passage au doigt. Le vrai Portal se déplace avec lui.</small>
-  <small>Chaque étage possède sa propre pièce ; dans le jeu, approche les escaliers et utilise Monter / Descendre.</small>
- </section>
- <section class="interior-layout-tools" aria-label="Taille et forme de la pièce">
-  <strong>📐 Forme de la pièce</strong>
-  <label>Forme <select id="interior-shape">
-    <option value="rectangle">Rectangle / petite maison</option>
-    <option value="l">Forme en L</option>
-    <option value="t">Forme en T</option>
-    <option value="cross">Croix / donjon</option>
-  </select></label>
-  <label>Largeur (cases) <input type="number" id="interior-width" min="8" max="80" step="1" value="18"></label>
-  <label>Profondeur (cases) <input type="number" id="interior-height" min="8" max="64" step="1" value="14"></label>
-  <button id="interior-layout-apply" type="button">Appliquer forme et taille</button>
-  <small id="interior-shape-hint">Choisir une forme l'applique directement. Le contour doré marque le sol autorisé. Pour la taille, utilise Appliquer.</small>
- </section>
+ <details class="interior-tool-group" name="interior-tool-group"><summary>🧱 Murs</summary>
  <section class="interior-wall-tools" aria-label="Construction des murs">
-  <strong>🧱 Construire l'intérieur</strong>
   <label>Texture des murs <select id="interior-wall-material">
     <option value="plaster">Enduit clair</option>
     <option value="stone">Pierre taillée</option>
@@ -1161,8 +1177,23 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
   <label class="wall-diagonal-option"><input id="interior-wall-diagonal" type="checkbox"> Mur en diagonale</label>
   <output id="interior-wall-info">Glisse du début à la fin pour tracer un mur. Deux appuis fonctionnent aussi. Grille et angles droits actifs.</output>
  </section>
+ </details>
+ <details class="interior-tool-group" name="interior-tool-group"><summary>📐 Forme et dimensions</summary>
+ <section class="interior-layout-tools" aria-label="Taille et forme de la pièce">
+  <label>Forme <select id="interior-shape">
+    <option value="rectangle">Rectangle / petite maison</option>
+    <option value="l">Forme en L</option>
+    <option value="t">Forme en T</option>
+    <option value="cross">Croix / donjon</option>
+  </select></label>
+  <label>Largeur (cases) <input type="number" id="interior-width" min="8" max="80" step="1" value="18"></label>
+  <label>Profondeur (cases) <input type="number" id="interior-height" min="8" max="64" step="1" value="14"></label>
+  <button id="interior-layout-apply" type="button">Appliquer forme et taille</button>
+  <small id="interior-shape-hint">Choisir une forme l'applique directement. Le contour doré marque le sol autorisé. Pour la taille, utilise Appliquer.</small>
+ </section>
+ </details>
+ <details class="interior-tool-group" name="interior-tool-group"><summary>🚪 Porte</summary>
  <section class="interior-door-tools" aria-label="Régler la porte du bâtiment">
-  <strong>🚪 Porte de la maison</strong>
   <label>Visuel de porte <select id="interior-door-asset">
     <option value="default">Porte en bois actuelle</option>
     <option value="object.door.fantasy.wood.01">Fantasy bois</option>
@@ -1194,6 +1225,30 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <input type="range" id="interior-door-scale" min="35" max="125" step="5" value="60" aria-label="Taille de la porte"></label>
   <small>Déplacer : touche ou fais glisser sur le sol. La porte sert aussi de point de sortie et déplace l’arrivée à l’intérieur.</small>
  </section>
+ </details>
+ <details class="interior-tool-group" name="interior-tool-group"><summary>🪜 Étages et escaliers</summary>
+ <section class="interior-floor-tools" aria-label="Étages du bâtiment">
+  <label>Étage actif <select id="interior-level-select"><option value="0">Rez-de-chaussée</option></select></label>
+  <button id="interior-level-add" type="button">+ Ajouter un étage</button>
+  <label>Passage <select id="interior-connector-link" aria-label="Niveau à relier"><option value="">Créer un étage d'abord</option></select></label>
+  <label>Escalier ou échelle <select id="interior-connector-asset">
+    <option value="stairs.wood">Escalier bois</option>
+    <option value="stairs.stone">Escalier pierre</option>
+    <option value="ladder.wood">Échelle bois</option>
+  </select></label>
+  <label>Orientation <output id="interior-connector-rotation-value">0°</output>
+    <input id="interior-connector-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Orientation de l’escalier ou de l’échelle en degrés">
+  </label>
+  <div class="object-actions">
+    <button id="interior-connector-turn-left" type="button">↶ 45°</button>
+    <button id="interior-connector-turn-right" type="button">↷ 45°</button>
+  </div>
+  <button id="interior-connector-place" type="button" aria-pressed="false">📍 Positionner le passage sur la carte</button>
+  <small id="interior-connector-hint">Choisis un étage relié et place le passage au doigt. Le vrai Portal se déplace avec lui.</small>
+  <small>Chaque étage possède sa propre pièce ; dans le jeu, approche les escaliers et utilise Monter / Descendre.</small>
+ </section>
+ </details>
+ <details class="interior-tool-group" name="interior-tool-group"><summary>🎨 Sol et caméra</summary><div class="interior-tool-fields">
  <label>Sol intérieur <select id="interior-floor-base" aria-label="Sol de base de cette pièce">
   <option value="floor.wood.house">Parquet chêne</option>
   <option value="floor.wood.dark">Bois foncé</option>
@@ -1204,18 +1259,17 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  <label>Inclinaison caméra <output id="interior-camera-value">55°</output>
   <input type="range" id="interior-camera-angle" min="35" max="90" value="55" step="5"
     aria-label="Inclinaison de la caméra intérieure en degrés"></label>
- <strong>Bibliothèque de pièces</strong>
+ </div></details>
+ <details class="interior-tool-group" name="interior-tool-group"><summary>📚 Modèles de pièces</summary><div class="interior-tool-fields">
  <label>Nom du modèle <input id="interior-template-name" type="text" maxlength="64" placeholder="Ex. Maison de village" aria-label="Nom du modèle de pièce"></label>
  <button id="interior-template-save" type="button">Enregistrer comme modèle</button>
  <label>Réutiliser <select id="interior-template-select" aria-label="Modèle de pièce à réutiliser"><option value="">Édition libre (aucun modèle)</option></select></label>
  <button id="interior-template-apply" type="button" disabled>Appliquer le modèle choisi</button>
  <small>Tu peux toujours personnaliser la pièce sans modèle. Appliquer remplace son contenu, sans modifier sa porte extérieure.</small>
+ </div></details>
   </div>
  </details>
 </section>
-</section>
-<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
-
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
  <div class="unavailable-card">
@@ -1483,7 +1537,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
   <button id="object-waypoint-destination" type="button">↪ Modifier l’arrivée sur la carte cible</button>
    <details id="object-waypoint-appearance" hidden>
     <summary>🎨 Apparence de cette sortie</summary>
-    <small>Le passage se déclenche automatiquement au contact, même si son repère est invisible.</small>
+    <small>Entre cartes : passage automatique. Porte de bâtiment : clic à proximité, même si le repère est invisible.</small>
     <label>Affichage en jeu
      <select id="object-waypoint-marker-mode" aria-label="Apparence du passage">
       <option value="ring">Cercle de passage (classique)</option>
@@ -1495,8 +1549,9 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <label id="object-waypoint-marker-texture-row" hidden>Texture à afficher
      <select id="object-waypoint-marker-texture" aria-label="Texture visuelle du passage"></select>
     </label>
+    <label>Rayon du passage <input id="object-waypoint-marker-radius" type="range" min="4" max="240" step="1" value="28"></label>
     <button id="object-waypoint-marker-save" type="button">✓ Enregistrer l'apparence</button>
-    <small>La zone de déclenchement et l'arrivée ne changent pas. En édition, un repère invisible reste sélectionnable.</small>
+    <small>Le rayon règle la zone de déclenchement. Pour une porte, le repère sert aussi d'arrivée. En édition, un repère invisible reste sélectionnable.</small>
    </details>
   <details id="object-waypoint-arrivals">
    <summary>🔵 Arrivées depuis les autres cartes</summary>
@@ -1579,6 +1634,8 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <input id="object-shadow-x" type="range" min="-60" max="60" step="2" value="0"></label>
    <label>Décalage vertical <output id="object-shadow-y-value">0 %</output>
     <input id="object-shadow-y" type="range" min="-60" max="60" step="2" value="0"></label>
+   <label>Rotation de l’ombre <output id="object-shadow-rotation-value">0°</output>
+    <input id="object-shadow-rotation" type="range" min="0" max="360" step="5" value="0"><small>0° = direction héritée (d’origine sans éclairage global)</small></label>
    <label>Opacité <output id="object-shadow-opacity-value">25 %</output>
     <input id="object-shadow-opacity" type="range" min="5" max="65" step="5" value="25"></label>
   </div>
@@ -1707,12 +1764,14 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <small>Les réglages sont sauvegardés dans la fiche. Les créatures de la bibliothèque se modifient dans leur fiche d’origine.</small>
    </section>
    <section id="npc-merchant-editor" hidden aria-label="Boutique du PNJ">
-    <strong>🛒 Marchand associé</strong>
-    <p>Choisis une boutique créée dans Monster Capture. Aucun identifiant à saisir.</p>
-    <label>Boutique <select id="npc-merchant-picker"><option value="">Chargement des marchands…</option></select></label>
-    <button type="button" id="npc-merchant-reload">Actualiser les marchands</button>
-    <button type="button" id="npc-merchant-clear">Retirer l'association</button>
-    <small id="npc-merchant-status">Marchands fournis par Monster Capture lorsque l'éditeur est ouvert dans GenSRPG.</small>
+    <strong>🛒 Marchand · objets et tarifs</strong>
+    <p>Configure les articles de ce PNJ depuis la bibliothèque d’objets, sans association de boutique séparée.</p>
+    <button type="button" id="npc-merchant-configure">Configurer les articles, tarifs et stocks</button>
+    <small id="npc-merchant-status" role="status" aria-live="polite">Ouvre les réglages du PNJ.</small>
+    <div id="npc-merchant-inline" hidden>
+      <iframe id="npc-merchant-frame" title="Objets et tarifs de ce PNJ" referrerpolicy="same-origin" style="width:100%;height: min(60dvh,640px);min-height:250px;border:0"></iframe>
+      <button type="button" id="npc-merchant-close">Fermer les réglages</button>
+    </div>
    </section>
    <p id="npc-role-pending" hidden>Les éditeurs de quêtes et de boutiques de GenSRPG ne sont pas encore raccordés. Les anciennes liaisons éventuelles sont conservées dans la sauvegarde, sans saisie d'identifiant technique.</p>
    <small id="npc-catalog-status" role="status" aria-live="polite">Chargement des créatures publiées depuis le catalogue officiel Combat…</small>
@@ -1847,6 +1906,13 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     </div>
   </div>
 </section>
+<dialog id="npc-merchant-test-dialog" aria-label="Test du commerce" style="width:min(850px,calc(100vw - 16px));max-width:95vw;max-height:96dvh;padding:6px;box-sizing:border-box;background:#152d38;color:#f5f9f8;border:1px solid #86c8bd;border-radius:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <strong>Commerce · simulation sans sauvegarde</strong>
+    <button type="button" id="npc-merchant-test-close">Fermer le test</button>
+  </div>
+  <iframe id="npc-merchant-test-frame" title="Commerce officiel Monster Capture en mode Tester" style="width:100%;height:min(75dvh,600px);border:0;display:block" referrerpolicy="same-origin"></iframe>
+</dialog>
 <div id="navigation-stick" role="group" aria-label="Joystick tactile de navigation" hidden>
   <div id="navigation-knob" aria-hidden="true"></div>
 </div>
@@ -1865,7 +1931,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <details id="sculpt-settings"><summary>⚙ Atelier · Réglages et outils avancés</summary>
 <div class="settings-interior">
 <details class="sculpt-tool-group" open>
- <summary>⛰ Sculpter le relief <small>Creuser, monter, pentes</small></summary>
+ <summary>⛰ Relief <small>Niveau exact et réinitialisation</small></summary>
  <div class="sculpt-tool-group-content">
  <section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
@@ -1891,7 +1957,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  </div>
 </details>
 <details class="sculpt-tool-group">
- <summary>💧 Sculpter l’eau <small>Niveau et débit</small></summary>
+ <summary>💧 Eau <small>Niveau exact</small></summary>
  <div class="sculpt-tool-group-content">
 <section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
 <strong>💧 Sculpter l’eau</strong>
@@ -1900,6 +1966,18 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <button data-mode="water-lower">Baisser l’eau −</button>
 <button data-mode="water-erase">Effacer l’eau</button>
 <button data-mode="water-smooth">Lisser l’eau</button>
+<button data-mode="water-paint">Peindre la texture seule</button>
+<label class="control">Texture du pinceau
+<select id="water-material" aria-label="Matériau visuel de l’eau">
+<option value="water.clear_blue">Bleue claire animée</option>
+<option value="water.turquoise">Turquoise animée</option>
+<option value="water.forest_stream">Rivière forestière animée</option>
+<option value="water.swamp">Marais animé</option>
+<option value="water.lava">Lave en fusion animée</option>
+</select></label>
+<label class="control">Vitesse des textures <output id="water-fps-value">8 FPS</output><input id="water-fps" type="range" min="1" max="16" value="8"></label>
+<label class="control">Écume <output id="water-foam-value">60 %</output><input id="water-foam" type="range" min="0" max="100" value="60"></label>
+<small>Remplir crée le volume avec la texture choisie. Peindre change uniquement l’apparence des cases déjà immergées. Le rivage suit automatiquement le relief.</small>
 <label class="control">Niveau d’eau <b id="water-target-value">3</b>
 <input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
 </section>
@@ -1951,17 +2029,34 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
 
 <button id="fit">Ajuster la vue</button>
-<label class="control">Aspect de l’eau
-<select id="water-material" aria-label="Matériau visuel de l’eau">
-<option value="water.clear_blue">Bleue claire</option>
-<option value="water.turquoise">Turquoise</option>
-<option value="water.forest_stream">Rivière forestière</option>
-<option value="water.swamp">Eau sombre / marais</option>
-</select></label>
+
 <label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
 <label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route exemple (visuel seul)</label>
 <label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
 </section>
+ </div>
+</details>
+<details class="sculpt-tool-group" id="world-lighting-panel">
+ <summary>☀ Éclairage et ambiance <small>Réglages du monde</small></summary>
+ <div class="sculpt-tool-group-content">
+  <label><input type="checkbox" id="world-light-enabled"> Activer l’éclairage personnalisé</label>
+  <div id="world-light-fields" class="sculpt-tool-group-content" hidden>
+   <small>Direction commune : 0° droite, 90° bas. Les exceptions d’objets et de modèles restent prioritaires.</small>
+   <label class="control">Orientation globale <output id="world-light-directionDeg-value">45°</output><input id="world-light-directionDeg" type="range" min="0" max="359" value="45"></label>
+<label class="control">Opacité des ombres <output id="world-light-shadowOpacityPct-value">35%</output><input id="world-light-shadowOpacityPct" type="range" min="0" max="65" value="35"></label>
+<label class="control">Aplatissement <output id="world-light-flattenPct-value">40%</output><input id="world-light-flattenPct" type="range" min="15" max="100" value="40"></label>
+   <label>Couleur des ombres <input id="world-light-shadowColor" type="color" value="#1a1b3a"></label>
+   <label class="control">Occlusion ambiante <output id="world-light-ambientOcclusionPct-value">25%</output><input id="world-light-ambientOcclusionPct" type="range" min="0" max="50" value="25"></label>
+<label class="control">Lumière chaude <output id="world-light-warmthPct-value">8%</output><input id="world-light-warmthPct" type="range" min="0" max="30" value="8"></label>
+   <label>Teinte lumineuse <input id="world-light-warmColor" type="color" value="#ffdc9b"></label>
+   <label><input type="checkbox" id="world-light-cloudsEnabled"> Ombres de nuages animées (extérieur)</label>
+   <label class="control">Opacité des nuages <output id="world-light-cloudOpacityPct-value">10%</output><input id="world-light-cloudOpacityPct" type="range" min="0" max="25" value="10"></label>
+<label class="control">Vitesse des nuages <output id="world-light-cloudSpeed-value">12</output><input id="world-light-cloudSpeed" type="range" min="0" max="60" value="12"></label>
+<label class="control">Taille des nuages <output id="world-light-cloudSize-value">500</output><input id="world-light-cloudSize" type="range" min="150" max="1200" value="500"></label>
+<label class="control">Direction des nuages <output id="world-light-cloudDirectionDeg-value">45°</output><input id="world-light-cloudDirectionDeg" type="range" min="0" max="359" value="45"></label>
+  </div>
+  <button type="button" id="world-light-reset">Restaurer le rendu d’origine</button>
+  <small>Enregistré avec le monde par la commande habituelle. Aperçu direct dans l’éditeur et Tester.</small>
  </div>
 </details>
 <details class="sculpt-tool-group">
@@ -1990,6 +2085,6 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126"></script>
 </body>
 </html>

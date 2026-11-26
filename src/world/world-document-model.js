@@ -22,6 +22,7 @@ import {
 import {normalizeCombatArenaIdV1} from './world-combat-arena-v1.js';
 import {normalizeWorldObjectShadowProfilesV1} from './world-object-shadow-settings-v1.js';
 
+import {normalizeWorldLightingV1} from './world-lighting-v1.js';
 export const WORLD_DOCUMENT_SCHEMA_VERSION = 3;
 
 function normalizedString(value) {
@@ -120,6 +121,7 @@ export function normalizeWorldDocument(raw = {}) {
         )
       : null;
 
+  const lighting=normalizeWorldLightingV1(source.lighting);
   const defaultCombatArenaId = normalizeCombatArenaIdV1(source.defaultCombatArenaId);
   return Object.freeze({
     schemaVersion:
@@ -128,6 +130,7 @@ export function normalizeWorldDocument(raw = {}) {
       normalizedString(source.id) ??
       'world-document',
     terrainFamilies,
+    ...(lighting?{lighting}:{}),
     ...(normalizeWorldObjectShadowProfilesV1(source.objectShadowProfiles).length?
       {objectShadowProfiles:normalizeWorldObjectShadowProfilesV1(source.objectShadowProfiles)}:{}),
     ...(defaultCombatArenaId ? {defaultCombatArenaId} : {}),

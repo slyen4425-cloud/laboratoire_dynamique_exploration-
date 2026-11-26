@@ -140,9 +140,9 @@ try{
  if(undo.after!==undo.before-1||undo.redone!==undo.before)
   throw Error('Sculpt floor undo/redo broke '+JSON.stringify(undo));
  await run("document.querySelector('#world-area-return').click()");
- const saved=await until(`(()=>{
+ const saved=await until(`(async()=>{
   const probe=window.__worldAssemblerProbe?.();
-  const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+  const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
   const area=world?.areas?.find(a=>a.id===${JSON.stringify(id)});
   return probe&&area&&location.pathname==='/world-assembler.html'?{area,probe}:null;
  })()`,'WorldArea save');

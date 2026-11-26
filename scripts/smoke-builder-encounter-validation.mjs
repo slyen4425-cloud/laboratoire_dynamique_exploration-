@@ -194,8 +194,8 @@ try{
   await run("document.querySelector('#world-area-return').click();'saved-through-WorldArea'");
   let returned;
   try {
-  returned=await waitFor(`(()=>{const probe=window.__worldAssemblerProbe?.();
-    const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+  returned=await waitFor(`(async()=>{const probe=window.__worldAssemblerProbe?.();
+    const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     return probe&&location.pathname==='/world-assembler.html'&&world
       ?{probe,path:location.pathname,world}:null;})()`,'2.5D -> same World Builder round trip');
   } catch(error) {

@@ -7,7 +7,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import {checkSculptWaterPassage} from './check-sculpt-water-passage.mjs';
 
+import {buildLivingWaterAtlases} from './build-living-water-atlases.mjs';
 const root = process.cwd();
+buildLivingWaterAtlases(root);
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json',
   '.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
@@ -82,11 +84,13 @@ try{
     pixelInfo=await run(`(()=>{const canvas=document.querySelector('#sculpt-canvas');
        const p=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
        let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
-       return {visible,w:canvas.width,h:canvas.height};})()`);
-    if(pixelInfo.visible>=100)break;
+       const probe=window.__sculptLabProbe();
+       return {visible,w:canvas.width,h:canvas.height,waterCells:probe.waterCells,roadCells:probe.roadCells};})()`);
+    if(pixelInfo.visible>=100&&pixelInfo.waterCells>0&&pixelInfo.roadCells>0)break;
     await sleep(150);
   }
-  if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels after draw-ready window: '+JSON.stringify(pixelInfo));
+  if(pixelInfo.visible<100||pixelInfo.waterCells<1||pixelInfo.roadCells<1)
+    throw Error('Sculpt renderer did not paint real terrain, water and road after draw-ready window: '+JSON.stringify(pixelInfo));
   // V12 real Chromium feature pixels, not just toggles or SVG flags.
   const overlayGate=await run(`(async()=>{
  await new Promise(ok=>setTimeout(ok,220));
@@ -284,6 +288,64 @@ try{
     probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};})()`);
   if(waterRedo.json!==afterWater.json||waterRedo.probe.redoCount!==0)
     throw Error('V13 redo did not reconstruct exact water stroke: '+JSON.stringify(waterRedo.probe));
+  // Author asset gate: actual browser decoding, not just a foam pixel change.
+  const authorAtlases=await run(`(async()=>{
+    const m=await import('./src/render/animated-surface-sprites-v1.js');
+    const ids=['water.clear_blue','water.turquoise','water.forest_stream','water.swamp','water.lava'];
+    const result=[];
+    for(const id of ids){
+      const image=await m.loadAnimatedSurfaceAtlas(id);
+      if(!image)throw Error('Missing authored surface atlas: '+id);
+      const read=frame=>{const c=m.animatedSurfaceSprite(id,frame);return c.getContext('2d').getImageData(0,0,c.width,c.height).data;};
+      const a=read(0),b=read(4),w=m.SURFACE_TILE.width,h=m.SURFACE_TILE.height;
+      let motion=0,seam=0;
+      for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])motion++;
+      for(let y=0;y<h;y++)for(let c=0;c<3;c++)seam=Math.max(seam,Math.abs(a[(y*w)*4+c]-a[(y*w+w-1)*4+c]));
+      for(let x=0;x<w;x++)for(let c=0;c<3;c++)seam=Math.max(seam,Math.abs(a[x*4+c]-a[((h-1)*w+x)*4+c]));
+      result.push({id,w:image.naturalWidth,h:image.naturalHeight,motion,seam});
+    }
+    return result;
+  })()`);
+  if(authorAtlases.length!==5||authorAtlases.some(a=>a.w!==504||a.h!==378||a.motion<100||a.seam>1))
+    throw Error('Authored water/lava sprite decode, motion or tile edge regression: '+JSON.stringify(authorAtlases));
+  console.log('Real Chromium five approved water/lava atlases:',JSON.stringify(authorAtlases));
+  // Living water: a real mouse stroke changes only the painted material.
+  // Pixel motion is measured at a stationary camera and no pointer movement.
+  const livingBefore=await run(`(async()=>{
+    const $=id=>document.getElementById(id);
+    const pick=$('water-material');pick.value='water.turquoise';pick.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('[data-mode=water-paint]').click();
+    $('export').click();const json=$('json').value;
+    const c=$('sculpt-canvas'),g=c.getContext('2d',{willReadFrequently:true});
+    const snapshot=()=>Uint8Array.from(g.getImageData(0,0,c.width,c.height).data);
+    await new Promise(ok=>setTimeout(ok,180));const a=snapshot();
+    const builds=window.__sculptObjectsProbe().terrainRasterBuilds;
+    await new Promise(ok=>setTimeout(ok,260));const b=snapshot();
+    let changed=0;for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])changed++;
+    return {json,changed,builds,afterBuilds:window.__sculptObjectsProbe().terrainRasterBuilds};
+  })()`);
+  if(livingBefore.json!==afterWater.json||livingBefore.changed<10||livingBefore.afterBuilds!==livingBefore.builds)
+    throw Error('Living water must animate without mutating map or rebuilding terrain: '+JSON.stringify({changed:livingBefore.changed,builds:livingBefore.builds,afterBuilds:livingBefore.afterBuilds}));
+  const livingPoint=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:livingPoint.x,y:livingPoint.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:livingPoint.x,y:livingPoint.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:livingPoint.x,y:livingPoint.y,button:'left',clickCount:1});
+  await sleep(180);
+  const paintedWater=await run(`(()=>{document.querySelector('#export').click();return JSON.parse(document.querySelector('#json').value);})()`);
+  const oldWater=JSON.parse(afterWater.json);
+  if(!paintedWater.waterMaterialRuns?.some(r=>r[2]==='water.turquoise')||
+     JSON.stringify(paintedWater.waterLevels)!==JSON.stringify(oldWater.waterLevels)||
+     JSON.stringify(paintedWater.levels)!==JSON.stringify(oldWater.levels))
+    throw Error('Living water paint-only brush failed or changed water/land geometry');
+  const restoredWater=await run(`(()=>{
+    document.querySelector('#undo').click();
+    const pick=document.querySelector('#water-material');pick.value='water.clear_blue';pick.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('[data-mode=water-fill]').click();
+    document.querySelector('#export').click();return document.querySelector('#json').value;
+  })()`);
+  if(restoredWater!==afterWater.json)throw Error('Living water brush undo did not restore exact geometry and material');
+  console.log('Living water native canvas animation, painted material and undo:',JSON.stringify({changedPixels:livingBefore.changed,terrainRasterBuilds:livingBefore.builds,materialRuns:paintedWater.waterMaterialRuns.length}));
   // Fresh stroke after undo removes redo branch, including when changing rock profiles.
   await run("document.querySelector('#undo').click();document.querySelector('[data-mode=plateau]').click()");
   // V14 switches to the shorter Terre-only toolbar. Recalculate visible pointer
@@ -774,12 +836,14 @@ try{
       selected:window.__sculptLabProbe().waterMaterialId};
   })()`);
   if(visualsV18.forestPixels<30||visualsV18.mountainPixels<30||
-      visualsV18.turquoisePixels<30||visualsV18.swampPixels<30||
+      // Water selection is now a brush choice; real painted pixels and animation
+      // are tested independently above. Do not infer a recolor from frame motion.
       !visualsV18.forestLoaded||!visualsV18.mountainLoaded||
       !visualsV18.turquoiseLoaded||!visualsV18.swampLoaded||
       !visualsV18.mapUnchanged||visualsV18.selected!=='water.swamp')
     throw Error('V18 real material image/pixel or data-isolation regression: '+JSON.stringify(visualsV18));
   console.log('V18 native visual palette real pixels:',JSON.stringify(visualsV18));
+  await run("const pick=document.querySelector('#water-material');pick.value='water.clear_blue';pick.dispatchEvent(new Event('change',{bubbles:true}));");
 
   // V20: REAL canvas pointer places a native catalog WorldObject, then undo,
   // redo, removal, scene export/import and native asset loading are exercised.
@@ -2633,12 +2697,24 @@ try{
       document.activeElement?.blur?.();
       return window.__sculptNavProbe().player;
     })()`);
-    const inputTimeBefore=await run('window.__sculptNavProbe().inputElapsedMs');
-    await run(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));true`);
-    await sleep(135);
-    await run(`window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));true`);
-    const current=await run(`window.__sculptNavProbe().player`);
-    const inputTimeAfter=await run('window.__sculptNavProbe().inputElapsedMs');
+    // Keep the press and release inside the browser so a slow CDP round trip
+    // cannot send the hero into the map edge. Stop after >=80ms of actual
+    // movement simulation; a single capped frame can overshoot by <=250ms.
+    const {current,inputTimeBefore,inputTimeAfter}=await run(`(async()=>{
+      const before=window.__sculptNavProbe().inputElapsedMs;
+      window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
+      try{
+        const deadline=performance.now()+5000;
+        while(window.__sculptNavProbe().inputElapsedMs-before<80){
+          if(performance.now()>deadline)throw Error('V66 movement simulation did not advance');
+          await new Promise(ok=>requestAnimationFrame(ok));
+        }
+      }finally{
+        window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));
+      }
+      const after=window.__sculptNavProbe();
+      return {current:after.player,inputTimeBefore:before,inputTimeAfter:after.inputElapsedMs};
+    })()`);
     const projection=await run(`(async()=>{
       const p=await import('./src/render/sculpt-camera-projection.js');
       const view=p.sculptCameraGameView(${angle});
@@ -2654,9 +2730,8 @@ try{
     if(consumedMs<30||projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
       throw Error('V66 actual key travel not screen-aligned or RAF input absent: '+JSON.stringify(v));
   }
-  // Compare pixel speeds per *actual movement RAF time*. Wall-clock sleep is
-  // not a simulation clock: on busy GitHub runners the browser can process
-  // 2 frames for one camera and 8 for the next during the same 135ms sleep.
+  // Compare pixel speeds per *actual capped movement simulation time*.
+  // Wall-clock sleep and discarded RAF time are not simulation clocks.
   // This keeps the original real keyboard->Collision World gate intact,
   // without relaxing the speed regression tolerance to conceal a failure.
   if(Math.abs(v66Results[0].projectedSpeed/v66Results[1].projectedSpeed-1)>.25)
@@ -3193,6 +3268,18 @@ try{
   const v79R2=await run(`(()=>{
     const roomBar=document.querySelector('#interior-area-bar');
     const quick=document.querySelector('.sculpt-quickbar');
+    const interiorTab=document.querySelector('#interior-tools-toggle');
+    const details=document.querySelector('#interior-controls-details');
+    if(!details.open)interiorTab.click();
+    const groups=[...roomBar.querySelectorAll('.interior-tool-group')];
+    const initiallyClosed=groups.every(g=>!g.open);
+    const walls=roomBar.querySelector('.interior-wall-tools').closest('details');
+    const floorGroup=document.querySelector('#interior-floor-base').closest('details');
+    walls.querySelector('summary').click();
+    const wallsVisible=walls.open&&document.querySelector('#interior-wall-toggle').getClientRects().length>0;
+    floorGroup.querySelector('summary').click();
+    const exclusive=floorGroup.open&&!walls.open;
+    const groupGate={count:groups.length,initiallyClosed,wallsVisible,exclusive};
     const floor=document.querySelector('#interior-floor-base');
     floor.value='floor.tile.light';floor.dispatchEvent(new Event('change',{bubbles:true}));
     const original=window.__sculptLabProbe().interiorFloorId;
@@ -3208,9 +3295,12 @@ try{
       document.querySelector('#fullscreen-toggle').click();
     const floatingInfo={immersive:document.body.classList.contains('sculpt-immersive'),
       insideQuickbar:quick.contains(roomBar),position:getComputedStyle(roomBar).position,
-      panelVisible:!roomBar.hidden,quickDisplay:getComputedStyle(quick).display};
-    const floating=floatingInfo.immersive&&floatingInfo.insideQuickbar&&
-      floatingInfo.position==='static'&&floatingInfo.panelVisible;
+      panelVisible:!roomBar.hidden&&getComputedStyle(roomBar).display!=='none',
+      tabVisible:!interiorTab.hidden&&interiorTab.getClientRects().length>0,
+      expanded:interiorTab.getAttribute('aria-expanded')==='true',
+      quickDisplay:getComputedStyle(quick).display};
+    const floating=floatingInfo.immersive&&!floatingInfo.insideQuickbar&&
+      floatingInfo.position==='fixed'&&floatingInfo.panelVisible&&floatingInfo.tabVisible&&floatingInfo.expanded;
     if(document.body.classList.contains('sculpt-immersive'))
       document.querySelector('#fullscreen-toggle').click();
     document.querySelector('#scene-export').click();
@@ -3218,12 +3308,13 @@ try{
     return {original,itemId,appliedFloor:applied.interiorFloorId,
       templates:applied.interiorTemplateCount,exported:exported.interiorTemplates?.length,
       savedFloor:exported.interiors?.[0]?.surface?.baseMaterialId,
-      floating,floatingInfo};
+      floating,floatingInfo,groupGate};
   })()`);
   if(v79R2.original!=='floor.tile.light'||!v79R2.itemId||
      v79R2.appliedFloor!=='floor.tile.light'||v79R2.templates!==1||
      v79R2.exported!==1||v79R2.savedFloor!=='floor.tile.light'||
-     !v79R2.floating)
+     !v79R2.floating||v79R2.groupGate.count!==6||!v79R2.groupGate.initiallyClosed||
+     !v79R2.groupGate.wallsVisible||!v79R2.groupGate.exclusive)
     throw Error('V79 R2 real Chromium native floors / reusable templates / floating bar failed: '+
       JSON.stringify(v79R2));
   console.log('V79 R2 REAL Chromium native indoor floors, reusable room and floating return:',JSON.stringify(v79R2));
@@ -3799,7 +3890,7 @@ try{
   // 2.5D World Builder contract: an actual dungeon placed IN a host Area,
   // its entry placed on SculptTerrain, then real Portal -> WorldArea ->
   // Spawn traversal while Tester is running. Restore unchanged whole world.
-  const authoredDungeon=await run(`(()=>{
+  const authoredDungeon=await run(`(async()=>{
     document.querySelector('.world-node[data-area-id="area-principale"]').click();
     document.querySelector('#area-name').value='Grotte du nord';
     document.querySelector('#area-kind').value='dungeon';
@@ -3807,7 +3898,7 @@ try{
     document.querySelector('#area-add-form').requestSubmit();
     const result=window.__worldAssemblerProbe();
     const dungeonId=result.areaIds.at(-1);
-    const saved=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const saved=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const dungeon=saved.areas.find(a=>a.id===dungeonId);
     return {...result,dungeonId,siteKind:dungeon?.siteKind,
       host: saved.portals.find(p=>p.targetAreaId===dungeonId)?.sourceAreaId,
@@ -4114,10 +4205,10 @@ try{
   let returned2p5d=null;
   for(let i=0;i<90;i++){
     await sleep(110);
-    try{returned2p5d=await run(`(()=>{
+    try{returned2p5d=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();
       if(!probe)return null;
-      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       return {...probe,dungeon:doc.areas.find(a=>a.id==='grotte-du-nord'),
         exterior:doc.areas.find(a=>a.id==='area-principale')};
     })()`);}catch{}
@@ -4202,9 +4293,9 @@ try{
   let unifiedBack=null;
   for(let i=0;i<90;i++){
     await sleep(110);
-    try{unifiedBack=await run(`(()=>{
+    try{unifiedBack=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();if(!probe)return null;
-      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       return {...probe,created:doc.areas.find(a=>a.label==='Grande clairière')};
     })()`);}catch{}
     if(unifiedBack)break;
@@ -4218,12 +4309,12 @@ try{
   // Keep a real legacy document byte-compatible, reject accidental editing,
   // then enter the old URL to verify the tactile return after refresh.
   const legacyId=unifiedBack.selectedAreaId;
-  const legacySaved=await run(`(()=>{
+  const legacySaved=await run(`(async()=>{
     const key='gensrpg.world-assembler.document.v1';
-    const draft=JSON.parse(localStorage.getItem(key));
+    const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const target=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     target.width=2400;target.height=1600;delete target.sculptTerrain;
-    localStorage.setItem(key,JSON.stringify(draft));
+    (await import('./src/builder/world-assembler-handoff.js')).saveWorldAssemblerDraft(localStorage,draft);
     return {id:target.id,width:target.width,height:target.height};
   })()`);
   if(legacySaved.width!==2400||legacySaved.height!==1600)
@@ -4264,10 +4355,10 @@ try{
   let compatibleMap=null;
   for(let i=0;i<100;i++){
     await sleep(100);
-    try{compatibleMap=await run(`(()=>{
+    try{compatibleMap=await run(`(async()=>{
       const probe=window.__sculptWorldProbe?.();
       if(!probe)return null;
-      const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       const legacy=world.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {probe,legacyWidth:legacy?.width,legacyHeight:legacy?.height,
         initialAreaId:world.initialAreaId,path:location.pathname};
@@ -4315,9 +4406,9 @@ try{
   let legacyReturn=null;
   for(let i=0;i<90;i++){
     await sleep(110);
-    try{legacyReturn=await run(`(()=>{
+    try{legacyReturn=await run(`(async()=>{
       const p=window.__worldAssemblerProbe?.();if(!p)return null;
-      const draft=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       const area=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {selected:p.selectedAreaId,area,portalCount:p.portalCount};
     })()`);}catch{}
@@ -4348,8 +4439,8 @@ try{
     JSON.stringify(accepted));
   await repairClick;
   socket.removeEventListener('message',observeRepairDialog);
-  const repairedRoute=await run(`(()=>{
-    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+  const repairedRoute=await run(`(async()=>{
+    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     const first=doc.areas.find(a=>a.id===doc.initialAreaId);
     const outgoing=doc.portals.filter(p=>p.sourceAreaId===doc.initialAreaId);
@@ -4369,14 +4460,14 @@ try{
     JSON.stringify(repairedRoute));
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
-  const prefabHouse=await run(`(()=>{
+  const prefabHouse=await run(`(async()=>{
     const gallery=document.querySelector('#world-map-preset-gallery');
     const card=gallery?.querySelector('.map-preset-card[data-preset-id="map-preset-109"]');
     if(!card)return {error:'official preset gallery card missing'};
     document.querySelector('.world-preset-details').open=true;
     card.closest('.map-preset-shelf').open=true;card.click();
     document.querySelector('#world-map-preset-create').click();
-    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');
     const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
       p.trigger?.kind==='object-anchor');

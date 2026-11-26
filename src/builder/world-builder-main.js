@@ -112,7 +112,7 @@ import {
   objectDefinitionFromUserRecord
 } from '../objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
-  resolvePortalTriggerPoint
+  resolvePortalWaypoint,buildingDoorCounterpart
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
 import {
   resolveExteriorReturnNavigation,
@@ -3349,8 +3349,9 @@ function refreshPortalControls() {
   $('portal-point-fields').hidden = !isPoint;
   $('portal-building-fields').hidden = isPoint;
 
-  $('portal-point-x').value = isPoint ? portal.trigger.x : '';
-  $('portal-point-y').value = isPoint ? portal.trigger.y : '';
+  const sharedPoint=isPoint&&buildingDoorCounterpart(draft,portal)?resolvePortalWaypoint(draft,portal):null;
+  $('portal-point-x').value = isPoint ? sharedPoint?.x??portal.trigger.x : '';
+  $('portal-point-y').value = isPoint ? sharedPoint?.y??portal.trigger.y : '';
   $('portal-radius').value = portal.trigger?.radius ?? 28;
 
   const buildings = sourceBuildings(portal);
@@ -3942,7 +3943,7 @@ function selectedWorldPoint(document, area) {
       item.sourceAreaId === area?.id
   );
   if (portal) {
-    const point = resolvePortalTriggerPoint(document.areas, portal);
+    const point = resolvePortalWaypoint(document, portal);
     if (point) return point;
   }
 
@@ -4023,8 +4024,8 @@ function drawBuildingEntranceAuthoringOverlay(
     currentBuildingInteriorLink();
   let point =
     link.outgoingPortal
-      ? resolvePortalTriggerPoint(
-          document.areas,
+      ? resolvePortalWaypoint(
+          document,
           link.outgoingPortal
         )
       : null;
@@ -4325,7 +4326,7 @@ function drawBuilderOverlays(area, document, camera) {
       item.sourceAreaId === area.id
   );
   if (portal) {
-    const point = resolvePortalTriggerPoint(document.areas, portal);
+    const point = resolvePortalWaypoint(document, portal);
     if (point) {
       ctx.beginPath();
       ctx.arc(
@@ -4644,7 +4645,7 @@ function switchPortalTrigger(kind) {
   renderPreview();
 }
 
-function applyPortalInputs() {
+function applyPortalInputs(event) {
   const portal = currentPortalRaw();
   if (!portal) return;
 
@@ -4662,8 +4663,10 @@ function applyPortalInputs() {
       if (kind === 'point') {
         nextPortal.trigger = {
           kind: 'point',
-          x: numberValue($('portal-point-x'), 0),
-          y: numberValue($('portal-point-y'), 0),
+          x: event?.target?.id==='portal-point-x'||event?.target?.id==='portal-point-y'
+            ?numberValue($('portal-point-x'),0):nextPortal.trigger.x,
+          y: event?.target?.id==='portal-point-x'||event?.target?.id==='portal-point-y'
+            ?numberValue($('portal-point-y'),0):nextPortal.trigger.y,
           radius
         };
       } else {
@@ -4671,7 +4674,10 @@ function applyPortalInputs() {
           kind: 'object-anchor',
           objectId: $('portal-building').value,
           anchorId: $('portal-anchor').value,
-          radius
+          radius,
+          ...(nextPortal.trigger?.objectId===$('portal-building').value&&
+             nextPortal.trigger?.anchorId===$('portal-anchor').value&&nextPortal.trigger?.doorPoint
+            ?{doorPoint:nextPortal.trigger.doorPoint}:{})
         };
       }
 
