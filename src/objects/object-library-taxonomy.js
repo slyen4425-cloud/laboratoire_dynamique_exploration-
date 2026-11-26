@@ -1,3 +1,4 @@
+import {normalizeObjectLibraryLayout,objectLibraryCategoryPath} from './object-library-layout-v1.js';
 const CATEGORIES = Object.freeze([
   Object.freeze({ id: 'buildings', label: 'Maisons / bâtiments' }),
   Object.freeze({ id: 'vegetation', label: 'Végétation' }),
@@ -159,25 +160,40 @@ export function objectLibraryDisplayPath(definition){
  const root=({buildings:'Bâtiments',vegetation:'Végétation',decor:'Décorations',rocks:'Rochers',doors:'Portes / entrées',stairs:'Escaliers',bridges:'Ponts'})[category]??'Divers';
  return [root,...(folder.includes('/')?[safe(library.folderLabel)||folder.split('/').at(-1)]:[])];
 }
-export function buildObjectLibraryTree(definitions=[],query=''){
- const search=safe(query).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+export function buildObjectLibraryTree(definitions=[],query='',layout=undefined){
+ const personal=normalizeObjectLibraryLayout(layout);
  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const root={children:new Map(),definitions:[]},seen=new Set();
+ const search=normalize(safe(query)),root={children:new Map(),definitions:[]},seen=new Set();
+ const matches=(label,path)=>!search||search.split(/\s+/).every(word=>normalize([label,...path].join(' ')).includes(word));
+ function branch(path){
+  let node=root;
+  for(const part of path){
+   if(!node.children.has(part.id))node.children.set(part.id,{...part,children:new Map(),definitions:[]});
+   node=node.children.get(part.id);
+  }
+  return node;
+ }
+ const personalPath=id=>objectLibraryCategoryPath(personal,id).map(c=>({id:c.id,label:c.label,personal:true}));
+ // Empty personal folders remain selectable and visible when not searching.
+ for(const category of personal.categories){
+  const path=personalPath(category.id);
+  if(matches('',path.map(p=>p.label)))branch(path);
+ }
  for(const def of definitions){
   if(!def?.id||seen.has(def.id))continue;seen.add(def.id);
-  const path=objectLibraryDisplayPath(def);
-  if(search&&!search.split(/\s+/).every(word=>normalize([def.label??'',...path].join(' ')).includes(word)))continue;
-  let node=root;
-  for(const label of path){
-   if(!node.children.has(label))node.children.set(label,{label,children:new Map(),definitions:[]});
-   node=node.children.get(label);
-  }
-  node.definitions.push(def);
+  const assigned=personal.assignments[def.id];
+  const native=objectLibraryDisplayPath(def);
+  const path=assigned?personalPath(assigned):native.map((label,i)=>({id:'native:'+JSON.stringify(native.slice(0,i+1)),label}));
+  if(!matches(def.label??'',path.map(p=>p.label)))continue;
+  branch(path).definitions.push(def);
  }
  const collator=new Intl.Collator('fr',{numeric:true,sensitivity:'base'});
  const sort=(a,b)=>collator.compare(a.label,b.label);
+ const positions=new Map(personal.categories.map((c,i)=>[c.id,i]));
  const freezeNode=(node,depth=0)=>{
   const children=[...node.children.values()].sort((a,b)=>{
+   if(a.personal!==b.personal)return a.personal?1:b.personal?-1:0;
+   if(a.personal&&b.personal)return positions.get(a.id)-positions.get(b.id);
    if(depth===0){
     const ai=rootOrder.indexOf(a.label),bi=rootOrder.indexOf(b.label);
     if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
@@ -185,7 +201,7 @@ export function buildObjectLibraryTree(definitions=[],query=''){
    return sort(a,b);
   }).map(child=>freezeNode(child,depth+1));
   const definitions=[...node.definitions].sort(sort);
-  return Object.freeze({label:node.label??'',children:Object.freeze(children),definitions:Object.freeze(definitions),
+  return Object.freeze({id:node.id??'',label:node.label??'',personal:!!node.personal,children:Object.freeze(children),definitions:Object.freeze(definitions),
    count:definitions.length+children.reduce((sum,child)=>sum+child.count,0)});
  };
  return freezeNode(root);

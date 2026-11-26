@@ -24,3 +24,18 @@ test('same names in distinct parents allowed; duplicates and cycles fail closed'
  assert.throws(()=>assignObjectLibraryCategory(l,'native.object','category.missing'),/Rattachement/);
  assert.equal(normalizeObjectLibraryLayout(JSON.parse(JSON.stringify(l))).categories.length,2);
 });
+
+import {buildObjectLibraryTree} from '../src/objects/object-library-taxonomy.js';
+test('tree renders empty categories, preserves personal order, and moves resources without duplication',()=>{
+ let l=addObjectLibraryCategory(undefined,{name:'Maisons',makeId:()=> 'personal-houses'});
+ l=addObjectLibraryCategory(l,{name:'Neige',parentId:'category.personal-houses',makeId:()=> 'personal-snow'});
+ const def={id:'objectdef.building.house.blue_cottage.01',kind:'building',label:'Maison bleue',library:{folderId:'buildings/houses/temperate',categoryId:'buildings'}};
+ let tree=buildObjectLibraryTree([def],'',l);
+ assert.equal(tree.children.filter(c=>c.label==='Maisons').length,2);
+ assert.equal(tree.children.find(c=>c.personal).children[0].count,0);
+ l=assignObjectLibraryCategory(l,def.id,'category.personal-snow');
+ tree=buildObjectLibraryTree([def],'',l);
+ assert.equal(tree.count,1);
+ assert.equal(tree.children[0].children[0].definitions[0],def);
+ assert.equal(buildObjectLibraryTree([def],'neige bleue',l).count,1);
+});

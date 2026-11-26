@@ -1,7 +1,7 @@
 import {buildObjectLibraryTree} from './object-library-taxonomy.js';
 // Presentation only. The existing placement controls remain the sole owner of
 // selected definition/kind. No separate object selection model is maintained.
-export function createObjectLibraryPicker({root,search,summary,definitions,onSelect,getSelected}){
+export function createObjectLibraryPicker({root,search,summary,definitions,onSelect,getSelected,getLayout=()=>undefined}){
  if(!root||!search||!summary)return null;
  let buttons=new Map(),previousOpen=new Set(),lastQuery='';
  function sync({reveal=false}={}){
@@ -19,13 +19,13 @@ export function createObjectLibraryPicker({root,search,summary,definitions,onSel
   const query=search.value.trim();
   if(!lastQuery)previousOpen=new Set([...root.querySelectorAll('details[open]')].map(d=>d.dataset.libraryPath));
   lastQuery=query;
-  const tree=buildObjectLibraryTree(definitions,query);
+  const tree=buildObjectLibraryTree(definitions,query,getLayout());
   buttons=new Map();
   const create=(node,path)=>{
-   const details=document.createElement('details'),key=JSON.stringify([...path,node.label]);
-   details.dataset.libraryPath=key;details.open=Boolean(query)||previousOpen.has(key);
+   const details=document.createElement('details'),key=node.id;
+   details.dataset.libraryPath=key;if(node.personal)details.dataset.personalCategory=node.id;details.open=Boolean(query)||previousOpen.has(key);
    const heading=document.createElement('summary');heading.textContent=node.label+' · '+node.count;details.append(heading);
-   for(const child of node.children)details.append(create(child,[...path,node.label]));
+   for(const child of node.children)details.append(create(child,[...path,node.id]));
    for(const def of node.definitions){
     const button=document.createElement('button');button.type='button';button.dataset.objectDefinition=def.id;
     button.textContent=def.label;button.setAttribute('aria-pressed','false');
