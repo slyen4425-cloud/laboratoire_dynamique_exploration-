@@ -1920,6 +1920,17 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <button data-mode="water-lower">Baisser l’eau −</button>
 <button data-mode="water-erase">Effacer l’eau</button>
 <button data-mode="water-smooth">Lisser l’eau</button>
+<button data-mode="water-paint">Peindre la texture seule</button>
+<label class="control">Texture du pinceau
+<select id="water-material" aria-label="Matériau visuel de l’eau">
+<option value="water.clear_blue">Bleue claire animée</option>
+<option value="water.turquoise">Turquoise animée</option>
+<option value="water.forest_stream">Rivière forestière animée</option>
+<option value="water.swamp">Marais animé</option>
+</select></label>
+<label class="control">Vitesse des textures <output id="water-fps-value">8 FPS</output><input id="water-fps" type="range" min="1" max="16" value="8"></label>
+<label class="control">Écume <output id="water-foam-value">60 %</output><input id="water-foam" type="range" min="0" max="100" value="60"></label>
+<small>Remplir crée le volume avec la texture choisie. Peindre change uniquement l’apparence des cases déjà immergées. Le rivage suit automatiquement le relief.</small>
 <label class="control">Niveau d’eau <b id="water-target-value">3</b>
 <input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
 </section>
@@ -1971,13 +1982,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
 
 <button id="fit">Ajuster la vue</button>
-<label class="control">Aspect de l’eau
-<select id="water-material" aria-label="Matériau visuel de l’eau">
-<option value="water.clear_blue">Bleue claire</option>
-<option value="water.turquoise">Turquoise</option>
-<option value="water.forest_stream">Rivière forestière</option>
-<option value="water.swamp">Eau sombre / marais</option>
-</select></label>
+
 <label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
 <label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route exemple (visuel seul)</label>
 <label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
@@ -2033,6 +2038,6 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-living-water-20261126"></script>
 </body>
 </html>
