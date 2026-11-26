@@ -42,6 +42,6 @@ test('V64 buildings/trees/rocks still cannot be dragged onto water; bounds stay 
 test('V64 real pointer path shares same scene policy, not unconditional wetness reject',()=>{
  const src=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  assert.match(src,/sculptObjectCanOccupyCell\(terrain,current\.objectDefinitionId,/);
- assert.match(src,/sculptObjectCanOccupyCell\(terrain,definitionId,cell\.x,cell\.y\)/);
+ assert.match(src,/sculptObjectCanOccupyCell\(terrain,definitionId,cell\.x,cell\.y,activeSculptObjectCatalog\(\)\)/);
  assert.doesNotMatch(src,/if\(sculptWaterAt\(terrain,Math\.floor\(x\/SCULPT_TILE\.width\)/);
 });
