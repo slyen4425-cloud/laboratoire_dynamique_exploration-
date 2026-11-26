@@ -1,44 +1,42 @@
-// Generic, reusable surface-sprite clock and atlas. Each frame is an
-// independently rendered seamless 112x84 tile, generated once per style.
-// No image downloads, timers or per-cell animations.
-export const SURFACE_FRAME_COUNT=12;
-export const SURFACE_TILE=Object.freeze({width:112,height:84});
+// Authored full-surface sprite atlases. Source ZIP is built offline; the browser
+// only loads the atlas of each material actually used. No procedural substitute.
+export const SURFACE_FRAME_COUNT=9;
+export const SURFACE_TILE=Object.freeze({width:168,height:126});
 export function animatedSurfaceFrame(timeSeconds,fps=8,count=SURFACE_FRAME_COUNT){
  const t=Number.isFinite(timeSeconds)?timeSeconds:0;
  const rate=Number.isFinite(fps)?Math.max(1,Math.min(16,fps)):8;
  return ((Math.floor(t*rate)%count)+count)%count;
 }
-const styles=Object.freeze({
- 'water.clear_blue':{color:'#d7f8ff',amplitude:2.1,streak:1},
- 'water.turquoise':{color:'#e1fff7',amplitude:1.7,streak:1.2},
- 'water.forest_stream':{color:'#bfe5e9',amplitude:1.3,streak:1.6},
- 'water.swamp':{color:'#abd6b5',amplitude:.9,streak:.7}
-});
-const frames=new Map();
+const names=Object.freeze({'water.clear_blue':'eau_bleue_profonde','water.turquoise':'eau_turquoise',
+ 'water.forest_stream':'eau_riviere','water.swamp':'eau_marais','water.lava':'lave'});
+const rates=Object.freeze({'water.forest_stream':1.2,'water.swamp':.75,'water.lava':.85});
+export function surfaceMaterialFrame(id,time,fps){return animatedSurfaceFrame(time,fps*(rates[id]??1));}
+export function animatedSurfaceAtlasUrl(id){
+ return names[id]?new URL('../../assets/exploration/materials/forest/water/animated/'+names[id]+'.png',import.meta.url).href:null;
+}
+const atlases=new Map(),frames=new Map();
+export function loadAnimatedSurfaceAtlas(id,makeImage=()=>new Image()){
+ const url=animatedSurfaceAtlasUrl(id);if(!url)return Promise.resolve(null);
+ if(atlases.has(id))return atlases.get(id).promise;
+ const entry={image:null,promise:null};atlases.set(id,entry);
+ entry.promise=new Promise(resolve=>{
+  const img=makeImage();img.onload=()=>{
+   if(img.naturalWidth!==SURFACE_TILE.width*3||img.naturalHeight!==SURFACE_TILE.height*3){resolve(null);return;}
+   entry.image=img;resolve(img);
+  };img.onerror=()=>resolve(null);img.src=url;
+ });return entry.promise;
+}
+// Keep only a single reusable frame canvas per material, never one per cell.
 export function animatedSurfaceSprite(id,index,createCanvas=()=>document.createElement('canvas')){
- const style=styles[id];if(!style)return null;
+ if(!names[id])return null;
+ const image=atlases.get(id)?.image;
+ if(!image){if(typeof Image!=='undefined')loadAnimatedSurfaceAtlas(id);return null;}
  const frame=((index%SURFACE_FRAME_COUNT)+SURFACE_FRAME_COUNT)%SURFACE_FRAME_COUNT;
- const key=id+':'+frame;if(frames.has(key))return frames.get(key);
- const canvas=createCanvas(),{width:w,height:h}=SURFACE_TILE;canvas.width=w;canvas.height=h;
- const ctx=canvas.getContext('2d');if(!ctx)return null;
- const phase=frame/SURFACE_FRAME_COUNT*Math.PI*2;
- ctx.lineCap='round';ctx.strokeStyle=style.color;
- // Repeat periodic bands across tile boundaries: no visible seams or jumps.
- for(let row=0;row<6;row++){
-  const y=(row+.5)*h/6;
-  const shift=phase+row*1.71;
-  for(let copy=-1;copy<=1;copy++){
-   const origin=copy*w+(row%2)*w/4+Math.sin(shift)*5;
-   for(let j=0;j<3;j++){
-    const x=origin+j*w/3;
-    const length=(13+5*Math.sin(shift+j*2))*style.streak;
-    const yy=y+Math.cos(shift+j)*1.8;
-    ctx.globalAlpha=.12+.10*(.5+.5*Math.sin(shift+j*1.9));
-    ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x,yy);
-    ctx.quadraticCurveTo(x+length*.5,yy+Math.sin(shift+j)*style.amplitude,x+length,yy);
-    ctx.stroke();
-   }
-  }
+ let cached=frames.get(id);const {width:w,height:h}=SURFACE_TILE;
+ if(!cached){const canvas=createCanvas();canvas.width=w;canvas.height=h;cached={canvas,frame:-1};frames.set(id,cached);}
+ if(cached.frame!==frame){
+  const ctx=cached.canvas.getContext('2d');if(!ctx)return null;
+  ctx.clearRect(0,0,w,h);ctx.drawImage(image,(frame%3)*w,Math.floor(frame/3)*h,w,h,0,0,w,h);cached.frame=frame;
  }
- frames.set(key,canvas);return canvas;
+ return cached.canvas;
 }
