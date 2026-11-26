@@ -156,6 +156,27 @@ if(sculptSettingsPanel&&sculptSettingsToggle){
   sculptSettingsPanel.addEventListener('toggle',syncSculptSettingsToggle);
   syncSculptSettingsToggle();
 }
+
+const interiorToolsToggle=$('interior-tools-toggle');
+const interiorToolsDetails=$('interior-controls-details');
+function setInteriorInspectorOpen(open){
+  if(!interiorToolsToggle||!interiorToolsDetails)return; // V80 frozen markup has no contextual toggle.
+  interiorToolsDetails.open=Boolean(open&&!$('interior-area-bar').hidden);
+  interiorToolsToggle.setAttribute('aria-expanded',String(interiorToolsDetails.open));
+}
+if(interiorToolsToggle&&interiorToolsDetails){
+interiorToolsToggle.addEventListener('click',()=>{
+  if(sculptSettingsPanel)sculptSettingsPanel.open=false;
+  setInteriorInspectorOpen(!interiorToolsDetails.open);
+});
+interiorToolsDetails.addEventListener('toggle',()=>{
+  interiorToolsToggle.setAttribute('aria-expanded',String(interiorToolsDetails.open));
+});
+for(const id of ['mode-ground','mode-water','mode-objects','mode-waypoints','mode-surface','mode-encounters','navigation-toggle','sculpt-settings-toggle','new-map-toggle']){
+  $(id)?.addEventListener('click',()=>setInteriorInspectorOpen(false));
+}
+}
+
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
 const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
  storage:window.localStorage,makeId:()=>crypto.randomUUID()
@@ -6012,6 +6033,8 @@ function updateSculptAreaControls(){
   const worldInterior=!entry&&sculptWorldCurrentInterior();
   const inInterior=!!entry||worldInterior;
   $('interior-area-bar').hidden=!inInterior;
+  if(interiorToolsToggle)interiorToolsToggle.hidden=!inInterior;
+  if(!inInterior)setInteriorInspectorOpen(false);
   $('interior-area-return').textContent=worldInterior&&
     !worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId)
       ?'🌍 Retour au Monde':'← Retour extérieur';
@@ -7453,6 +7476,7 @@ function installSculptWorldAreaEditing(){
   $('world-area-portal-panel').hidden=false;
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
+  $('new-map-toggle').textContent='🗺 Réinitialiser carte';
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
   // This is a *download*, never a second saved world, autosave key or
   // alternative Portal graph. Even an invalid Portal must not cost an hour
