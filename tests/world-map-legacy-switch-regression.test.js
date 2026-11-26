@@ -29,7 +29,9 @@ test('legacy map handoff always allows return without committing the unrelated d
  const main=read('src/sculpt-lab-main.js'),html=read('sculpt-lab.html');
  assert.match(main,/sculptWorldAreaMounted=false/);
  assert.match(main,/if\(sculptWorldAreaMounted\)commitCurrentSculptWorldArea\(\)/);
- assert.match(main,/saveWorldAssemblerDraft\(worldStorage,sculptWorldDraft\)/);
+ assert.match(main,/createWorldAuthoringAccessV1/);
+ assert.match(main,/commit:\(document,expected\)=>access\.saveDraft\(document,expected\)/);
+ assert.match(main,/await save\(persistCurrentWorldSculpt\(\)\)/);
   assert.match(main,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
  assert.match(main,/world-area-unavailable'\)\.hidden=false/);
  assert.match(html,/id="world-area-unavailable"/);

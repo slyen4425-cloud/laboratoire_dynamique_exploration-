@@ -42,6 +42,12 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
   async load(id){return run(({library,projects})=>universeId===null?library.load(id):projects.load(universeId,id));},
   async readDraft(){return run(({readDraft})=>readDraft(universeId));},
   async saveDraft(document,expectedDocument){return run(({saveDraft})=>saveDraft(document,{universeId,expectedDocument}));},
+  // Unload has no async durability guarantee. Only the existing synchronous
+  // legacy owner may be invoked here, never a fallback writer for IndexedDB.
+  saveDraftOnUnload(document,expectedDocument){
+   if(owner)throw Error('IndexedDB exige une sauvegarde confirmée avant fermeture');
+   return run(({saveDraft})=>saveDraft(document,{universeId,expectedDocument}));
+  },
   async archive(document,{replace=false}={}){return run(({library,projects})=>universeId===null?library.save(document,{replace}):projects.save(universeId,document));},
   async activate(id){return run(({library,projects})=>universeId===null?library.activate(id):projects.activate(universeId,id));},
   async addBlank(options){if(universeId===null)throw Error('Projet univers requis');return run(({projects})=>projects.addBlank(universeId,options));},

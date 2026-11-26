@@ -62,7 +62,6 @@ import {createUserHeroStoreV1} from './storage/user-hero-store-v1.js';
 import {createUserNpcStoreV1} from './storage/user-npc-store-v1.js';
 import {createUserNpcAssetResolverV1,resolvePlacedNpcDefinitionsV1} from './actors/user-npc-definition-v1.js';
 import {createExplorationUniverseWorkspaceStorageV1} from './storage/exploration-universe-workspace-storage-v1.js';
-import {createExplorationUniverseWorldProjectsV1} from './builder/exploration-universe-world-projects-v1.js';
 import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js';
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
@@ -121,7 +120,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecov
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1,describeWorldAreaIncomingPortalsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
-import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
+import {createWorldAuthoringAccessV1} from './storage/world-document-authoring-access-v1.js';
 import {installWorldExternalBackupPanelV1} from './storage/world-document-external-backup-panel-v1.js';
 import {createSculptWorldPersistenceV1} from './storage/sculpt-world-persistence-v1.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
@@ -180,15 +179,10 @@ for(const id of ['mode-ground','mode-water','mode-objects','mode-waypoints','mod
 }
 
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
-const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
- storage:window.localStorage,makeId:()=>crypto.randomUUID()
-});
-if(universeWorldProjects&&universeWorldProjects.list(sculptUniverseId).length===0)
- throw new Error('Univers sans WorldDocument natif : aucune scène historique ouverte');
+const sculptWorldAccess=createWorldAuthoringAccessV1({storage:window.localStorage,
+ sessionStorage:window.sessionStorage,universeId:sculptUniverseId});
 const worldStorage=sculptUniverseId===null?window.localStorage:
  createExplorationUniverseWorkspaceStorageV1(window.localStorage,sculptUniverseId);
-const worldSessionStorage=sculptUniverseId===null?window.sessionStorage:
- createExplorationUniverseWorkspaceStorageV1(window.sessionStorage,sculptUniverseId);
 // Only the official Capture host may supply a SoundtrackProject Map scene;
  // the native Explorer still owns all decoding and playback.
 let captureMapMusicScene=null;
@@ -6279,8 +6273,8 @@ $('interior-level-select').addEventListener('change',async()=>{
 $('interior-level-add').addEventListener('click',async()=>{
   if(sculptWorldCurrentInterior()){
     try{
-      commitCurrentSculptWorldArea();
       await sculptWorldPersistence.transition(async save=>{
+      commitCurrentSculptWorldArea();
       const newFloor=addWorldInteriorFloor(sculptWorldDraft,sculptWorldAreaId);
       await save(newFloor.document);
       sculptWorldDraft=newFloor.document;
@@ -7278,7 +7272,7 @@ async function recoverScopedSculptEncounter(pending){
     throw Error('Le combat en attente ne peut pas être rouvert');
   presentSculptEncounter(pending.snapshot,true);
 }
-async function installSculptPlayMode(){
+async function installSculptPlayMode(access=sculptWorldAccess){
   if(!sculptPlayRequested)return;
   document.body.classList.add('sculpt-play-mode');
   const fail=error=>{
@@ -7294,7 +7288,7 @@ async function installSculptPlayMode(){
     console.error('Lancement Jouer refusé :',error);
   };
   try{
-    const world=readWorldAssemblerDraft(worldStorage);
+    const world=await access.readDraft();
     if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
     const checkpoint=readExplorationPlay(worldStorage,world,playOptions);
     if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
@@ -7453,7 +7447,7 @@ async function installSculptPlayMode(){
     fail(error);
   }
 }
-function installSculptWorldAreaEditing(){
+export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
   $('world-workspace-tabs').hidden=false;
@@ -7466,17 +7460,23 @@ function installSculptWorldAreaEditing(){
   // The handoff is intentionally consumed once. On a page refresh we
   // restore from the SAME canonical world document saved by World Builder,
   // never from an independent Sculpt scene or parallel WorldGraph.
-  const transfer=readWorldAssemblerHandoff(worldSessionStorage)??(()=>{
-    const document=readWorldAssemblerDraft(worldStorage);
-    return document&&requestedAreaId&&
-      document.areas.some(a=>a.id===requestedAreaId)
-      ?{document,areaId:requestedAreaId}:null;
-  })();
+  let transfer=null,initialSaved=null,loadError=null;
+  try{
+    if(sculptUniverseId!==null&&!(await access.list()).length)
+      throw Error('Univers sans WorldDocument natif : aucune scène historique ouverte');
+    initialSaved=await access.readDraft();
+    transfer=await access.readHandoff();
+    if(transfer&&initialSaved&&JSON.stringify(createWorldBuilderDraft(transfer.document))!==JSON.stringify(createWorldBuilderDraft(initialSaved)))
+      throw Error('Transfert de carte périmé : reviens au monde enregistré, aucune carte modifiée');
+    if(!transfer&&initialSaved&&requestedAreaId&&initialSaved.areas.some(a=>a.id===requestedAreaId))
+      transfer={document:initialSaved,areaId:requestedAreaId};
+  }catch(error){loadError=error;transfer=null;}
   if(!transfer){
     const unavailable=$('world-area-unavailable');
     unavailable.hidden=false;
     $('world-area-unavailable-message').textContent=
-      'Le contexte World Builder est absent. Reviens au panneau Monde pour sélectionner une carte.';
+      (loadError?loadError.message+' · ':'Le contexte World Builder est absent. ')+
+      'Reviens au panneau Monde pour sélectionner une carte.';
     $('world-area-unavailable-return').addEventListener('click',()=>
       window.location.assign('./world-assembler.html'+(sculptUniverseId?'?universe='+encodeURIComponent(sculptUniverseId):'')));
     $('world-area-unavailable-create').addEventListener('click',()=>
@@ -7486,19 +7486,11 @@ function installSculptWorldAreaEditing(){
     return;
   }
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
-  // For this increment the existing canonical storage remains the sole owner.
-  // The coordinator's async commit port can later receive IndexedDB without
-  // changing the native area, floor and building transition commands.
-  const initialSaved=readWorldAssemblerDraft(worldStorage);
-  const commitLegacy=(document,expected)=>{
-    const current=readWorldAssemblerDraft(worldStorage);
-    const raw=value=>value===null?null:JSON.stringify(createWorldBuilderDraft(value));
-    if(raw(current)!==raw(expected))throw Error('Le monde a changé dans un autre onglet : conserve et exporte tes modifications avant de recharger.');
-    if(!current&&worldStorage.getItem('gensrpg.world-assembler.document.v1')!==null)
-      throw Error('Document local illisible : aucune écriture destructive');
-    saveWorldAssemblerDraft(worldStorage,document);
-  };
-  sculptWorldPersistence=createSculptWorldPersistenceV1({initialDocument:initialSaved,commit:commitLegacy,commitOnUnload:commitLegacy});
+  // Exactly the same owner/transport seam as World Builder. Presets and
+  // gameplay checkpoints retain their own existing storage keys.
+  sculptWorldPersistence=createSculptWorldPersistenceV1({initialDocument:initialSaved,
+    commit:(document,expected)=>access.saveDraft(document,expected),
+    commitOnUnload:access.durable?null:(document,expected)=>access.saveDraftOnUnload(document,expected)});
   const externalBackup=installWorldExternalBackupPanelV1({root:window,captureDocument:()=>{
     // Never snapshot live play/navigation or a failed mount as authored data.
     if(!sculptWorldAreaMounted||sculptPlayRequested||navigationTesting)return null;
@@ -7548,8 +7540,7 @@ function installSculptWorldAreaEditing(){
     try{
       await sculptWorldPersistence.transition(async save=>{
       await save(persistCurrentWorldSculpt());
-      saveWorldAssemblerHandoff(
-        worldSessionStorage,sculptWorldDraft,sculptWorldAreaId);
+      await access.writeHandoff(sculptWorldDraft,sculptWorldAreaId);
       window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
         (newArea?'&createArea=1':'')+(sculptUniverseId?'&universe='+encodeURIComponent(sculptUniverseId):''));
       });
@@ -7736,7 +7727,7 @@ function installSculptWorldAreaEditing(){
       await save(persistCurrentWorldSculpt());
       const target=portal.targetAreaId;
       if(!sculptWorldDraft.areas.some(a=>a.id===target))throw Error('Zone cible indisponible');
-      saveWorldAssemblerHandoff(worldSessionStorage,sculptWorldDraft,target);
+      await access.writeHandoff(sculptWorldDraft,target);
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
@@ -7841,6 +7832,8 @@ function installSculptWorldAreaEditing(){
     spawns:sculptWorldArea()?.spawns??[],
     terrainWidth:terrain.width,terrainHeight:terrain.height,
     editable:sculptWorldAreaMounted,
+    storagePending:sculptWorldPersistence.busy,
+    durableStorage:access.durable,
     traverseVisible:!$('world-portal-traverse').hidden,
     placementMode:sculptWorldPortalPlacement
   });
@@ -8001,6 +7994,6 @@ sculptBootReady=true;fit();
 // Frozen V80 does not include the WorldArea Portal button. Modern Sculpt
 // keeps its canonical action; the legacy editor must still boot completely.
 $('world-portal-traverse')?.addEventListener('click',traverseSculptWorldPortal);
-installSculptWorldAreaEditing();
+await installSculptWorldAreaEditing();
 installSculptPlayMode();
 installSculptMapPresetPalette();
