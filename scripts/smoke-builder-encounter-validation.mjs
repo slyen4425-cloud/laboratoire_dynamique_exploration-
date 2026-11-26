@@ -30,7 +30,7 @@ try{
   chrome=spawn(binary,['--headless=new','--no-sandbox','--disable-gpu',
     '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
     '--window-size=1400,850','--remote-debugging-port=0',
-    '--user-data-dir='+profile,pageUrl],{stdio:['ignore','ignore','pipe']});
+    '--user-data-dir='+profile,pageUrl],{stdio:['ignore','ignore','pipe'],detached:process.platform!=='win32'});
   const port=await new Promise((ok,fail)=>{
     let stderr='';const watchdog=setTimeout(()=>fail(Error('No DevTools port: '+stderr.slice(-400))),45000);
     chrome.stderr.on('data',chunk=>{
@@ -230,8 +230,29 @@ try{
     +JSON.stringify({path:returned.path,area:savedArea.id,
       chance:savedFamily.encounterChancePercent,portals:returned.probe.portalCount}));
 }finally{
-  if(socket){try{socket.close();}catch{}}
-  if(chrome){try{chrome.kill('SIGKILL');}catch{}}
-  server.close();
-  await rm(profile,{recursive:true,force:true});
+  // Close the dedicated Chromium process tree before removing its profile.
+  // The editor assertions above remain mandatory; no retry of failed tests.
+  if(socket){
+    try{if(socket.readyState===WebSocket.OPEN){
+      socket.send(JSON.stringify({id:2147483000,method:'Browser.close'}));
+      await sleep(750);
+    }}catch{}
+    try{socket.close();}catch{}
+  }
+  if(chrome){
+    const killTree=signal=>{
+      try{if(process.platform!=='win32'&&Number.isInteger(chrome.pid))process.kill(-chrome.pid,signal);
+      else chrome.kill(signal);}catch(error){if(error?.code!=='ESRCH')throw error;}
+    };
+    if(chrome.exitCode===null&&chrome.signalCode===null){
+      const exited=new Promise(ok=>chrome.once('exit',ok));
+      killTree('SIGTERM');
+      if(!await Promise.race([exited.then(()=>true),sleep(3500).then(()=>false)])){
+        killTree('SIGKILL');await exited;
+      }
+    }
+    if(process.platform!=='win32')killTree('SIGKILL');
+  }
+  await new Promise(ok=>server.close(ok));
+  await rm(profile,{recursive:true,force:true,maxRetries:60,retryDelay:250});
 }
