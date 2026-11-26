@@ -292,7 +292,7 @@ try{
     document.querySelector('[data-mode=water-paint]').click();
     $('export').click();const json=$('json').value;
     const c=$('sculpt-canvas'),g=c.getContext('2d',{willReadFrequently:true});
-    const snapshot=()=>Array.from(g.getImageData(0,0,c.width,c.height).data);
+    const snapshot=()=>Uint8Array.from(g.getImageData(0,0,c.width,c.height).data);
     await new Promise(ok=>setTimeout(ok,180));const a=snapshot();
     const builds=window.__sculptObjectsProbe().terrainRasterBuilds;
     await new Promise(ok=>setTimeout(ok,260));const b=snapshot();
@@ -818,6 +818,7 @@ try{
       !visualsV18.mapUnchanged||visualsV18.selected!=='water.swamp')
     throw Error('V18 real material image/pixel or data-isolation regression: '+JSON.stringify(visualsV18));
   console.log('V18 native visual palette real pixels:',JSON.stringify(visualsV18));
+  await run("const pick=document.querySelector('#water-material');pick.value='water.clear_blue';pick.dispatchEvent(new Event('change',{bubbles:true}));");
 
   // V20: REAL canvas pointer places a native catalog WorldObject, then undo,
   // redo, removal, scene export/import and native asset loading are exercised.
