@@ -1,3 +1,5 @@
+import {sculptWaterMaterialCells} from '../world/sculpt-water-materials-v1.js';
+import {animatedSurfaceFrame,animatedSurfaceSprite} from './animated-surface-sprites-v1.js';
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
@@ -347,11 +349,12 @@ export function sculptRockToeSegments(terrain,row,from,to){
   }
   return Object.freeze(segments);
 }
-function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim}){
+function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,timeSeconds=null}){
   const edges=sculptWetShoreEdges(terrain,col,row);
   if(!edges.length)return;
   const phase=(hash(col,row,83)%100)/100;
-  const jitter=(hash(col,row,84)%5-2)*.18;
+  const pulse=timeSeconds===null?0:Math.sin(timeSeconds*2.8+phase*Math.PI*2);
+  const jitter=(hash(col,row,84)%5-2)*.18+pulse*.6;
   ctx.save();
   sculptWetShorePath(ctx,x,y,w,h,sculptWetShoreProfile(terrain,col,row,{width:w,height:h}));
   ctx.clip();
@@ -365,14 +368,14 @@ function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim}){
     else if(edge==='west'){a=[x+1.8,y-.8];b=[x+2.9+jitter,y+h/2];c=[x+1.8,y+h+.8];d=[1,0];}
     else {a=[x+w-1.8,y-.8];b=[x+w-2.9-jitter,y+h/2];c=[x+w-1.8,y+h+.8];d=[-1,0];}
     ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...b,...c);
-    ctx.globalAlpha=.27;ctx.strokeStyle=rim;ctx.lineWidth=4.2;ctx.stroke();
-    ctx.globalAlpha=.58;ctx.lineWidth=1.4;ctx.stroke();
+    ctx.globalAlpha=.27+pulse*.06;ctx.strokeStyle=rim;ctx.lineWidth=4.2+pulse*.5;ctx.stroke();
+    ctx.globalAlpha=.58+pulse*.15;ctx.lineWidth=1.4+pulse*.35;ctx.stroke();
     // A small second broken froth arc adds sparkle without a solid outline.
     ctx.beginPath();
     const dotT=.26+phase*.45;
     const px=a[0]+(c[0]-a[0])*dotT,py=a[1]+(c[1]-a[1])*dotT;
     ctx.moveTo(px,py);ctx.lineTo(px+d[0]*1.6,py+d[1]*1.6);
-    ctx.globalAlpha=.45;ctx.lineWidth=1;ctx.stroke();
+    ctx.globalAlpha=.45+pulse*.13;ctx.lineWidth=1;ctx.stroke();
   }
   ctx.restore();
 }
@@ -380,19 +383,26 @@ function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim}){
 // Render a volume of water per authored surface cell. Actual submerged depth
 // is the difference between water surface elevation and land elevation.
 // One cell can dry out after raising its ground without deleting water data.
-function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.height}){
+function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.height,waterMask=null,waterPatterns=null}){
   if(!overlay?.visible||!terrain?.waterLevels)return 0;
   const {width:w,height:h,rise}=tile;
-  const style=overlay.material?.render??{};
+  const cells=overlay.living?sculptWaterMaterialCells(terrain):null;
   let count=0;
-  const water=style.waterColor??'#39aee5';
-  const rim=style.highlightColor??'#d7f8ff';
-  const pattern=overlay.texture&&ctx.createPattern?.(overlay.texture,'repeat');
-  if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')pattern.setTransform(new DOMMatrix().scale(.55));
+  const patterns=waterPatterns??new Map();
   for(let row=rowStart;row<rowEnd;row++)for(let col=0;col<terrain.width;col++){
     const depth=sculptWaterAt(terrain,col,row);
     if(!depth)continue;
     count++;
+    const id=cells?.[row*terrain.width+col];
+    const entry=overlay.materials?.get(id)??overlay;
+    const style=entry.material?.render??{};
+    const water=style.waterColor??'#39aee5',rim=style.highlightColor??'#d7f8ff';
+    if(!patterns.has(entry)){
+      const pattern=entry.texture&&ctx.createPattern?.(entry.texture,'repeat');
+      if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')pattern.setTransform(new DOMMatrix().scale(.55));
+      patterns.set(entry,pattern);
+    }
+    const pattern=patterns.get(entry);
     const surface=terrain.waterLevels[row*terrain.width+col];
     const x=col*w,y=row*h-surface*rise;
     const eastDepth=sculptWaterAt(terrain,col+1,row);
@@ -408,11 +418,29 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     }
     ctx.globalAlpha=.94;ctx.fillStyle=water;ctx.fillRect(x,y,w+.65,h+.65);
     if(pattern){ctx.globalAlpha=.52;ctx.fillStyle=pattern;ctx.fillRect(x,y,w+.65,h+.65);}
-    ctx.globalAlpha=.28;ctx.strokeStyle=rim;ctx.lineWidth=.75;
-    ctx.beginPath();ctx.moveTo(x+3,y+h*.45);ctx.bezierCurveTo(x+w*.38,y+h*.32,
-      x+w*.61,y+h*.60,x+w-3,y+h*.41);ctx.stroke();
+    if(overlay.living){
+      ctx.globalAlpha=Math.min(.42,.08+depth*.055);ctx.fillStyle='#102a51';ctx.fillRect(x,y,w+.65,h+.65);
+      ctx.globalAlpha=1;
+      for(const edge of shore.edges){
+        const horizontal=edge==='north'||edge==='south';
+        const sign=edge==='north'||edge==='west'?1:-1;
+        const gx=edge==='east'?x+w:x,gy=edge==='south'?y+h:y;
+        const g=ctx.createLinearGradient(gx,gy,gx+(horizontal?0:sign*w*.40),gy+(horizontal?sign*h*.45:0));
+        g.addColorStop(0,'rgba(79,209,197,.70)');g.addColorStop(1,'rgba(79,209,197,0)');
+        ctx.fillStyle=g;ctx.fillRect(x,y,w+.65,h+.65);
+      }
+    }else{
+      ctx.globalAlpha=.28;ctx.strokeStyle=rim;ctx.lineWidth=.75;
+      ctx.beginPath();ctx.moveTo(x+3,y+h*.45);ctx.bezierCurveTo(x+w*.38,y+h*.32,
+        x+w*.61,y+h*.60,x+w-3,y+h*.41);ctx.stroke();
+    }
     ctx.restore();
-    drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim});
+    if(!waterMask)drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim});
+    if(waterMask){
+      waterMask.save();waterMask.clearRect(x,y,w+.65,h+.65);
+      if(shore.edges.length){sculptWetShorePath(waterMask,x,y,w,h,shore);waterMask.clip();}
+      waterMask.fillStyle='#fff';waterMask.fillRect(x,y,w+.65,h+.65);waterMask.restore();
+    }
     if(visibleWall>0){
       const grad=ctx.createLinearGradient(x,y+h,x,y+h+visibleWall);
       grad.addColorStop(0,'rgba(107,217,240,.83)');
@@ -420,6 +448,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
       grad.addColorStop(1,'rgba(19,83,130,.64)');
       ctx.fillStyle=grad;
       ctx.fillRect(x,y+h,w+.7,visibleWall);
+      waterMask?.clearRect(x,y+h,w+.7,visibleWall);
       ctx.fillStyle='rgba(226,252,250,.42)';
       ctx.fillRect(x,y+h,w,.85);
     }
@@ -427,6 +456,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
       (eastDepth?terrain.waterLevels[row*terrain.width+col+1]:sculptHeightAt(terrain,col+1,row))){
       ctx.fillStyle='rgba(24,91,139,.44)';
       ctx.fillRect(x+w-2,y+h,3,Math.max(2,Math.min(depth*rise,6)));
+      waterMask?.clearRect(x+w-2,y+h,3,Math.max(2,Math.min(depth*rise,6)));
     }
   }
   return count;
@@ -843,7 +873,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE,
-  drawOuterSouthRim=true,ambientOcclusionPct=null}={}){
+  drawOuterSouthRim=true,ambientOcclusionPct=null,waterMask=null}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -866,6 +896,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   const south=new Map(),east=new Map();
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
   let waterCells=0,roadCells=0,faceRuns=0;
+  const waterPatterns=new Map();
   // R14: square height tops do not use legacy roundness visual profiles.
   const drawPaint=sculptPaintByCell(ctx,terrain,tile,paintSurface,paintImages);
   // The flat baseColor backing is visible BELOW raised tiles at the south
@@ -892,6 +923,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       const x=col*w,y=row*h-level*rise;
       // Fully opaque grass over every corner; no clipped brown underpainting.
       ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
+      waterMask?.clearRect(x,y,w+.6,h+.6);
       ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
         'rgba(0,0,0,.01)'],col,row,2);
       ctx.fillRect(x,y,w,h);
@@ -905,7 +937,9 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h,ambientOcclusionPct});
       const side=east.get(idx);
       if(side){
-        rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
+        const bounds=sculptEastSeamBounds(tile,col,row,side.upper,side.lower);
+        waterMask?.clearRect(bounds.x,bounds.y,bounds.width,bounds.height);
+        rockFace(ctx,{...bounds,
           colors,seed:idx+54,sun:0,smoothness:0,
           rockPalette,cliffAtlas,cliffHD,cliffMoss});
       }
@@ -922,6 +956,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       }
       const x=col*w,y=row*h-first.upper*rise+h;
       const width=(end-col)*w,height=(first.upper-first.lower)*rise;
+      waterMask?.clearRect(x-2,y,width+4,height+3);
       // One continuous HD rock wall beneath straight grass edges.
       rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:0,
         rockPalette,cliffAtlas,cliffHD,cliffMoss});
@@ -930,7 +965,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     // Painter order: water belongs to its own absolute-height layer. Paint it
     // before the next (foreground) land row, never over every finished cliff.
     waterCells+=drawWaterVolume(ctx,{terrain,overlay:overlays.water,tile,
-      rowStart:row,rowEnd:row+1});
+      rowStart:row,rowEnd:row+1,waterMask,waterPatterns});
   }
 
   // Outside-world front rim is a V50 HD cliff, not untextured baseColor.
@@ -944,6 +979,14 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   }
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
+  if(waterMask){
+    // Replay the same final relief renderer into the alpha mask, not a second height model.
+    waterMask.save();waterMask.globalCompositeOperation='destination-out';
+    drawSculptSphereMeshes(waterMask,{terrain,tile,texture:null,baseColor:'#fff',rockPaletteColors:colors,rockTexture:null,rockPalette,sphereWallImages:null});
+    for(const bridge of sculptNavigationWaterSupports(terrain))if(bridge.visibleInPlay)drawSculptWaterSupport(waterMask,bridge,rise);
+    for(const ramp of sculptTerrainRampProjections(terrain))if(!ramp.navigationOnly)drawSculptRamp(waterMask,ramp,terrain,{tileWidth:w,tileHeight:h,rise,texture:null,baseColor:'#fff'});
+    waterMask.restore();
+  }
   const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,
     rockPaletteColors:colors,rockTexture:cliffHD,rockPalette,sphereWallImages});
   // Native ground relief: the same grassy surface material as the terrain,
@@ -961,4 +1004,37 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       tileWidth:w,tileHeight:h,rise,texture,baseColor}))terrainRampCount++;
   }
   return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight};
+}
+
+// Only the animated surface and real shore contacts; clipping is performed by
+// the caller with the water visibility mask produced in native painter order.
+const wetCellCache=new WeakMap();
+function visibleWaterCells(terrain,tile){
+ if(wetCellCache.has(terrain))return wetCellCache.get(terrain);
+ const ids=sculptWaterMaterialCells(terrain),groups=new Map();
+ for(let row=0;row<terrain.height;row++)for(let col=0;col<terrain.width;col++){
+  if(!sculptWaterAt(terrain,col,row))continue;
+  const i=row*terrain.width+col,id=ids[i];
+  if(!groups.has(id))groups.set(id,[]);
+  groups.get(id).push({row,col,x:col*tile.width,y:row*tile.height-terrain.waterLevels[i]*tile.rise,
+    shore:sculptWetShoreEdges(terrain,col,row).length>0});
+ }
+ wetCellCache.set(terrain,groups);return groups;
+}
+export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSeconds=0,fps=8,viewport,foam=true}){
+ const groups=visibleWaterCells(terrain,tile),{width:w,height:h}=tile;
+ const frame=animatedSurfaceFrame(timeSeconds,fps);
+ let visible=0;
+ for(const [id,cells] of groups){
+  const sprite=animatedSurfaceSprite(id,frame);if(!sprite)continue;
+  const pattern=ctx.createPattern(sprite,'repeat');if(!pattern)continue;
+  const inView=c=>!viewport||(c.x+w>=viewport.minX&&c.x<=viewport.maxX&&c.y+h>=viewport.minY&&c.y<=viewport.maxY);
+  ctx.save();ctx.fillStyle=pattern;ctx.beginPath();
+  for(const cell of cells)if(inView(cell)){ctx.rect(cell.x,cell.y,w+.65,h+.65);visible++;}
+  ctx.fill();ctx.restore();
+  if(foam)for(const cell of cells)if(cell.shore&&inView(cell)){
+   drawSculptShoreFoam(ctx,{terrain,col:cell.col,row:cell.row,x:cell.x,y:cell.y,w,h,rim:'#f1fff9',timeSeconds});
+  }
+ }
+ return visible;
 }
