@@ -59,13 +59,13 @@ function sampleTexture(tex,u,v,profile){
   }
   return {r,g,b,a};
 }
-const TILE_CACHE_LIMIT=384,RASTER_SCALE=2;
+const TILE_CACHE_LIMIT=768,RASTER_SCALE=2;
 function cacheFor(field,tile,images){
   const refs=[];
   for(const entry of field.entries)for(const {asset} of Object.values(entry.styles))if(!refs.some(x=>x[0]===asset.id))refs.push([asset.id,images.get(asset.id)]);
   const old=rasterCaches.get(field);
   if(old&&old.w===tile.width&&old.h===tile.height&&old.refs.length===refs.length&&refs.every(([id,ref],i)=>old.refs[i][0]===id&&old.refs[i][1]===ref))return old;
-  const c={w:tile.width,h:tile.height,refs,tiles:new Map(),textures:new Map(),spriteBuckets:new Map()};
+  const c={w:tile.width,h:tile.height,refs,tiles:new Map(),emptyTiles:new Set(),bandCells:new Map(),textures:new Map(),spriteBuckets:new Map()};
   for(const [id,imgs] of refs){
     const asset=ROAD_BORDER_ASSETS.find(a=>a.id===id);
     if(asset?.kind==='band'&&imgs?.[0]){
@@ -83,6 +83,7 @@ function cacheFor(field,tile,images){
 }
 function tileRaster(field,cache,col,row){
   const key=col+','+row;
+  if(cache.emptyTiles.has(key))return null;
   if(cache.tiles.has(key)){const old=cache.tiles.get(key);cache.tiles.delete(key);cache.tiles.set(key,old);return old;}
   const w=Math.ceil(cache.w*RASTER_SCALE),h=Math.ceil(cache.h*RASTER_SCALE);
   const canvas=makeCanvas(w,h),ctx=canvas?.getContext('2d');if(!ctx)return null;
@@ -99,15 +100,21 @@ function tileRaster(field,cache,col,row){
     if(a>0){const i=(y*w+x)*4;pixels.data[i]=r/a;pixels.data[i+1]=g/a;pixels.data[i+2]=b/a;pixels.data[i+3]=a*255;visible=true;}
   }
   if(visible)ctx.putImageData(pixels,0,0);
-  const result=visible?canvas:null;cache.tiles.set(key,result);
+  if(!visible){if(cache.emptyTiles.size>4096)cache.emptyTiles.clear();cache.emptyTiles.add(key);return null;}
+  cache.tiles.set(key,canvas);
   if(cache.tiles.size>TILE_CACHE_LIMIT)cache.tiles.delete(cache.tiles.keys().next().value);
-  return result;
+  return canvas;
 }
 export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
   if(!routes?.some(r=>r.border?.enabled))return null;
   const field=fieldFor(routes),cache=cacheFor(field,tile,images);
   if(!cache.textures.size&&!cache.spriteBuckets.size)return null;
-  const hasBand=(col,row)=>cache.textures.size>0&&roadBorderFieldHasCell(field,col*tile.width,row*tile.height,tile.width,tile.height);
+  const hasBand=(col,row)=>{
+    if(!cache.textures.size)return false;
+    const key=col+','+row;
+    if(!cache.bandCells.has(key))cache.bandCells.set(key,roadBorderFieldHasCell(field,col*tile.width,row*tile.height,tile.width,tile.height));
+    return cache.bandCells.get(key);
+  };
   const paint=(col,row,level)=>{
     const key=col+','+row,band=hasBand(col,row)?tileRaster(field,cache,col,row):null;
     if(band){
