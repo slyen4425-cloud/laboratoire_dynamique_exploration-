@@ -9,7 +9,7 @@ export function mountNpcWildBehaviorControlsV1(host,onChange){
   wrapper.append(element);host.append(wrapper);fields[key]=element;
  }
  const mode=doc.createElement('select');
- for(const [value,label] of [['pacific','Pacifique — interaction volontaire'],['contact','Réagit au contact'],['aggressive','Agressif — détecte et poursuit']]){
+ for(const [value,label] of [['pacific','Pacifique — interaction volontaire'],['contact','Réagit au contact'],['aggressive','Agressif — détecte et poursuit'],['flee','Craintif — fuit à proximité']]){
   const option=doc.createElement('option');option.value=value;option.textContent=label;mode.append(option);
  }
  field('mode','Comportement ',mode);
