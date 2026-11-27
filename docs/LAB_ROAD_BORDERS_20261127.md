@@ -19,3 +19,9 @@ Demande auteur 27/11 : travailler uniquement sur cette branche, ne pas fusionner
 3. Contours et rendu dans le renderer existant ; intersections, relief, masquage eau, bords de carte, ponts. Cache invalidé sur changement, sans nouvelle boucle RAF.
 4. UI : sélectionner route / bordure / sans bordure, gomme locale et poignées (PC/tactile), sans doublon de l'outil textures. Raccord avec #564 à coordonner.
 5. Tests Node, import/export des mondes, navigateur PC et Pixel paysage, tests sentinelles et budget Pages. Validation auteur puis autorisation distincte de fusion/publication. Aucun GREEN avant preuves.
+
+## Candidat de développement — état NON GREEN
+- Contrat WorldSurface, géométrie de courbe, gomme locale par section (pas une gomme pixel indépendante), dessin libre, sélection, poignées, styles gauche/droite, chargement WebP et rendu par cellule raccordés au Sculpt 2.5D. V80 reste sans nouveaux contrôles.
+- npm run build:road-borders matérialise les 14 WebP depuis le ZIP source vérifié ; npm test le fait automatiquement. Le smoke Chromium construit aussi les ressources. Aucun PNG source/ZIP supplémentaire n'est livré ; l'archive originale demeure dans Git. L'intégration PWA ultérieure devra appeler ce build avant copie et exclure le ZIP.
+- Les portions décoratives hors carte restent sur le contrat historique ; import utilisateur et presets à coordonner avec le propriétaire de la bibliothèque (#564). La limite 80 tracés est conservée en attendant un test de charge et le lot de sauvegarde #561. Les 32 nœuds/512 points sont bornés.
+- Tests du modèle, de découpe, des courbes et des croisements ; smoke navigateur ajouté pour pixels, chargement et sauvegarde. CI exacte et validation mobile encore nécessaires. Pas de promotion main/public/PWA sans autorisation.

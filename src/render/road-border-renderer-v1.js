@@ -73,7 +73,7 @@ export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
       }
   }
   if(!buckets.size)return null;
-  return (col,row,level)=>{
+  const paint=(col,row,level)=>{
     for(const s of buckets.get(row*terrain.width+col)??[]){
       const imgs=images.get(s.asset.id);
       const image=s.asset.kind==='sprites'?imgs[s.index%imgs.length]:imgs[0];
@@ -93,4 +93,6 @@ export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
       ctx.restore();
     }
   };
+  paint.hasCell=(col,row)=>buckets.has(row*terrain.width+col);
+  return paint;
 }

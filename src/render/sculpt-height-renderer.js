@@ -595,7 +595,7 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   }
   return (col,row,level,x,y)=>{
     const items=buckets[row*terrain.width+col];
-    if(!items?.length){if(drawBorders){ctx.save();sculptPaintCellClipV1(ctx,x,y,w,h);drawBorders(col,row,level);ctx.restore();}return 0;}
+    if(!items?.length){if(drawBorders?.hasCell(col,row)){ctx.save();sculptPaintCellClipV1(ctx,x,y,w,h);drawBorders(col,row,level);ctx.restore();}return 0;}
     // On fractional mobile DPR/zoom, the independently anti-aliased clips
     // can expose one physical pixel of the green base below a snow/road zone.
     // Underpaint ONLY with the same canonical opaque Material Registry pattern;

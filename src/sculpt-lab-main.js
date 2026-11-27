@@ -2331,7 +2331,8 @@ function begin(event){
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     if(objectEditing){handleDecorativeFringeObject(cell,event);return;}
     if(surfaceEditing){
-      if($('surface-action').value==='erase'){
+      if(['curve','edit'].includes($('surface-action').value)){status('Les courbes et poignées sont réservées à la carte jouable.');return;}
+      if(['erase','delete'].includes($('surface-action').value)){
         try{commitFringeSurface([fringeSurfacePoint(cell)],true)}
         catch(error){status(error.message)}
       }else fringeSurfaceGesture={pointerId:event.pointerId,
@@ -4470,7 +4471,8 @@ window.__sculptSurfaceProbe=()=>Object.freeze({
   routes:surface.routes.length,zones:surface.zones.length,
   baseTerrainFamilyId:surface.baseTerrainFamilyId,
   features:[...surface.routes,...surface.zones].map(f=>({
-    id:f.id,materialId:f.materialId,terrainFamilyId:f.terrainFamilyId,width:f.width,points:f.points.length
+    id:f.id,materialId:f.materialId,terrainFamilyId:f.terrainFamilyId,width:f.width,points:f.points.length,
+    ...(f.border?{border:f.border}:{}),...(f.knots?{knots:f.knots.length}: {})
   })),
   texturesLoaded:[...surfacePaintImages.keys()],
   undoCount:surfaceHistory.length
