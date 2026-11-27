@@ -27,6 +27,14 @@
      <summary aria-label="Ouvrir les options d'import et export">☰ Fichiers</summary>
      <div class="world-file-menu">
       <button id="export-world" class="accent" type="button">↓ Exporter le monde complet</button>
+      <details id="world-external-backup-panel">
+ <summary>💾 Copies de secours sur disque</summary>
+ <small>Copies du monde courant, toutes les 5 minutes si modifié, pendant l'édition. Ni médias ni parties inclus.</small>
+ <button id="world-external-backup-folder" type="button">Choisir un dossier PC</button>
+ <button id="world-external-backup-now" type="button" disabled>Copier maintenant / réautoriser</button>
+ <button id="world-external-backup-stop" type="button" disabled>Désactiver</button>
+ <output id="world-external-backup-status" role="status" aria-live="polite">Copies externes désactivées</output>
+</details>
       <button id="export-selected-map-preset" type="button" title="Télécharger la carte 2,5D de la zone sélectionnée dans le format natif des présets">↓ Exporter cette carte en préset</button>
       <small>Monde = zones et passages. Carte = relief, textures, objets, acteurs et décor extérieur, sans les passages.</small>
       <label class="import-btn" for="import-world">↑ Importer JSON

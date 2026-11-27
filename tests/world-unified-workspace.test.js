@@ -34,7 +34,10 @@ test('the World and Map panels use the same selected WorldArea handoff, not two 
  assert.match(assembler,/world-workspace-map/);
  assert.match(main,/world-workspace-world/);
  assert.match(main,/saveAndReturnWorldArea/);
- assert.match(main,/saveWorldAssemblerHandoff/);
- assert.match(assembler,/saveWorldAssemblerHandoff/);
+ assert.match(main,/await access\.writeHandoff\(sculptWorldDraft,sculptWorldAreaId\)/);
+ assert.match(assembler,/await access\.writeHandoff\(draft,areaToOpen\)/);
+ const access=code('src/storage/world-document-authoring-access-v1.js');
+ assert.match(access,/saveWorldAssemblerHandoff\(sessions,document,areaId\)/);
+ assert.match(access,/schemaVersion:2,worldId:document\.id,areaId,revision:row\.revision/);
  assert.match(html,/id="world-area-create-another"/);
 });

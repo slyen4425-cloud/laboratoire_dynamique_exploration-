@@ -64,7 +64,6 @@ import {createUserHeroStoreV1} from './storage/user-hero-store-v1.js';
 import {createUserNpcStoreV1} from './storage/user-npc-store-v1.js';
 import {createUserNpcAssetResolverV1,resolvePlacedNpcDefinitionsV1} from './actors/user-npc-definition-v1.js';
 import {createExplorationUniverseWorkspaceStorageV1} from './storage/exploration-universe-workspace-storage-v1.js';
-import {createExplorationUniverseWorldProjectsV1} from './builder/exploration-universe-world-projects-v1.js';
 import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js';
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
@@ -128,7 +127,9 @@ import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecov
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1,describeWorldAreaIncomingPortalsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
-import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
+import {openWorldDocumentReleaseAccessV1} from './storage/world-document-release-access-v1.js';
+import {installWorldExternalBackupPanelV1} from './storage/world-document-external-backup-panel-v1.js';
+import {createSculptWorldPersistenceV1,installSculptWorldAutosaveV1} from './storage/sculpt-world-persistence-v1.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {emitExplorationPlayNavigationCommittedV1
 } from './play/exploration-play-events-v1.js';
@@ -185,15 +186,10 @@ for(const id of ['mode-ground','mode-water','mode-objects','mode-waypoints','mod
 }
 
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
-const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
- storage:window.localStorage,makeId:()=>crypto.randomUUID()
-});
-if(universeWorldProjects&&universeWorldProjects.list(sculptUniverseId).length===0)
- throw new Error('Univers sans WorldDocument natif : aucune scène historique ouverte');
+const sculptWorldAccess=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,
+ sessionStorage:window.sessionStorage,universeId:sculptUniverseId});
 const worldStorage=sculptUniverseId===null?window.localStorage:
  createExplorationUniverseWorkspaceStorageV1(window.localStorage,sculptUniverseId);
-const worldSessionStorage=sculptUniverseId===null?window.sessionStorage:
- createExplorationUniverseWorkspaceStorageV1(window.sessionStorage,sculptUniverseId);
 // Only the official Capture host may supply a SoundtrackProject Map scene;
  // the native Explorer still owns all decoding and playback.
 let captureMapMusicScene=null;
@@ -248,6 +244,7 @@ let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=
 // World-linked authoring uses exactly one world document. Active terrain is
 // transient editor state until committed back to its own WorldArea.
 let sculptWorldDraft=null,sculptWorldAreaId=null,sculptWorldPortalPlacement=null;
+let sculptWorldPersistence=null;
 let sculptWorldAreaMounted=false; // derived from a successful canonical 2.5D WorldArea mount
 let sculptInteriorTemplates=Object.freeze([]);
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
@@ -6338,7 +6335,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   status(activeInteriorId?'Intérieur lié à cette maison : porte, sol, murs et modèles indépendants.':
     'Extérieur restauré · maison et relief conservés.');
 }
-function openSelectedSculptInterior(){
+async function openSelectedSculptInterior(){
   if(activeInteriorId)return;
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   const resolved=resolveWorldObjectPlacements(selected?[selected]:[],
@@ -6347,6 +6344,7 @@ function openSelectedSculptInterior(){
   if(sculptWorldDraft){
     if(sculptPlayRequested||navigationTesting){status('Passe en édition 2,5D pour lier une maison.');return;}
     try{
+      await sculptWorldPersistence.transition(async save=>{
       // Capture the *current* object placement before resolving its one real
       // door. An unsaved preview must never create an orphan Builder link.
       commitCurrentSculptWorldArea();
@@ -6356,12 +6354,13 @@ function openSelectedSculptInterior(){
       // Validate the destination BEFORE replacing the current displayed Area.
       const target=link.document.areas.find(a=>a.id===link.targetAreaId);
       const scene=sculptWorldAreaScene(target,sculptGraphicContext());
+      await save(link.document);
       sculptWorldDraft=link.document;
-      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       mountWorldSculptArea(link.targetAreaId,scene);
       $('world-area-portal-panel').open=false;
       status((link.created?'Intérieur créé et lié':'Intérieur lié retrouvé')+
         ' : porte extérieure, arrivée et sortie déjà enregistrées dans World Builder.');
+      });
     }catch(error){status('Maison non liée : '+error.message);}
     return;
   }
@@ -6421,17 +6420,19 @@ function loadSculptTemplates(){
   catch{sculptInteriorTemplates=Object.freeze([]);}
   refreshSculptTemplateSelector();
 }
-$('interior-level-select').addEventListener('change',()=>{
+$('interior-level-select').addEventListener('change',async()=>{
   if(sculptWorldCurrentInterior()){
     try{
+      await sculptWorldPersistence.transition(async save=>{
       const destination=$('interior-level-select').value;
       if(!worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId)
          .some(f=>f.areaId===destination))throw Error('Étage inexistant');
       commitCurrentSculptWorldArea();
+      await save(sculptWorldDraft);
       mountWorldSculptArea(destination);
-      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       status('Étage '+(worldInteriorFloors(sculptWorldDraft,destination)
         .find(f=>f.areaId===destination)?.label??'lié')+' ouvert et sauvegardé.');
+      });
     }catch(error){status('Impossible de changer d’étage : '+error.message);
       updateSculptAreaControls();}
     return;
@@ -6442,15 +6443,17 @@ $('interior-level-select').addEventListener('change',()=>{
     e.floorIndex===floorIndex);
   if(target)changeSculptArea(target.area.id);
 });
-$('interior-level-add').addEventListener('click',()=>{
+$('interior-level-add').addEventListener('click',async()=>{
   if(sculptWorldCurrentInterior()){
     try{
+      await sculptWorldPersistence.transition(async save=>{
       commitCurrentSculptWorldArea();
       const newFloor=addWorldInteriorFloor(sculptWorldDraft,sculptWorldAreaId);
+      await save(newFloor.document);
       sculptWorldDraft=newFloor.document;
-      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       mountWorldSculptArea(newFloor.areaId);
       status('Étage créé et relié par vrais passages aller-retour. Place un escalier/une échelle dans le panneau.');
+      });
     }catch(error){status('Étage non créé : '+error.message);}
     return;
   }
@@ -7149,7 +7152,7 @@ function drawSculptWorldPortalMarkers(){
   }
   ctx.restore();
 }
-function commitCurrentSculptWorldArea(){
+function snapshotCurrentSculptWorldArea(){
   if(!sculptWorldDraft||!sculptWorldAreaId)return null;
   if(!sculptWorldAreaMounted)throw Error('Zone 2,5D non chargée : aucune scène démo ne doit remplacer la WorldArea');
   // Scene-saving validates the WorldDocument before it returns. Always feed
@@ -7162,10 +7165,14 @@ function commitCurrentSculptWorldArea(){
   const areas=updated.areas.map(a=>a.id===sculptWorldAreaId
     ?{...a,encounters:sculptExteriorEncounters}:a);
   // One EncounterConfig on the whole document, same Builder commands.
-  sculptWorldDraft=createWorldBuilderDraft({
+  return createWorldBuilderDraft({
     ...updated,areas,encounterConfig:sculptEncounterConfig
   });
-  return sculptWorldDraft;
+}
+function commitCurrentSculptWorldArea(){
+  const snapshot=snapshotCurrentSculptWorldArea();
+  if(snapshot)sculptWorldDraft=snapshot;
+  return snapshot;
 }
 function mountWorldSculptArea(areaId,validatedScene=null){
   sculptWorldAreaMounted=false;
@@ -7243,7 +7250,7 @@ function reportScopedPlayZoneLoadingV1(visible){
   },window.location.origin);
 }
 async function traverseSculptWorldPortal(){
-  if(sculptPortalLoading)return;
+  if(sculptPortalLoading||(!sculptPlayActive&&sculptWorldPersistence?.transitioning))return;
   let portal=sculptWorldPortalAtHero();
   if(!portal){
     if(sculptPlayActive)return; // Gameplay never creates a Portal.
@@ -7321,9 +7328,18 @@ async function traverseSculptWorldPortal(){
       ?validatedTargetScene
       :sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId),sculptGraphicContext());
     if(!destinationScene)throw Error('Scene de destination invalide');
-    if(navigationTesting)setNavigationTesting(false);
-    mountWorldSculptArea(transition.currentAreaId,destinationScene);
-    setNavigationTesting(true);
+    const mountDestination=()=>{
+      if(navigationTesting)setNavigationTesting(false);
+      mountWorldSculptArea(transition.currentAreaId,destinationScene);
+      setNavigationTesting(true);
+    };
+    // Tester is an authoring transition: acknowledge the current WorldDocument
+    // before releasing its map. Jouer never writes authored data.
+    if(sculptPlayActive)mountDestination();
+    else await sculptWorldPersistence.transition(async save=>{
+      await save(document);
+      mountDestination();
+    });
     if(!navActor)throw Error('Zone de destination non praticable');
     if(sculptPlayActive){
       const arrival={...navActor,x:transition.x,y:transition.y};
@@ -7438,7 +7454,7 @@ async function recoverScopedSculptEncounter(pending){
     throw Error('Le combat en attente ne peut pas être rouvert');
   presentSculptEncounter(pending.snapshot,true);
 }
-async function installSculptPlayMode(){
+async function installSculptPlayMode(access=sculptWorldAccess){
   if(!sculptPlayRequested)return;
   document.body.classList.add('sculpt-play-mode');
   const fail=error=>{
@@ -7454,7 +7470,7 @@ async function installSculptPlayMode(){
     console.error('Lancement Jouer refusé :',error);
   };
   try{
-    const world=readWorldAssemblerDraft(worldStorage);
+    const world=await access.readDraft();
     if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
     assertSculptWorldGraphicsAvailableV1(world,sculptGraphics);
     const checkpoint=readExplorationPlay(worldStorage,world,playOptions);
@@ -7614,7 +7630,7 @@ async function installSculptPlayMode(){
     fail(error);
   }
 }
-function installSculptWorldAreaEditing(){
+export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
   $('world-workspace-tabs').hidden=false;
@@ -7627,17 +7643,24 @@ function installSculptWorldAreaEditing(){
   // The handoff is intentionally consumed once. On a page refresh we
   // restore from the SAME canonical world document saved by World Builder,
   // never from an independent Sculpt scene or parallel WorldGraph.
-  const transfer=readWorldAssemblerHandoff(worldSessionStorage)??(()=>{
-    const document=readWorldAssemblerDraft(worldStorage);
-    return document&&requestedAreaId&&
-      document.areas.some(a=>a.id===requestedAreaId)
-      ?{document,areaId:requestedAreaId}:null;
-  })();
+  let transfer=null,initialSaved=null,loadError=null,confirmedDeparture=false;
+  try{
+    if(sculptUniverseId!==null&&!(await access.list()).length)
+      throw Error('Univers sans WorldDocument natif : aucune scène historique ouverte');
+    initialSaved=await access.readDraft();
+    transfer=await access.readHandoff();
+    if(transfer&&initialSaved&&JSON.stringify(createWorldBuilderDraft(transfer.document))!==JSON.stringify(createWorldBuilderDraft(initialSaved)))
+      throw Error('Transfert de carte périmé : reviens au monde enregistré, aucune carte modifiée');
+    if(!transfer&&initialSaved&&requestedAreaId&&initialSaved.areas.some(a=>a.id===requestedAreaId))
+      transfer={document:initialSaved,areaId:requestedAreaId};
+    if(transfer)assertSculptWorldGraphicsAvailableV1(transfer.document,sculptGraphics);
+  }catch(error){loadError=error;transfer=null;}
   if(!transfer){
     const unavailable=$('world-area-unavailable');
     unavailable.hidden=false;
     $('world-area-unavailable-message').textContent=
-      'Le contexte World Builder est absent. Reviens au panneau Monde pour sélectionner une carte.';
+      (loadError?loadError.message+' · ':'Le contexte World Builder est absent. ')+
+      'Reviens au panneau Monde pour sélectionner une carte.';
     $('world-area-unavailable-return').addEventListener('click',()=>
       window.location.assign('./world-assembler.html'+(sculptUniverseId?'?universe='+encodeURIComponent(sculptUniverseId):'')));
     $('world-area-unavailable-create').addEventListener('click',()=>
@@ -7646,9 +7669,19 @@ function installSculptWorldAreaEditing(){
     sculptWorldStatus('Session World Builder absente. Retourne au constructeur de mondes.',true);
     return;
   }
-  try{assertSculptWorldGraphicsAvailableV1(transfer.document,sculptGraphics);}
-  catch(error){document.body.classList.add('world-area-unavailable');sculptWorldStatus(error.message,true);return;}
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
+  // Exactly the same owner/transport seam as World Builder. Presets and
+  // gameplay checkpoints retain their own existing storage keys.
+  sculptWorldPersistence=createSculptWorldPersistenceV1({initialDocument:initialSaved,
+    commit:(document,expected)=>access.saveDraft(document,expected),
+    commitOnUnload:access.durable?null:(document,expected)=>access.saveDraftOnUnload(document,expected),
+    onTransition:active=>{if(access.durable)document.body.inert=active;}});
+  const externalBackup=installWorldExternalBackupPanelV1({root:window,captureDocument:()=>{
+    // Never snapshot live play/navigation or a failed mount as authored data.
+    if(!sculptWorldAreaMounted||sculptPlayRequested||navigationTesting)return null;
+    return snapshotCurrentSculptWorldArea();
+  }});
+  window.addEventListener('pagehide',()=>externalBackup.dispose(),{once:true});
   $('world-area-portal-panel').hidden=false;
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
@@ -7685,17 +7718,20 @@ function installSculptWorldAreaEditing(){
     if(sculptWorldAreaMounted)commitCurrentSculptWorldArea();
     // The single world document is written into its canonical storage key.
     // No independent map/scene key or duplicate portal owner is introduced.
-    saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
     return sculptWorldDraft;
   }
-  function saveAndReturnWorldArea({newArea=false}={}){
+  async function saveAndReturnWorldArea({newArea=false}={}){
+    if(sculptWorldPersistence.transitioning)return;
     try{
-      persistCurrentWorldSculpt();
-      saveWorldAssemblerHandoff(
-        worldSessionStorage,sculptWorldDraft,sculptWorldAreaId);
+      await sculptWorldPersistence.transition(async save=>{
+      await save(persistCurrentWorldSculpt());
+      await access.writeHandoff(sculptWorldDraft,sculptWorldAreaId);
+      confirmedDeparture=true;
       window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
         (newArea?'&createArea=1':'')+(sculptUniverseId?'&universe='+encodeURIComponent(sculptUniverseId):''));
+      });
     }catch(error){
+      confirmedDeparture=false;
       let message='Enregistrement bloqué : '+error.message;
       try{
         const file=downloadWorldSculptRecovery();
@@ -7714,14 +7750,15 @@ function installSculptWorldAreaEditing(){
   $('world-area-unavailable-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-unavailable-create').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
-  $('world-area-return-house').addEventListener('click',()=>{
+  $('world-area-return-house').addEventListener('click',async()=>{
     try{
       const house=worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId);
       if(!house)throw Error('Cette zone ne possède pas de porte extérieure liée');
-      persistCurrentWorldSculpt();
+      await sculptWorldPersistence.transition(async save=>{
+      await save(persistCurrentWorldSculpt());
       mountWorldSculptArea(house.outsideAreaId);
-      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       status('Retour extérieur : carte maison retrouvée, portes et étages conservés.');
+      });
     }catch(error){sculptWorldStatus('Retour impossible : '+error.message,true);}
   });
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
@@ -7869,14 +7906,15 @@ function installSculptWorldAreaEditing(){
       sculptWorldStatus('★ Touche le nouveau départ sur la carte jouable (terrain sec).');
     }catch(error){sculptWorldStatus(error.message,true);}
   });
-  $('world-area-edit-destination').addEventListener('click',()=>{
+  $('world-area-edit-destination').addEventListener('click',async()=>{
     const portal=currentWorldPortal();
     if(!portal){sculptWorldStatus('Sélectionne d’abord une sortie.',true);return;}
     try{
-      persistCurrentWorldSculpt();
+      await sculptWorldPersistence.transition(async save=>{
+      await save(persistCurrentWorldSculpt());
       const target=portal.targetAreaId;
       if(!sculptWorldDraft.areas.some(a=>a.id===target))throw Error('Zone cible indisponible');
-      saveWorldAssemblerHandoff(worldSessionStorage,sculptWorldDraft,target);
+      await access.writeHandoff(sculptWorldDraft,target);
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
@@ -7886,8 +7924,10 @@ function installSculptWorldAreaEditing(){
       url.searchParams.delete('arrivalSpawnId');
       if(reverse)url.searchParams.set('arrivalPortalId',reverse.id);
       else url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
+      confirmedDeparture=true;
       window.location.assign(url.href);
-    }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
+      });
+    }catch(error){confirmedDeparture=false;sculptWorldStatus('Zone cible : '+error.message,true);}
   });
   for(const [id,mode] of [
     ['world-area-portal-place','portal'],['world-area-spawn-place','spawn']]){
@@ -7923,12 +7963,38 @@ function installSculptWorldAreaEditing(){
       y:Number($('world-area-spawn-y').value)
     });}catch(error){sculptWorldStatus(error.message,true);}
   });
-  // Persist on refresh/navigation as well; the landing screen can recover
-  // the selected area using areaId and this exact world document.
-  window.addEventListener('pagehide',()=>{
-    try{persistCurrentWorldSculpt();}
-    catch(error){console.warn('WorldArea non sauvegardée au changement de page :',error);}
-  },{once:true});
+  // Durable editing never relies on an asynchronous pagehide transaction.
+  // Observe completed authoring interactions; canonical capture excludes play.
+  let scheduleInitialWorldSave=()=>{};
+  if(access.durable){
+    const output=$('world-storage-status');output.hidden=false;
+    const autosave=installSculptWorldAutosaveV1({persistence:sculptWorldPersistence,root:window,
+      capture:()=>snapshotCurrentSculptWorldArea(),
+      canSave:()=>sculptWorldAreaMounted&&!navigationTesting&&!sculptPlayRequested,
+      onState:(state,error)=>{output.textContent=state==='saved'?'✓ Carte sauvegardée':state==='error'?
+        '⚠ Enregistrement non confirmé : '+error.message:'Modifications à enregistrer…';}});
+    const edited=()=>{if(sculptWorldAreaMounted&&!sculptPlayRequested&&!navigationTesting&&!sculptWorldPersistence.transitioning)autosave.schedule();};
+    scheduleInitialWorldSave=edited;
+    for(const event of ['pointerup','change','input','click','keyup'])document.addEventListener(event,edited);
+    window.addEventListener('beforeunload',event=>{
+      // A confirmed explicit departure has saved the exact snapshot and
+      // validated the handoff. The transition blocks further input.
+      if(confirmedDeparture)return;
+      let dirty=sculptWorldPersistence.busy;
+      if(!dirty&&sculptWorldAreaMounted&&!navigationTesting){
+        try{dirty=JSON.stringify(snapshotCurrentSculptWorldArea())!==JSON.stringify(sculptWorldPersistence.confirmed);}
+        catch{dirty=true;}
+      }else if(!dirty)dirty=autosave.pending;
+      if(dirty){event.preventDefault();event.returnValue='';}
+    });
+    window.addEventListener('pagehide',()=>{autosave.dispose();for(const event of ['pointerup','change','input','click','keyup'])document.removeEventListener(event,edited);},{once:true});
+  }else{
+    // Legacy synchronous owner only, until the coordinated cutover.
+    window.addEventListener('pagehide',()=>{
+      try{if(!sculptWorldPersistence.busy)sculptWorldPersistence.flushOnUnload(persistCurrentWorldSculpt());}
+      catch(error){console.warn('WorldArea non sauvegardée au changement de page :',error);}
+    },{once:true});
+  }
   try{
     mountWorldSculptArea(transfer.areaId);
     const arrivalParams=new URL(window.location.href).searchParams;
@@ -7952,6 +8018,10 @@ function installSculptWorldAreaEditing(){
       sculptWorldStatus('Arrivée liée à une porte : modifie sa position sur le bâtiment.',true);
     }else sculptWorldStatus('WorldArea '+sculptWorldArea().label+
       ' chargée : place ses passages, teste-les, puis enregistre le monde.');
+    // Mount may materialize a newly created area's canonical terrain. Commit
+    // that initial projection through the same autosave even without a click.
+    // Unchanged documents are skipped by the existing autosave coordinator.
+    scheduleInitialWorldSave();
   }catch(error){
     // A legacy/oversized Area must not display the separate demo terrain as if
     // it were the user's editable map; navigation remains possible.
@@ -7980,6 +8050,8 @@ function installSculptWorldAreaEditing(){
     spawns:sculptWorldArea()?.spawns??[],
     terrainWidth:terrain.width,terrainHeight:terrain.height,
     editable:sculptWorldAreaMounted,
+    storagePending:sculptWorldPersistence.busy,
+    durableStorage:access.durable,
     traverseVisible:!$('world-portal-traverse').hidden,
     placementMode:sculptWorldPortalPlacement
   });
@@ -8144,6 +8216,6 @@ if($('graphic-library-import-form')||sculptPlayRequested||new URLSearchParams(lo
   try{await refreshLocalSculptGraphics();}
   catch(error){status('Bibliothèque personnelle indisponible : '+error.message);}
 }
-installSculptWorldAreaEditing();
+await installSculptWorldAreaEditing();
 installSculptPlayMode();
 installSculptMapPresetPalette();

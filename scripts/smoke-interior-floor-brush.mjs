@@ -86,14 +86,19 @@ try{
   document.querySelector('#area-add-form').requestSubmit();
   return window.__worldAssemblerProbe();
  })()`);
- if(!created.areaKinds.includes('interior'))throw Error('World Builder failed to create an interior '+JSON.stringify(created));
+ if(!created.areaKinds.includes('interior')||created.areaKinds[created.areaIds.indexOf(created.selectedAreaId)]!=='interior')
+  throw Error('World Builder failed to create and select an interior '+JSON.stringify(created));
  const id=created.selectedAreaId;
  await run("document.querySelector('#world-workspace-map').click()");
- const opened=await until(`(()=>{
+ let opened;
+ try{opened=await until(`(()=>{
   const probe=window.__sculptWorldProbe?.();
   return location.pathname==='/sculpt-lab.html'&&probe?.editable&&
    probe.areaId===${JSON.stringify(id)}?probe:null;
- })()`,'native Sculpt WorldArea');
+ })()`,'native Sculpt WorldArea');}catch(error){
+  const diagnostics=await run(`({url:location.href,world:window.__worldAssemblerProbe?.(),sculpt:window.__sculptWorldProbe?.(),status:document.querySelector('#status-toast')?.textContent,save:document.querySelector('#save-state')?.textContent})`);
+  throw Error(error.message+' '+JSON.stringify(diagnostics));
+ }
  if(opened.areaKind!=='interior')throw Error('Wrong interior '+JSON.stringify(opened));
  const control=await run(`(()=>{
   document.querySelector('#mode-surface').click();
@@ -142,7 +147,7 @@ try{
  await run("document.querySelector('#world-area-return').click()");
  const saved=await until(`(async()=>{
   const probe=window.__worldAssemblerProbe?.();
-  const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+  const world=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
   const area=world?.areas?.find(a=>a.id===${JSON.stringify(id)});
   return probe&&area&&location.pathname==='/world-assembler.html'?{area,probe}:null;
  })()`,'WorldArea save');

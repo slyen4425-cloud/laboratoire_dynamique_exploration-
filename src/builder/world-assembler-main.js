@@ -6,20 +6,14 @@ import {
   setWorldAssemblerNodePosition,resetWorldAssemblerNodePositions,
   serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
-import {
-  saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
-  saveWorldAssemblerDraft,readWorldAssemblerDraft
-} from './world-assembler-handoff.js';
+import {openWorldDocumentReleaseAccessV1} from '../storage/world-document-release-access-v1.js';
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {readSculptMapPresets} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {renderSculptMapPresetChoicesV1} from './sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
-import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
-import {createExplorationUniverseWorldProjectsV1} from './exploration-universe-world-projects-v1.js';
 import {createExplorationUniverseWorkspaceStorageV1} from '../storage/exploration-universe-workspace-storage-v1.js';
-import {WORLD_ASSEMBLER_DRAFT_KEY} from './world-assembler-handoff.js';
 import {worldAssemblerRegionOverview} from './world-assembler-region-overview.js';
 import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
 import {DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1} from '../encounters/wild-stat-profile-contract-v1.js';
@@ -28,6 +22,8 @@ import {sculptWorldAreaScene,SCULPT_WORLD_TILE} from './sculpt-world-area-link.j
 import {exportWorldAreaAsMapPresetV1} from './world-assembler-map-preset-export-v1.js';
 import {SCULPT_INTERIOR_SIZE} from '../world/sculpt-interior-area-link.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
+
+import {installWorldExternalBackupPanelV1} from '../storage/world-document-external-backup-panel-v1.js';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -117,7 +113,7 @@ function lineForPortal(portal,positions){
   return p;
 }
 
-function installWorldAssembler(){
+export async function installWorldAssembler({owner=null,store=null}={}){
   const toast=byId('status-toast');
   const listenerCleanups=[];
   const on=(el,event,callback,options)=>{
@@ -126,26 +122,25 @@ function installWorldAssembler(){
   };
   const params=new URLSearchParams(window.location.search);
   const universeId=params.get('universe');
-  const worldProjects=universeId===null?null:createExplorationUniverseWorldProjectsV1({
-    storage:window.localStorage,makeId:()=>crypto.randomUUID()
-  });
+  const worldProjects=universeId!==null;
+  const access=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,sessionStorage:window.sessionStorage,
+    universeId,owner,store,makeId:()=>crypto.randomUUID()});
   const worldStorage=universeId===null?window.localStorage:
     createExplorationUniverseWorkspaceStorageV1(window.localStorage,universeId);
-  const worldSessionStorage=universeId===null?window.sessionStorage:
-    createExplorationUniverseWorkspaceStorageV1(window.sessionStorage,universeId);
-  const allowed=worldProjects?.list(universeId)??null;
+  const allowed=worldProjects?await access.list():null;
   if(worldProjects&&!allowed.length)
     throw new Error('Univers sans WorldDocument natif : aucune carte historique ouverte');
   const transfer=params.get('return')==='1'
-    ?readWorldAssemblerHandoff(worldSessionStorage):null;
-  const savedDraft=readWorldAssemblerDraft(worldStorage);
-  if(worldProjects&&worldStorage.getItem(WORLD_ASSEMBLER_DRAFT_KEY)!==null&&!savedDraft)
-    throw new Error('Brouillon de cet univers illisible : aucune récupération destructive');
+    ?await access.readHandoff():null;
+  const savedDraft=await access.readDraft();
+  let lastCommitted=savedDraft;
+  let writeQueue=Promise.resolve(true),writeGeneration=0,transitionBusy=false;
   let draft=transfer?.document??savedDraft
-    ??(worldProjects?worldProjects.load(universeId,allowed[0].id):
+    ??(worldProjects?await access.load(allowed[0].id):
       createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}));
   if(worldProjects&&!allowed.some(w=>w.id===draft.id))
     throw new Error('WorldDocument étranger à cet univers : aucune ouverture');
+  const externalBackup=installWorldExternalBackupPanelV1({root:window,captureDocument:()=>draft});
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
   let linksShown=true;
@@ -154,12 +149,11 @@ function installWorldAssembler(){
   const arenaPanel = byId('area-combat-arenas');
   let arenaOptions = null;
   let loadingArenaOptions = false;
-  const library=createExplorationWorldDocumentLibraryV1({storage:window.localStorage});
   if(worldProjects)byId('world-name').readOnly=true;
-  function refreshWorldLibrary(){
+  async function refreshWorldLibrary(){
     const picker=byId('world-library-select');
     const selected=picker.value;
-    const worlds=worldProjects?worldProjects.list(universeId):library.list();
+    const worlds=await access.list();
     picker.replaceChildren(...(worlds.length?worlds.map(w=>
       new Option(w.id+' · '+w.areaCount+' zone(s)',w.id))
       :[new Option('Aucun monde enregistré','')]));
@@ -173,13 +167,15 @@ function installWorldAssembler(){
     const out=byId('world-library-status');
     out.textContent=message;out.dataset.error=String(error);
   }
-  function archiveCurrentWorld(){
-    if(worldProjects)return worldProjects.save(universeId,draft);
-    try{return library.save(draft);}
+  async function archiveCurrentWorld(){
+    if(!await persist())throw Error('Sauvegarde du brouillon non confirmée : archive conservée');
+    const snapshot=draft;
+    if(worldProjects)return access.archive(snapshot);
+    try{return await access.archive(snapshot);}
     catch(error){
       if(!/existe déjà/.test(error.message))throw error;
       if(!window.confirm('Ce monde est déjà archivé. Remplacer sa version enregistrée par les modifications actuelles ?'))return null;
-      return library.save(draft,{replace:true});
+      return access.archive(snapshot,{replace:true});
     }
   }
   on(byId('world-area-encounter-levels'),'submit',event=>{
@@ -205,38 +201,41 @@ function installWorldAssembler(){
      apply(()=>setAreaEncounterWildStatProfile(draft,area.id,profile),
        'Profil sauvage de '+areaLabel(area)+' enregistré dans le WorldDocument.');
    });
-   on(byId('world-encounters-initialize'),'click',()=>{
+   on(byId('world-encounters-initialize'),'click',async()=>{
     if(!encounterConfigNeedsExplicitInitialization(draft.encounterConfig)){
       libraryStatus('Rencontres déjà configurées : paramètres conservés.');
       return;
     }
     if(!window.confirm('Les rencontres de ce monde sont à 0 %. Initialiser les probabilités par terrain et les éléments depuis les profils officiels ? Tu pourras ensuite tout modifier dans l’éditeur.'))return;
-    const ok=apply(()=>initializeWorldPresetEncounters(draft),
+    const ok=await apply(()=>initializeWorldPresetEncounters(draft),
       'Rencontres du monde initialisées avec les profils officiels, sans valeur cachée.');
     if(ok)libraryStatus('✓ Rencontres activées dans le WorldDocument. Enregistre ton monde dans Mes mondes avant de changer de carte.');
   });
-  on(byId('world-library-save'),'click',()=>{
+  on(byId('world-library-save'),'click',async()=>{
+    if(transitionBusy)return;transitionBusy=true;
     try{
-      const saved=archiveCurrentWorld();
+      const saved=await archiveCurrentWorld();
       if(!saved){libraryStatus('Sauvegarde annulée : monde archivé conservé.');return;}
-      refreshWorldLibrary();
+      await refreshWorldLibrary();
       libraryStatus('✓ Monde '+saved.id+' enregistré dans Mes mondes.');
-    }catch(error){libraryStatus(error.message,true);}
+    }catch(error){libraryStatus(error.message,true);}finally{transitionBusy=false;}
   });
-  on(byId('world-library-open'),'click',()=>{
+  on(byId('world-library-open'),'click',async()=>{
     const id=byId('world-library-select').value;
     if(!id){libraryStatus('Choisis un monde enregistré.',true);return;}
+    if(transitionBusy)return;transitionBusy=true;
     try{
-      const opened=worldProjects?worldProjects.activate(universeId,id):library.activate(id);
-      draft=opened;selectedId=draft.initialAreaId;
-      persist();render();refreshWorldLibrary();
+      if(!await persist())return;
+      const opened=await access.activate(id);
+      draft=opened;lastCommitted=opened;selectedId=draft.initialAreaId;
+      render();await refreshWorldLibrary();
       libraryStatus('✓ Monde '+opened.id+' chargé sans supprimer les autres.');
-    }catch(error){libraryStatus(error.message,true);}
+    }catch(error){libraryStatus(error.message,true);}finally{transitionBusy=false;}
   });
   on(byId('world-library-select'),'change',()=>{
     byId('world-library-delete').disabled=Boolean(worldProjects)||!byId('world-library-select').value;
   });
-  on(byId('world-library-delete'),'click',()=>{
+  on(byId('world-library-delete'),'click',async()=>{
     if(worldProjects){libraryStatus('Suppression de carte interdite tant que ses sauvegardes ne sont pas vérifiées.',true);return;}
     const chosen=byId('world-library-select').value;
     if(!chosen){libraryStatus('Choisis le monde à supprimer.',true);return;}
@@ -244,21 +243,23 @@ function installWorldAssembler(){
     const warning='Supprimer définitivement le monde « '+chosen+' » de Mes mondes ?'+
       (active?' Il est actuellement ouvert : un nouveau monde vierge le remplacera. Ses modifications non archivées seront perdues.':'')+
       ' Cette action ne touche pas aux autres mondes ni aux parties enregistrées.';
-    if(!window.confirm(warning))return;
+    if(!window.confirm(warning)||transitionBusy)return;
+    transitionBusy=true;
     try{
+      if(!await writeQueue)return;
       const blank=active?createBlankWorldBuilderDraft({
         id:'nouveau-monde-'+crypto.randomUUID().slice(0,8),
         width:36*28,height:24*21
       }):null;
-      const deleted=library.remove(chosen,{confirmed:true,replacement:blank});
+      const deleted=await access.remove(chosen,{confirmed:true,replacement:blank});
       if(deleted.activeReplacement){
-        draft=deleted.activeReplacement;
+        draft=deleted.activeReplacement;lastCommitted=draft;
         selectedId=draft.initialAreaId;
         render();
       }
-      refreshWorldLibrary();
+      await refreshWorldLibrary();
       libraryStatus('✓ Monde « '+chosen+' » supprimé de Mes mondes. Les autres mondes et les parties restent conservés.');
-    }catch(error){libraryStatus(error.message,true);}
+    }catch(error){libraryStatus(error.message,true);}finally{transitionBusy=false;}
   });
   function status(message,isError=false){
     toast.textContent=message;toast.dataset.error=String(isError);
@@ -268,22 +269,39 @@ function installWorldAssembler(){
     modalStatus.dataset.error=String(isError);
   }
   function persist(){
-    try{
-      saveWorldAssemblerDraft(worldStorage,draft);
-      autosaveAvailable=true;
-      byId('save-state').textContent='✓ Monde sauvegardé localement';
-    }catch(error){
-      autosaveAvailable=false;
-      byId('save-state').textContent='⚠ Export JSON recommandé';
-      status('Stockage local indisponible : '+error.message+' · utilise Exporter',true);
-    }
+    const snapshot=draft,generation=++writeGeneration;
+    autosaveAvailable=false;
+    byId('save-state').textContent='Enregistrement…';
+    writeQueue=writeQueue.then(async()=>{
+      try{
+        await access.saveDraft(snapshot,lastCommitted);
+        lastCommitted=snapshot;
+        if(generation===writeGeneration){
+          autosaveAvailable=true;
+          byId('save-state').textContent='✓ Monde sauvegardé localement';
+        }
+        return true;
+      }catch(error){
+        if(generation===writeGeneration){
+          autosaveAvailable=false;
+          byId('save-state').textContent='⚠ Export JSON recommandé';
+          status('Stockage local indisponible : '+error.message+' · utilise Exporter ou Copies de secours',true);
+        }
+        return false;
+      }
+    });
+    return writeQueue;
   }
-  on(byId('world-play-open'),'click',event=>{
-    persist();
-    if(!autosaveAvailable){
-      event.preventDefault();
-      status('Monde non sauvegardé : exporte ton travail avant de jouer.',true);
-    }
+  on(byId('world-play-open'),'click',async event=>{
+    event.preventDefault();
+    if(transitionBusy)return;
+    transitionBusy=true;
+    try{
+      if(!await persist())return status('Monde non sauvegardé : exporte ton travail avant de jouer.',true);
+      const target=new URL(byId('world-play-open').href,window.location.href);
+      if(universeId!==null)target.searchParams.set('universe',universeId);
+      window.location.assign(target.href);
+    }finally{transitionBusy=false;}
   });
   function getSelected(){
     return draft.areas.find(area=>area.id===selectedId)??draft.areas[0];
@@ -317,15 +335,21 @@ function installWorldAssembler(){
     requestedInteriorHostId=null;
     byId('area-creation-details').open=false;
   });
-  function apply(command,success){
+  async function apply(command,success,{internal=false,onAccepted=null}={}){
+    if(transitionBusy&&!internal){status('Une transition de monde est en cours.',true);return false;}
     try{
       const next=command();
       // Validate BEFORE replacing or saving the currently editable draft.
       serializeWorldBuilderDraft(next);
       draft=next;
       if(!draft.areas.some(a=>a.id===selectedId))selectedId=draft.initialAreaId;
-      persist();render();status(success);
-      return true;
+      // Selection/form changes belong to the validated in-memory command,
+      // not to the later storage acknowledgement. Navigation still awaits it.
+      if(onAccepted)onAccepted();
+      const pending=persist();render();
+      const persisted=await pending;
+      if(persisted&&autosaveAvailable)status(success);
+      return persisted;
     }catch(error){status(error.message,true);return false;}
   }
   function fillSelect(select,areas,current){
@@ -748,7 +772,7 @@ function installWorldAssembler(){
         byId('world-map-preset-name').value=preset.name;
     }catch(error){status(error.message,true);}
   });
-  on(byId('world-map-preset-create'),'click',()=>{
+  on(byId('world-map-preset-create'),'click',async()=>{
     try{
       const preset=listAvailableSculptMapPresets(worldStorage)
         .find(p=>p.id===byId('world-map-preset-gallery').dataset.selectedId);
@@ -768,7 +792,7 @@ function installWorldAssembler(){
         hostAreaId=null;
         asNewStart=true;
       }
-      const ok=apply(()=>{
+      await apply(()=>{
         let next=createWorldAreaFromSculptMapPreset(draft,preset,{
           name,kind,hostAreaId
         });
@@ -778,26 +802,22 @@ function installWorldAssembler(){
       },asNewStart?'Préset créé comme départ 2,5D · ancienne zone préservée.'
         :kind==='dungeon'
         ?'Donjon créé depuis le préset avec passages aller-retour.'
-        :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.');
-      if(ok){
-        selectedId=draft.areas.find(a=>!before.has(a.id)&&a.kind!=='interior')?.id??selectedId;
-        render();
-      }
+        :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.',
+        {onAccepted:()=>{selectedId=draft.areas.find(a=>!before.has(a.id)&&a.kind!=='interior')?.id??selectedId;}});
     }catch(error){status(error.message,true);}
   });
-  on(byId('world-playable-route'),'click',()=>{
+  on(byId('world-playable-route'),'click',async()=>{
     if(!window.confirm('Raccorder des régions 2,5D, réparer leurs sorties et relier les cartes jouables ? '+
        'Les passages historiques incompatibles seront réparés, sans modifier leurs cartes. '+
        'Si les rencontres de ce monde sont toutes à 0 %, initialiser aussi les profils des présets. '+
        'Les réglages déjà personnalisés seront conservés.'))return;
     let result;
-    const ok=apply(()=>{
+    const ok=await apply(()=>{
       result=makePlayableZoneRoute(draft,{selectedAreaId:selectedId,initializeEncounters:true});
       return result.document;
-    },'Parcours jouable créé : deux zones compatibles et Portals aller-retour.');
-    if(ok&&result){
-      selectedId=result.sourceAreaId;
-      render();
+    },'Parcours jouable créé : deux zones compatibles et Portals aller-retour.',
+      {onAccepted:()=>{selectedId=result.sourceAreaId;}});
+    if(ok&&result&&autosaveAvailable){
       status('✓ Parcours actif entre '+pretty(result.sourceAreaId)+' et '+
         pretty(result.targetAreaId)+'. Zone de départ sélectionnée. '+
         (result.retargetedPortalId?'Ancienne sortie réparée. ':'')+
@@ -809,7 +829,7 @@ function installWorldAssembler(){
   let areaSizeTouched=false;
   for(const id of ['area-width','area-height'])
     on(byId(id),'input',()=>{areaSizeTouched=true;});
-  on(byId('area-add-form'),'submit',event=>{
+  on(byId('area-add-form'),'submit',async event=>{
     event.preventDefault();
     const name=byId('area-name').value.trim();
     if(!name){status('Entre un nom pour la nouvelle zone.',true);return;}
@@ -817,7 +837,7 @@ function installWorldAssembler(){
     const kind=byId('area-kind').value;
     const hostId=requestedInteriorHostId??selectedId;
     const shouldLinkInterior=kind==='interior'&&requestedInteriorHostId===hostId;
-    const ok=apply(()=>{
+    await apply(()=>{
       let next=addWorldArea(draft,{name,kind,
         ...worldAreaSizeFromTiles({width:byId('area-width').value,
           height:byId('area-height').value})});
@@ -830,11 +850,12 @@ function installWorldAssembler(){
       return next;
     },(kind==='dungeon'||shouldLinkInterior)
         ?'Instance créée dans cette Area · Portals aller/retour ajoutés.'
-        :'Nouvelle WorldArea ajoutée au monde.');
-    if(ok){requestedInteriorHostId=null;
+        :'Nouvelle WorldArea ajoutée au monde.',{onAccepted:()=>{
+      requestedInteriorHostId=null;
       selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
       byId('area-add-form').reset();areaSizeTouched=false;
-      byId('area-creation-details').open=false;render();}
+      byId('area-creation-details').open=false;
+    }});
   });
   on(byId('area-kind'),'change',()=>{
     const kind=byId('area-kind').value;
@@ -866,7 +887,8 @@ function installWorldAssembler(){
     if(!name){byId('world-name').value=draft.id;return;}
     apply(()=>createWorldBuilderDraft({...draft,id:name}),'Nom du monde enregistré.');
   });
-  function openAreaEditor(url){
+  async function openAreaEditor(url){
+    if(transitionBusy)return;transitionBusy=true;
     try{
       if(!url.startsWith('./sculpt-lab.html?'))throw Error('Ancien éditeur 2D retiré : seule la carte 2,5D officielle est disponible.');
       let areaToOpen=selectedId;
@@ -894,14 +916,14 @@ function installWorldAssembler(){
           areaToOpen=to.id;
         }
       }
-      saveWorldAssemblerHandoff(worldSessionStorage,draft,areaToOpen);
-      persist();
+      if(!await persist())return;
+      await access.writeHandoff(draft,areaToOpen);
       // Selection is an ephemeral UI choice, never a second WorldDocument.
       if(areaToOpen!==selectedId){selectedId=areaToOpen;render();}
       const next=url.startsWith('./sculpt-lab.html?')
         ?url+'&areaId='+encodeURIComponent(areaToOpen)+(universeId?'&universe='+encodeURIComponent(universeId):''):url;
       window.location.assign(next);
-    }catch(error){status(error.message,true);}
+    }catch(error){status(error.message,true);}finally{transitionBusy=false;}
   }
   const mapPanelUrl='./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3&panels=world1';
   on(byId('open-neighbor-area'),'click',()=>{
@@ -983,8 +1005,8 @@ function installWorldAssembler(){
     try{
       if(worldProjects)throw new Error('Importe une carte via la fonction de copie validée du projet, sans écraser la carte courante');
       const imported=importWorldBuilderDocument(await file.text());
-      apply(()=>imported,'Monde importé et validé. Les passages et zones sont conservés.');
-      selectedId=draft.initialAreaId;render();
+      await apply(()=>imported,'Monde importé et validé. Les passages et zones sont conservés.',
+        {onAccepted:()=>{selectedId=draft.initialAreaId;}});
     }catch(error){status('Import refusé : '+error.message,true);}
     finally{input.value='';}
   });
@@ -994,28 +1016,30 @@ function installWorldAssembler(){
   });
   const dialog=byId('reset-dialog');
   on(byId('reset-world'),'click',()=>dialog.showModal());
-  on(dialog,'close',()=>{
-    if(dialog.returnValue!=='confirm')return;
+  on(dialog,'close',async()=>{
+    if(dialog.returnValue!=='confirm'||transitionBusy)return;
+    transitionBusy=true;
     try{
-      const archived=archiveCurrentWorld();
+      const archived=await archiveCurrentWorld();
       if(!archived){libraryStatus('Nouveau monde annulé : modifications du monde actif conservées.');return;}
       if(worldProjects){
-        const blank=worldProjects.addBlank(universeId,{width:36*28,height:24*21});
-        apply(()=>blank,'Nouveau WorldDocument de cet univers prêt à assembler.');
+        const blank=await access.addBlank({width:36*28,height:24*21});
+        draft=blank;lastCommitted=blank;
+        status('Nouveau WorldDocument de cet univers prêt à assembler.');
       }else{
-        apply(()=>createBlankWorldBuilderDraft({
+        await apply(()=>createBlankWorldBuilderDraft({
           id:'nouveau-monde-'+crypto.randomUUID().slice(0,8),
           width:36*28,height:24*21
-        }), 'Nouveau monde vierge prêt à assembler. L’ancien est archivé.');
+        }), 'Nouveau monde vierge prêt à assembler. L’ancien est archivé.',{internal:true});
       }
-      selectedId=draft.initialAreaId;render();refreshWorldLibrary();
-    }catch(error){libraryStatus(error.message,true);}
+      selectedId=draft.initialAreaId;render();await refreshWorldLibrary();
+    }catch(error){libraryStatus(error.message,true);}finally{transitionBusy=false;}
   });
   if(transfer){
-    persist();status('Carte modifiée : même monde, même WorldArea et mêmes passages.');
+    if(await persist())status('Carte modifiée : même monde, même WorldArea et mêmes passages.');
   }else status('Choisis une WorldArea puis utilise le panneau Carte pour la modifier.');
   render();
-  try{refreshWorldLibrary();}
+  try{await refreshWorldLibrary();}
   catch(error){libraryStatus(error.message,true);}
   // Coming from the map panel with "Nouvelle carte de taille libre" only
   // focuses the native Area form: it never starts a standalone map.
@@ -1035,10 +1059,17 @@ function installWorldAssembler(){
     selectedEventCount:(draft.events??[]).filter(e=>e.sourceAreaId===selectedId).length,
     saved:autosaveAvailable,source:'WorldDocument'
   });
+  // Closing the editor while an asynchronous write is pending must not silently
+  // lose the in-memory authoring document. A browser can still force-close;
+  // the last confirmed IndexedDB revision and external copies remain intact.
+  on(window,'beforeunload',event=>{
+    if(!autosaveAvailable){event.preventDefault();event.returnValue='';}
+  });
   return {dispose(){
+    externalBackup.dispose();
     for(const cleanup of listenerCleanups)cleanup();
     delete window.__worldAssemblerProbe;
   }};
 }
-const app=installWorldAssembler();
+export const app=await installWorldAssembler();
 window.addEventListener('pagehide',()=>app.dispose(),{once:true});

@@ -1314,6 +1314,15 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
   <strong id="world-area-current-name">Zone</strong>
   <small id="world-area-current-kind">WorldArea 2,5D</small>
   <button id="world-area-return" type="button">💾 Enregistrer · Retour au World Builder</button>
+  <output id="world-storage-status" role="status" aria-live="polite" hidden>Carte ouverte</output>
+  <details id="world-external-backup-panel">
+ <summary>💾 Copies de secours sur disque</summary>
+ <small>Copies du monde courant, toutes les 5 minutes si modifié, pendant l'édition. Ni médias ni parties inclus.</small>
+ <button id="world-external-backup-folder" type="button">Choisir un dossier PC</button>
+ <button id="world-external-backup-now" type="button" disabled>Copier maintenant / réautoriser</button>
+ <button id="world-external-backup-stop" type="button" disabled>Désactiver</button>
+ <output id="world-external-backup-status" role="status" aria-live="polite">Copies externes désactivées</output>
+</details>
   <button id="world-area-return-house" type="button" hidden>🏠 Retour à la maison sur la carte 2,5D</button>
   <label>1. Vers quelle carte ?
    <select id="world-area-passages-target" aria-label="Choisir la zone de destination"></select>

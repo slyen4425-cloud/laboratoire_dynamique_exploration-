@@ -74,7 +74,9 @@ test('editor overlay and world deletion are actually mounted in the native UI, n
  assert.match(main,/if\(navigationTesting\|\|!decorativeFringe/);
  assert.match(main,/drawEditorPlayableLimit\(\)/);
  assert.match(html,/trait jaune : limite jouable/);
- assert.match(builder,/library\.remove\(chosen,\{confirmed:true,replacement:blank\}\)/);
+ const access=readFileSync(new URL('../src/storage/world-document-authoring-access-v1.js',import.meta.url),'utf8');
+ assert.match(builder,/await access\.remove\(chosen,\{confirmed:true,replacement:blank\}\)/);
+ assert.match(access,/library\.remove\(id,options\)/);
  assert.match(builderHtml,/id="world-library-delete"/);
  assert.match(builder,/window\.confirm\(warning\)/);
 });
