@@ -23,14 +23,15 @@ export function routePointsFromKnots(knots){
   }
   return result; // <=497 points, below Sculpt's 512-point limit.
 }
-export function routeKnotsFromPoints(points){
+export function routeKnotsFromPoints(points,bounds=null){
+  const clamp=(v,key)=>Math.max(0,Math.min(bounds?bounds[key]-.001:Infinity,v));
   if(points.length<2)return null;
   const step=Math.max(1,Math.ceil((points.length-1)/31));
   const chosen=points.filter((_,i)=>i%step===0||i===points.length-1);
   return normalizeRouteKnots(chosen.map((p,i)=>{
     const a=chosen[Math.max(0,i-1)],b=chosen[Math.min(chosen.length-1,i+1)];
     const dx=(b.x-a.x)/6,dy=(b.y-a.y)/6;
-    return {...p,in:{x:Math.max(0,p.x-dx),y:Math.max(0,p.y-dy)},out:{x:Math.max(0,p.x+dx),y:Math.max(0,p.y+dy)}};
+    return {...p,in:{x:clamp(p.x-dx,'width'),y:clamp(p.y-dy,'height')},out:{x:clamp(p.x+dx,'width'),y:clamp(p.y+dy,'height')}};
   }));
 }
 function circleInterval(a,b,p,r){
