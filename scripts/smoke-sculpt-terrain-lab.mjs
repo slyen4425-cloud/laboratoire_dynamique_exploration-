@@ -1,6 +1,6 @@
 // Real Chromium gate for the isolated sculptable heightfield lab, without a separate engine.
 import { createServer } from 'node:http';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
@@ -1647,6 +1647,49 @@ try{
   await run("document.querySelector('#surface-undo').click()");
   const restoredSide=await run('window.__sculptSurfaceProbe().features[0].border');
   if(!restoredSide?.enabled||restoredSide.right||restoredSide.left.width!==10)throw Error('Visible undo did not restore previous border style');
+  // V3 reproduces the author's 206% view, wide wood and short irregular bends.
+  // Read actual decoded WebP pixels through the same renderer, not a mock.
+  const curveV3=await run(`(async()=>{
+    const {roadBorderCellPainter,roadBorderField,roadBorderTextureAt,ROAD_BORDER_ASSETS}=await import('./src/render/road-border-renderer-v1.js');
+    const asset=ROAD_BORDER_ASSETS.find(a=>a.id==='road-border.bordure_bois');
+    const image=new Image();image.src=asset.path;await image.decode();
+    const style={assetId:asset.id,width:28,scale:1.5,offset:-5,spacing:10,opacity:1};
+    const route={id:'curve-v3',width:84,materialId:'road.dirt',points:[{x:55,y:115},{x:135,y:103},{x:170,y:105},{x:177,y:111},{x:180,y:119},{x:190,y:126},{x:209,y:140},{x:235,y:168},{x:270,y:220}],border:{enabled:true,left:style,right:style}};
+    const routes=Object.freeze([route]),tile={width:28,height:21,rise:18},terrain={width:13,height:15};
+    const w=terrain.width*tile.width,h=terrain.height*tile.height,scale=2;
+    const layer=document.createElement('canvas');layer.width=w*scale;layer.height=h*scale;
+    const ctx=layer.getContext('2d',{willReadFrequently:true});ctx.scale(scale,scale);
+    const painter=roadBorderCellPainter(ctx,terrain,tile,routes,new Map([[asset.id,[image]]]));
+    if(!painter)throw Error('V3 renderer unavailable');
+    for(let row=0;row<terrain.height;row++)for(let col=0;col<terrain.width;col++){
+      if(!painter.hasCell(col,row))continue;
+      ctx.save();ctx.beginPath();ctx.rect(col*tile.width,row*tile.height,tile.width,tile.height);ctx.clip();painter(col,row,0);ctx.restore();
+    }
+    const rgba=ctx.getImageData(0,0,layer.width,layer.height).data;
+    const d=(p,a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy)));return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);};
+    let visible=0,leak=0,core=0,corePainted=0,nearLeft=0,nearRight=0;
+    const field=roadBorderField(routes);
+    for(let y=0;y<layer.height;y++)for(let x=0;x<layer.width;x++){
+      const p={x:(x+.5)/scale,y:(y+.5)/scale},alpha=rgba[(y*layer.width+x)*4+3];
+      if(alpha>48){visible++;const dist=Math.min(...route.points.slice(1).map((b,i)=>d(p,route.points[i],b)));if(dist>route.width/2+9)leak++;}
+      if(x%4||y%4)continue;
+      const m=roadBorderTextureAt(field,p.x,p.y)[0];
+      if(!m||Math.abs(m.v-m.profile.anchor)>.035)continue;
+      core++;if(alpha>100){corePainted++;if(m.side===-1)nearLeft++;else nearRight++;}
+    }
+    // Compose the actual renderer output over the canonical road geometry;
+    // the background is deliberately plain to expose isolated pixels.
+    const preview=document.createElement('canvas');preview.width=layer.width;preview.height=layer.height;
+    const pc=preview.getContext('2d');pc.scale(scale,scale);pc.fillStyle='#718e49';pc.fillRect(0,0,w,h);
+    pc.strokeStyle='#96704a';pc.lineCap='round';pc.lineJoin='round';pc.lineWidth=route.width;
+    pc.beginPath();route.points.forEach((p,i)=>i?pc.lineTo(p.x,p.y):pc.moveTo(p.x,p.y));pc.stroke();
+    pc.setTransform(1,0,0,1,0,0);pc.drawImage(layer,0,0);
+    return {visible,leak,core,corePainted,nearLeft,nearRight,png:preview.toDataURL('image/png').split(',')[1]};
+  })()`);
+  await mkdir('artifacts',{recursive:true});await writeFile('artifacts/road-border-v3-real-preview.png',Buffer.from(curveV3.png,'base64'));delete curveV3.png;
+  if(curveV3.leak!==0||curveV3.visible<1000||curveV3.core<80||curveV3.corePainted/curveV3.core<.72||curveV3.nearLeft<20||curveV3.nearRight<20)
+    throw Error('V3 real thick curved border pixels: '+JSON.stringify(curveV3));
+  console.log('V3 real curved wood: '+JSON.stringify(curveV3));
   // Restore the precise original fixture for downstream historical tests.
   await run(`(()=>{document.querySelector('#json').value=window.__v27Scene;document.querySelector('#import').click();
     const action=document.querySelector('#surface-action');action.value='paint';action.dispatchEvent(new Event('change',{bubbles:true}));})()`);
