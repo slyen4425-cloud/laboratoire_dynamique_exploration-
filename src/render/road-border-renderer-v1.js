@@ -1,190 +1,125 @@
-import {squareSurfaceStrokeContainsPoint} from '../world/surface-brush-geometry.js';
+import {buildRoadBorderField,roadBorderMappingAt,roadBorderFieldHasCell,roadBorderSpriteSamples} from './road-border-contour-v3.js';
 const bandNames={naturelle:'Terre et herbe',cailloux:'Cailloux en bande',pierre_taillee:'Pierre taillée',beton:'Béton',bois:'Bois',neige:'Neige'};
 const root='./assets/exploration/materials/road-borders/';
 export const ROAD_BORDER_ASSETS=Object.freeze([
   ...Object.entries(bandNames).map(([key,label])=>Object.freeze({id:'road-border.bordure_'+key,label,kind:'band',path:root+'bandes/bordure_'+key+'.webp'})),
   Object.freeze({id:'road-border.cailloux',label:'Cailloux individuels (8 variantes)',kind:'sprites',paths:Object.freeze(Array.from({length:8},(_,i)=>root+'sprites_cailloux/caillou_'+String(i+1).padStart(2,'0')+'.webp'))})
 ]);
-// Border geometry is derived from the actual swept WorldSurface, not a new road.
-const TAU=2*Math.PI,EPS=1e-7;
-const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
-const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
-const mul=(a,s)=>({x:a.x*s,y:a.y*s});
-const dot=(a,b)=>a.x*b.x+a.y*b.y;
-const cross=(a,b)=>a.x*b.y-a.y*b.x;
-const length=a=>Math.hypot(a.x,a.y);
-const unit=a=>{const d=length(a);return d>EPS?mul(a,1/d):null;};
-const normal=(v,sign)=>({x:-v.y*sign,y:v.x*sign});
-const distance=(p,a,b)=>{
-  const v=sub(b,a),l=dot(v,v),t=l?Math.max(0,Math.min(1,dot(sub(p,a),v)/l)):0;
-  return length(sub(sub(p,a),mul(v,t)));
-};
-function contains(route,p,inset=.01){
-  const radius=Math.max(0,route.width/2-inset);
-  if(route.brushShape==='square')return squareSurfaceStrokeContainsPoint(route.points,p.x,p.y,radius);
-  return route.points.some((b,i)=>i&&distance(p,route.points[i-1],b)<radius);
+// Source PNG/WebP and IDs remain unchanged. The visible material is sampled
+// from the original atlas, with alpha-only cleanup of the baked soil fringe.
+// Anchors correspond to the actual object/vegetation, not the image midpoint.
+const profiles=Object.freeze({
+  naturelle:[59,0,0,70,84],cailloux:[58,0,0,68,83],
+  pierre_taillee:[57,0,0,66,79],beton:[57,0,0,65,79],
+  bois:[56,32,40,73,85],neige:[65,0,0,74,87]
+});
+export function roadBorderSourceProfile(id){
+  const [anchor,topStart,topEnd,bottomStart,bottomEnd]=profiles[id?.replace('road-border.bordure_','')]??[64,0,0,128,128];
+  return {anchor:anchor/128,topStart:topStart/128,topEnd:topEnd/128,bottomStart:bottomStart/128,bottomEnd:bottomEnd/128};
 }
-const support=(n,r,square)=>r*(square?Math.abs(n.x)+Math.abs(n.y):1);
-const distinct=points=>points.filter((p,i)=>!i||length(sub(p,points[i-1]))>EPS);
-function pushUnique(list,p){if(!list.length||length(sub(p,list.at(-1)))>EPS)list.push(p);}
-function intersection(p,d,q,e){
-  const k=cross(d,e);if(Math.abs(k)<EPS)return null;
-  return add(p,mul(d,cross(sub(q,p),e)/k));
+export function roadBorderSourceAlpha(profile,v){
+  const clamp=x=>Math.max(0,Math.min(1,x));
+  const top=profile.topEnd>profile.topStart?clamp((v-profile.topStart)/(profile.topEnd-profile.topStart)):1;
+  const bottom=profile.bottomEnd>profile.bottomStart?clamp((profile.bottomEnd-v)/(profile.bottomEnd-profile.bottomStart)):1;
+  return top*bottom;
 }
-// Offset sides: outer turns arc around the original vertex, inner turns meet
-// at the offset-line intersection. Every joint has a shared geometric vertex.
-export function roadSideContour(route,sign){
-  const points=distinct(route.points),r=route.width/2,square=route.brushShape==='square';
-  if(points.length<2)return [];
-  const directions=points.slice(1).map((p,i)=>unit(sub(p,points[i])));
-  const normals=directions.map(d=>normal(d,sign));
-  const offset=(p,n)=>add(p,mul(n,support(n,r,square)));
-  const out=[offset(points[0],normals[0])];
-  for(let i=1;i<points.length-1;i++){
-    const p=points[i],d=directions[i-1],e=directions[i],n=normals[i-1],m=normals[i];
-    const turn=Math.atan2(cross(d,e),dot(d,e)),a=offset(p,n),b=offset(p,m);
-    if(Math.abs(turn)<1e-5){pushUnique(out,a);continue;}
-    if(turn*sign<0&&!square){
-      const angle=Math.atan2(n.y,n.x),count=Math.max(1,Math.ceil(Math.abs(turn)/Math.min(Math.PI/24,Math.max(.025,2*Math.acos(Math.max(-1,1-.18/Math.max(r,.18)))))));
-      for(let j=0;j<=count;j++){const t=angle+turn*j/count;pushUnique(out,add(p,{x:r*Math.cos(t),y:r*Math.sin(t)}));}
-    }else{
-      const meet=intersection(a,d,b,e);
-      if(meet&&length(sub(meet,p))<=Math.max(r*3,r+1)&&Math.abs(turn)<Math.PI-.01)pushUnique(out,meet);
-      else {pushUnique(out,a);pushUnique(out,b);}
+const fields=new WeakMap(),rasterCaches=new WeakMap(),decoded=new WeakMap();
+function fieldFor(routes){
+  if(fields.has(routes))return fields.get(routes);
+  const f=buildRoadBorderField(routes,ROAD_BORDER_ASSETS);
+  if(Object.isFrozen(routes))fields.set(routes,f);
+  return f;
+}
+// Public pure mapping used by the renderer AND numerical/browser regression
+// tests. No quads, miter expansion or clipped rotating texture strips remain.
+export function roadBorderTextureAt(field,x,y){return roadBorderMappingAt(field,x,y,roadBorderSourceProfile);}
+export function roadBorderField(routes){return fieldFor(routes);}
+function makeCanvas(w,h){
+  if(typeof OffscreenCanvas!=='undefined')return new OffscreenCanvas(w,h);
+  if(typeof document==='undefined')return null;
+  const c=document.createElement('canvas');c.width=w;c.height=h;return c;
+}
+function readImage(image){
+  if(!image)return null;
+  if(decoded.has(image))return decoded.get(image);
+  const w=image.naturalWidth??image.width,h=image.naturalHeight??image.height;
+  if(!w||!h)return null;
+  const canvas=makeCanvas(w,h),ctx=canvas?.getContext('2d',{willReadFrequently:true});
+  if(!ctx)return null;
+  ctx.drawImage(image,0,0);const pixels={w,h,data:ctx.getImageData(0,0,w,h).data};decoded.set(image,pixels);return pixels;
+}
+function sampleTexture(tex,u,v,profile){
+  const x=u*tex.w-.5,y=Math.max(0,Math.min(tex.h-1,v*tex.h-.5));
+  const x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0;
+  let a=0,r=0,g=0,b=0;
+  for(let j=0;j<2;j++)for(let i=0;i<2;i++){
+    const xx=((x0+i)%tex.w+tex.w)%tex.w,yy=Math.min(tex.h-1,y0+j),k=(yy*tex.w+xx)*4;
+    const weight=(i?fx:1-fx)*(j?fy:1-fy)*tex.data[k+3]/255*roadBorderSourceAlpha(profile,(yy+.5)/tex.h);
+    a+=weight;r+=tex.data[k]*weight;g+=tex.data[k+1]*weight;b+=tex.data[k+2]*weight;
+  }
+  return {r,g,b,a};
+}
+const TILE_CACHE_LIMIT=384,RASTER_SCALE=2;
+function cacheFor(field,tile,images){
+  const refs=[];
+  for(const entry of field.entries)for(const {asset} of Object.values(entry.styles))if(!refs.some(x=>x[0]===asset.id))refs.push([asset.id,images.get(asset.id)]);
+  const old=rasterCaches.get(field);
+  if(old&&old.w===tile.width&&old.h===tile.height&&old.refs.length===refs.length&&refs.every(([id,ref],i)=>old.refs[i][0]===id&&old.refs[i][1]===ref))return old;
+  const c={w:tile.width,h:tile.height,refs,tiles:new Map(),textures:new Map(),spriteBuckets:new Map()};
+  for(const [id,imgs] of refs){
+    const asset=ROAD_BORDER_ASSETS.find(a=>a.id===id);
+    if(asset?.kind==='band'&&imgs?.[0]){
+      const texture=readImage(imgs[0]);if(texture)c.textures.set(id,texture);
     }
   }
-  pushUnique(out,offset(points.at(-1),normals.at(-1)));return out;
-}
-function contourSegments(points,sign){
-  const ps=distinct(points),dirs=ps.slice(1).map((p,i)=>unit(sub(p,ps[i])));
-  const normals=dirs.map(d=>normal(d,sign));
-  const joins=ps.map((p,i)=>{
-    if(i===0)return normals[0];
-    if(i===ps.length-1)return normals.at(-1);
-    const n=unit(add(normals[i-1],normals[i]));
-    return n?mul(n,Math.min(2,1/Math.max(.5,dot(n,normals[i])))):normals[i];
-  });
-  let total=0;
-  const segments=dirs.map((d,i)=>{
-    const a=ps[i],b=ps[i+1],span=length(sub(b,a)),start=total;total+=span;
-    return {a,b,d,span,start,end:total,n0:joins[i],n1:joins[i+1],n: normals[i]};
-  });
-  return {segments,total};
-}
-function at(seg,t){
-  const p=add(seg.a,mul(sub(seg.b,seg.a),t)),n=add(mul(seg.n0,1-t),mul(seg.n1,t));
-  return {p,n};
-}
-const cache=new WeakMap();
-// Texture phase is measured on the BORDER arc length. The outer side is
-// longer and receives more repetitions instead of stretching the same stamps.
-export function roadBorderSamples(routes){
-  if(Object.isFrozen(routes)&&cache.has(routes))return cache.get(routes);
-  const output=[];
-  for(const route of routes){
-    if(!route.border?.enabled)continue;
-    for(const [key,sign] of [['left',-1],['right',1]]){
-      const style=route.border[key];if(!style||style.opacity<=0)continue;
-      const asset=ROAD_BORDER_ASSETS.find(x=>x.id===style.assetId);if(!asset)continue;
-      const thick=style.width*style.scale,period=Math.max(1,thick*4);
-      const {segments,total}=contourSegments(roadSideContour(route,sign),sign);
-      if(total<EPS)continue;
-      const visible=p=>!contains(route,p,.8)&&!routes.some(other=>other!==route&&contains(other,p));
-      if(asset.kind==='sprites'){
-        const spacing=Math.max(1,thick+style.spacing);let i=0,si=0;
-        for(let s=spacing/2;s<total;s+=spacing,i++){
-          while(si<segments.length-1&&segments[si].end<s)si++;
-          const seg=segments[si],v=at(seg,(s-seg.start)/seg.span);
-          if(!visible(v.p))continue;
-          const pos=add(v.p,mul(v.n,style.offset));
-          output.push({...pos,angle:Math.atan2(seg.d.y,seg.d.x),sign,style,asset,thick,span:thick,phase:0,period,index:i});
-        }
-        continue;
+  for(const s of roadBorderSpriteSamples(field)){
+    if(!images.has(s.asset.id))continue;
+    for(let row=Math.floor((s.y-s.thick)/tile.height);row<=Math.floor((s.y+s.thick)/tile.height);row++)
+      for(let col=Math.floor((s.x-s.thick)/tile.width);col<=Math.floor((s.x+s.thick)/tile.width);col++){
+        const k=col+','+row;if(!c.spriteBuckets.has(k))c.spriteBuckets.set(k,[]);c.spriteBuckets.get(k).push(s);
       }
-      let index=0;
-      for(const seg of segments){
-        // Small subdivisions are only for union clipping. Adjacent quads
-        // share endpoints and UV coordinates, with no cropped source strips.
-        for(let s=0;s<seg.span-EPS;){
-          const span=Math.min(6,seg.span-s),v0=at(seg,s/seg.span),v1=at(seg,(s+span)/seg.span),mid=at(seg,(s+span/2)/seg.span);
-          const phase=((seg.start+s)%period)/period;s+=span;
-          if(!visible(mid.p))continue;
-          const a=add(v0.p,mul(v0.n,style.offset)),b=add(v1.p,mul(v1.n,style.offset)),pos=mul(add(a,b),.5);
-          const q=[add(a,mul(v0.n,thick/2)),add(b,mul(v1.n,thick/2)),add(b,mul(v1.n,-thick/2)),add(a,mul(v0.n,-thick/2))];
-          output.push({...pos,a,b,q,n:seg.n,angle:Math.atan2(seg.d.y,seg.d.x),sign,style,asset,thick,span,phase,period,index:index++});
-        }
-      }
-    }
   }
-  if(Object.isFrozen(routes))cache.set(routes,output);
-  return output;
+  rasterCaches.set(field,c);return c;
 }
-// Apply the entire repeating texture in the local strip coordinate system.
-// Only the continuous strip outline clips it. The small longitudinal overlap
-// closes subpixel raster seams without extending the outside silhouette.
-// The author ZIP is immutable. Remove the pale baked ground fringe at draw
-// time, once per decoded band, with a soft alpha fade. Wood stays untouched.
-const bandFadeRows=Object.freeze({naturelle:[72,91],cailloux:[69,87],pierre_taillee:[68,83],beton:[68,83],neige:[75,91]});
-const cleanedBands=new WeakMap();
-export function roadBorderFadeProfile(assetId){
-  const rows=bandFadeRows[assetId?.replace('road-border.bordure_','')];
-  return rows?{start:rows[0]/128,end:rows[1]/128}:null;
-}
-function preparedBand(asset,image){
-  const fade=roadBorderFadeProfile(asset.id);if(!fade)return image;
-  if(cleanedBands.has(image))return cleanedBands.get(image);
-  const w=image.naturalWidth,h=image.naturalHeight;
-  const canvas=typeof OffscreenCanvas!=='undefined'?new OffscreenCanvas(w,h):
-    typeof document!=='undefined'?document.createElement('canvas'):null;
-  if(!canvas)return image;
-  canvas.width=w;canvas.height=h;
-  const c=canvas.getContext('2d');if(!c)return image;
-  c.drawImage(image,0,0);c.globalCompositeOperation='destination-in';
-  const gradient=c.createLinearGradient(0,0,0,h);
-  gradient.addColorStop(0,'rgba(0,0,0,1)');gradient.addColorStop(fade.start,'rgba(0,0,0,1)');
-  gradient.addColorStop(fade.end,'rgba(0,0,0,0)');gradient.addColorStop(1,'rgba(0,0,0,0)');
-  c.fillStyle=gradient;c.fillRect(0,0,w,h);
-  cleanedBands.set(image,canvas);return canvas;
-}
-function drawBand(ctx,image,s){
-  const v=sub(s.b,s.a),d=unit(v);if(!d)return;
-  const q=s.q.map((p,i)=>add(p,mul(d,i===0||i===3?-.35:.35)));
-  ctx.beginPath();ctx.moveTo(q[0].x,q[0].y);
-  for(let i=1;i<q.length;i++)ctx.lineTo(q[i].x,q[i].y);ctx.closePath();ctx.clip();
-  const inward=mul(s.n,-1);
-  ctx.transform(d.x,d.y,inward.x,inward.y,s.a.x,s.a.y);
-  const projected=q.map(p=>dot(sub(p,s.a),inward));
-  const min=Math.min(...projected),max=Math.max(...projected);
-  const start=-s.phase*s.period;
-  const first=Math.floor((-.5-start)/s.period),last=Math.floor((length(v)+.5-start)/s.period);
-  for(let i=first;i<=last;i++)ctx.drawImage(image,start+i*s.period,min,s.period,max-min);
+function tileRaster(field,cache,col,row){
+  const key=col+','+row;
+  if(cache.tiles.has(key)){const old=cache.tiles.get(key);cache.tiles.delete(key);cache.tiles.set(key,old);return old;}
+  const w=Math.ceil(cache.w*RASTER_SCALE),h=Math.ceil(cache.h*RASTER_SCALE);
+  const canvas=makeCanvas(w,h),ctx=canvas?.getContext('2d');if(!ctx)return null;
+  const pixels=ctx.createImageData(w,h);let visible=false;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const wx=col*cache.w+(x+.5)*cache.w/w,wy=row*cache.h+(y+.5)*cache.h/h;
+    let a=0,r=0,g=0,b=0;
+    for(const s of roadBorderTextureAt(field,wx,wy)){
+      const texture=cache.textures.get(s.asset.id);if(!texture)continue;
+      const q=sampleTexture(texture,s.u,s.v,s.profile),opacity=s.style.opacity;
+      const alpha=q.a*opacity;if(alpha<=0)continue;
+      r=q.r*opacity+r*(1-alpha);g=q.g*opacity+g*(1-alpha);b=q.b*opacity+b*(1-alpha);a=alpha+a*(1-alpha);
+    }
+    if(a>0){const i=(y*w+x)*4;pixels.data[i]=r/a;pixels.data[i+1]=g/a;pixels.data[i+2]=b/a;pixels.data[i+3]=a*255;visible=true;}
+  }
+  if(visible)ctx.putImageData(pixels,0,0);
+  const result=visible?canvas:null;cache.tiles.set(key,result);
+  if(cache.tiles.size>TILE_CACHE_LIMIT)cache.tiles.delete(cache.tiles.keys().next().value);
+  return result;
 }
 export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
   if(!routes?.some(r=>r.border?.enabled))return null;
-  const buckets=new Map(),w=tile.width,h=tile.height;
-  for(const stamp of roadBorderSamples(routes)){
-    if(!images.has(stamp.asset.id))continue;
-    const bounds=stamp.q??[{x:stamp.x-stamp.thick,y:stamp.y-stamp.thick},{x:stamp.x+stamp.thick,y:stamp.y+stamp.thick}];
-    const xs=bounds.map(p=>p.x),ys=bounds.map(p=>p.y);
-    for(let row=Math.max(0,Math.floor((Math.min(...ys)-1)/h));row<=Math.min(terrain.height-1,Math.floor((Math.max(...ys)+1)/h));row++)
-      for(let col=Math.max(0,Math.floor((Math.min(...xs)-1)/w));col<=Math.min(terrain.width-1,Math.floor((Math.max(...xs)+1)/w));col++){
-        const key=row*terrain.width+col;
-        if(!buckets.has(key))buckets.set(key,[]);
-        buckets.get(key).push(stamp);
-      }
-  }
-  if(!buckets.size)return null;
+  const field=fieldFor(routes),cache=cacheFor(field,tile,images);
+  if(!cache.textures.size&&!cache.spriteBuckets.size)return null;
+  const hasBand=(col,row)=>cache.textures.size>0&&roadBorderFieldHasCell(field,col*tile.width,row*tile.height,tile.width,tile.height);
   const paint=(col,row,level)=>{
-    for(const s of buckets.get(row*terrain.width+col)??[]){
-      const imgs=images.get(s.asset.id),image=s.asset.kind==='sprites'?imgs[s.index%imgs.length]:imgs[0];
-      if(!image?.naturalWidth)continue;
-      ctx.save();ctx.translate(0,-level*tile.rise);ctx.globalAlpha=s.style.opacity;
-      if(s.asset.kind==='sprites'){
-        ctx.translate(s.x,s.y);ctx.rotate(s.angle);ctx.drawImage(image,-s.thick/2,-s.thick/2,s.thick,s.thick);
-      }else drawBand(ctx,preparedBand(s.asset,image),s);
-      ctx.restore();
+    const key=col+','+row,band=hasBand(col,row)?tileRaster(field,cache,col,row):null;
+    if(band){
+      ctx.save();ctx.globalAlpha=1;
+      ctx.drawImage(band,col*tile.width,row*tile.height-level*tile.rise,tile.width,tile.height);ctx.restore();
+    }
+    for(const s of cache.spriteBuckets.get(key)??[]){
+      const imgs=images.get(s.asset.id),image=imgs?.[s.index%imgs.length];if(!image?.naturalWidth)continue;
+      ctx.save();ctx.globalAlpha=s.style.opacity;ctx.translate(s.x,s.y-level*tile.rise);ctx.rotate(s.angle);
+      ctx.drawImage(image,-s.thick/2,-s.thick/2,s.thick,s.thick);ctx.restore();
     }
   };
-  paint.hasCell=(col,row)=>buckets.has(row*terrain.width+col);
+  paint.hasCell=(col,row)=>cache.spriteBuckets.has(col+','+row)||hasBand(col,row);
   return paint;
 }
