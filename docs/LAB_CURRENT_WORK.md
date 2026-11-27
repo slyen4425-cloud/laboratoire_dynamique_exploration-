@@ -1,3 +1,8 @@
+## 2026-11-27 — Correctif pont Combat Aventure IndexedDB (NON GREEN)
+- START e471f4e2c6dc4fd492495db2ef30b701f2694c49 ; checkpoint `checkpoint/exploration-before-indexeddb-encounter-bridge-20261127`, branche `work/exploration-indexeddb-encounter-bridge-20261127`.
+- PWA #693 CI 46041483079 : le vrai duel démarre mais le pont propriétaire Exploration lit encore localStorage historique et refuse le monde. Remplacer uniquement ce lecteur par la composition officielle release, asynchrone et scopée univers, avec refus propriétaire non durable. Tester historique conserve import lazy. Aucun changement Combat, carte, ressources ni sauvegarde.
+- La branche main comprend maintenant #566 routes pour test labo uniquement (pas d'autorisation PWA routes). Ne pas promouvoir ce nouveau main dans PWA sans accord sur ce périmètre. CI et Pages exactes requises.
+
 ## 2026-11-26 — Bibliothèque graphique : import universel et sélecteur hiérarchique (NON GREEN)
 - Demande auteur : importer directement depuis l'application les textures statiques et sprites animés, puis ranger les sélecteurs d'objets en cases dépliables par catégorie / sous-type (maisons standard/neige, arènes, décors eau/urbain, végétation arbres standard/neige/fleurs/buissons, etc.).
 - START main a7b9d535880719cd50fd8935a5876e02219f2495, checkpoint `checkpoint/exploration-before-graphic-library-20261126`, branche unique `work/exploration-graphic-library-20261126`. #562 fusionnée, statut Pages exact SUCCESS, auteur a testé et validé le rendu eau/lave; PWA #683/#684 en cours. Ne pas modifier leurs pins. #561 stockage encore ouvert : intégrer sa version finale avant raccord des imports/exports de mondes; préserver ses modifications de sculpt-lab et journal.

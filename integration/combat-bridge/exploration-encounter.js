@@ -283,19 +283,17 @@ function completeBattle(outcome) {
 async function readAdventureCombatParty(handoff,bundle,universeId){
   // Historical Tester previews package this bridge over older Exploration.
   // Load the scoped readers only when the launched battle belongs to Aventure.
-  const [{readWorldAssemblerDraft},{readScopedAdventurePublishedEncountersV1},
+  const [{openWorldDocumentReleaseAccessV1},{readScopedAdventurePublishedEncountersV1},
     {readScopedAdventurePlayingPartyV1}]=await Promise.all([
-    import('../../../src/builder/world-assembler-handoff.js'),
+    import('../../../src/storage/world-document-release-access-v1.js'),
     import('../../../src/encounters/adventure-published-encounters-v1.js'),
     import('../../../src/encounters/adventure-playing-party-v1.js')
   ]);
-  let worldStorage=window.localStorage;
-  if(universeId!==null){
-    const {createExplorationUniverseWorkspaceStorageV1}=await import(
-      '../../../src/storage/exploration-universe-workspace-storage-v1.js');
-    worldStorage=createExplorationUniverseWorkspaceStorageV1(worldStorage,universeId);
-  }
-  const world=readWorldAssemblerDraft(worldStorage);
+  const access=await openWorldDocumentReleaseAccessV1({
+    storage:window.localStorage,sessionStorage:window.sessionStorage,universeId
+  });
+  if(!access.durable)throw new Error('Propriétaire WorldDocument durable requis pour Aventure');
+  const world=await access.readDraft();
   if(!world)throw new Error('Le monde de la partie Aventure est absent');
   const context={
     storage:window.sessionStorage,sessionId:encounterSessionId,worldId:world.id,
