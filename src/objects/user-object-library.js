@@ -35,6 +35,15 @@ function safeToken(value) {
     .replace(/^-+|-+$/g, '');
 }
 
+// Portable WorldDocuments can retain the exact generated reference even on a
+// device where the image library is not yet installed. This validates only
+// identity syntax, not existence, collision geometry or rendering permission.
+export function isUserWorldObjectDefinitionId(value) {
+  if(typeof value!=='string')return false;
+  const match=/^user\.objectdef\.([a-z]+)\.([a-z0-9-]+)$/.exec(value);
+  return Boolean(match&&ALLOWED_KINDS.includes(match[1])&&safeToken(match[2])===match[2]);
+}
+
 function defaultCollisionRoleForKind(kind) {
   return (
     kind === 'rock' ||

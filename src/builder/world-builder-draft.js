@@ -1,3 +1,4 @@
+import {isUserWorldObjectDefinitionId} from '../objects/user-object-library.js';
 import {buildingDoorCounterpart} from '../world/portal-model.js';
 import {normalizeWorldEncounterStatProfileV1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {normalizeCombatArenaIdV1} from '../world/world-combat-arena-v1.js';
@@ -504,10 +505,13 @@ export function connectWorldAreas(draft,{
 export function validateWorldBuilderDraft(
   draft,
   {
-    objectCatalog =
-      objectDefinitionCatalogV1
+    objectCatalog = null
   } = {}
 ) {
+  // Storage/transport may preserve a generated personal reference before
+  // the local library has been restored. An explicit composed catalog is
+  // strict authoring/runtime validation; it must resolve every reference.
+  const definitions=objectCatalog??objectDefinitionCatalogV1;
   const errors = [];
 
   if (!draft || typeof draft !== 'object') {
@@ -583,7 +587,8 @@ export function validateWorldBuilderDraft(
 
       if (
         definitionId &&
-        !objectCatalog?.get?.(definitionId)
+        !definitions?.get?.(definitionId) &&
+        !(objectCatalog===null&&isUserWorldObjectDefinitionId(definitionId))
       ) {
         errors.push(
           `object-definition-unknown:${definitionId}`
