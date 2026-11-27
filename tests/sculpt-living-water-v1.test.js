@@ -48,14 +48,18 @@ test('shore contact does not create foam between two wet material types',()=>{
  t=stroke(t,4,3,'water-fill','water.swamp');
  assert.deepEqual(sculptWetShoreEdges(t,3,3),['north','south','west']);
 });
-test('nine actual image frames share one reusable canvas and a material clock',async()=>{
+test('36 actual image frames share one reusable canvas and a material clock',async()=>{
  assert.equal(animatedSurfaceFrame(0),0);assert.equal(animatedSurfaceFrame(SURFACE_FRAME_COUNT/8),0);
- assert.equal(animatedSurfaceFrame(-1/8),8);
+ assert.equal(SURFACE_FRAME_COUNT,36);
+ assert.equal(animatedSurfaceFrame(-1/8),35);
+ assert.equal(surfaceMaterialFrame('water.clear_blue',2.25,8),0);
+ assert.equal(surfaceMaterialFrame('water.clear_blue',.5,4),4);
+ assert.equal(surfaceMaterialFrame('water.clear_blue',4.5,4),0);
  assert.notEqual(surfaceMaterialFrame('water.swamp',.5,8),surfaceMaterialFrame('water.forest_stream',.5,8));
- let requests=0;const fakeImage=()=>{requests++;return {naturalWidth:504,naturalHeight:378,set src(v){this.onload();}};};
+ let requests=0;const fakeImage=()=>{requests++;return {naturalWidth:1008,naturalHeight:756,set src(v){this.onload();}};};
  const loaded=await loadAnimatedSurfaceAtlas('water.turquoise',fakeImage);
  assert.equal(await loadAnimatedSurfaceAtlas('water.turquoise',fakeImage),loaded);assert.equal(requests,1);
- assert.match(animatedSurfaceAtlasUrl('water.lava'),/lave\.png$/);
+ assert.match(animatedSurfaceAtlasUrl('water.lava'),/lave\.png\?rev=surface-fluidity-36-v1$/);
  let allocations=0;const canvas=()=>{allocations++;const calls=[];
   const ctx={clearRect(){},drawImage(...v){calls.push(v)}};
   return {calls,getContext(){return ctx}};
@@ -65,7 +69,14 @@ test('nine actual image frames share one reusable canvas and a material clock',a
  assert.equal(a.calls[0][1],0);
  const b=animatedSurfaceSprite('water.turquoise',1,canvas);
  assert.equal(a,b);assert.equal(b.calls[1][1],SURFACE_TILE.width);
- assert.equal(animatedSurfaceSprite('water.turquoise',9,canvas),a);
+ assert.equal(animatedSurfaceSprite('water.turquoise',36,canvas),a);
+ const before=a.calls.length;
+ assert.equal(animatedSurfaceSprite('water.turquoise',35.5,canvas),a);
+ assert.equal(a.calls.length,before+2); // fractional seam blends last and first
+ assert.equal(a.calls.at(-2)[1],5*SURFACE_TILE.width);
+ assert.equal(a.calls.at(-2)[2],5*SURFACE_TILE.height);
+ assert.equal(a.calls.at(-1)[1],0);
+ assert.equal(a.calls.at(-1)[2],0);
  assert.equal(allocations,1);
  assert.equal(animatedSurfaceSprite('unknown',0,canvas),null);
 });
@@ -83,4 +94,19 @@ test('world area normalizer and scene export preserve visual choices',async()=>{
  const area=normalizeWorldArea({id:'area-test',label:'Test',kind:'exterior',width:224,height:168,sculptTerrain:JSON.parse(serializeSculptTerrain(t))});
  assert.deepEqual(area.sculptTerrain,t);
  assert.deepEqual(importSculptPreviewScene(serializeSculptPreviewScene(t)).terrain,t);
+});
+
+test('offline interpolation preserves all authored keyframes and creates distinct intermediate frames including the loop seam',async()=>{
+ const {interpolateSurfaceLoop,FRAME_COUNT,SOURCE_FRAME_COUNT,SUBFRAMES}=await import('../scripts/build-living-water-atlases.mjs');
+ const w=36,h=36,keys=Array.from({length:SOURCE_FRAME_COUNT},(_,k)=>Buffer.from(Array.from({length:w*h*3},(_,i)=>{const x=Math.floor(i/3)%w,y=Math.floor(i/(3*w));return Math.round(128+80*Math.sin((x-k*2)*Math.PI/9)+35*Math.cos(y*Math.PI/9));})));
+ const frames=interpolateSurfaceLoop(keys,w,h);
+ assert.equal(frames.length,FRAME_COUNT);assert.equal(FRAME_COUNT,36);
+ for(let k=0;k<keys.length;k++){
+  assert.equal(frames[k*SUBFRAMES],keys[k]);
+  for(let n=1;n<SUBFRAMES;n++){
+   const frame=frames[k*SUBFRAMES+n];assert.notDeepEqual(frame,keys[k]);assert.notDeepEqual(frame,keys[(k+1)%keys.length]);
+   for(let y=0;y<h;y++)assert.deepEqual(frame.subarray(y*w*3,y*w*3+3),frame.subarray((y*w+w-1)*3,(y*w+w)*3));
+   assert.deepEqual(frame.subarray(0,w*3),frame.subarray((h-1)*w*3,h*w*3));
+  }
+ }
 });
