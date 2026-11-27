@@ -7143,7 +7143,7 @@ function reportScopedPlayZoneLoadingV1(visible){
   },window.location.origin);
 }
 async function traverseSculptWorldPortal(){
-  if(sculptPortalLoading)return;
+  if(sculptPortalLoading||(!sculptPlayActive&&sculptWorldPersistence?.transitioning))return;
   let portal=sculptWorldPortalAtHero();
   if(!portal){
     if(sculptPlayActive)return; // Gameplay never creates a Portal.
@@ -7221,9 +7221,18 @@ async function traverseSculptWorldPortal(){
       ?validatedTargetScene
       :sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId));
     if(!destinationScene)throw Error('Scene de destination invalide');
-    if(navigationTesting)setNavigationTesting(false);
-    mountWorldSculptArea(transition.currentAreaId,destinationScene);
-    setNavigationTesting(true);
+    const mountDestination=()=>{
+      if(navigationTesting)setNavigationTesting(false);
+      mountWorldSculptArea(transition.currentAreaId,destinationScene);
+      setNavigationTesting(true);
+    };
+    // Tester is an authoring transition: acknowledge the current WorldDocument
+    // before releasing its map. Jouer never writes authored data.
+    if(sculptPlayActive)mountDestination();
+    else await sculptWorldPersistence.transition(async save=>{
+      await save(document);
+      mountDestination();
+    });
     if(!navActor)throw Error('Zone de destination non praticable');
     if(sculptPlayActive){
       const arrival={...navActor,x:transition.x,y:transition.y};
