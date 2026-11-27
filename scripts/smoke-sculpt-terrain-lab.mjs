@@ -10,6 +10,9 @@ import {checkSculptWaterPassage} from './check-sculpt-water-passage.mjs';
 import {buildLivingWaterAtlases} from './build-living-water-atlases.mjs';
 const root = process.cwd();
 buildLivingWaterAtlases(root);
+const roadAssets=spawnSync('python3',['scripts/import-road-borders-v1.py','--install'],{cwd:root,encoding:'utf8'});
+if(roadAssets.status!==0)throw Error('Road border build: '+roadAssets.stderr);
+console.log(roadAssets.stdout.trim());
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json',
   '.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
@@ -1593,6 +1596,44 @@ try{
      v27Reload.baseTerrainFamilyId!=='mountain'||
      v27Reload.features[1].terrainFamilyId!=='snow')
     throw Error('V27 imported WorldSurface routes/zones lost: '+JSON.stringify(v27Reload));
+  // Author route border: existing route, optional sides, real pixels, reload and eraser.
+  const roadConfig=await run(`(()=>{
+    const material=document.querySelector('#surface-material');
+    material.value='road.dirt';material.dispatchEvent(new Event('change',{bubbles:true}));
+    const action=document.querySelector('#surface-action');action.value='edit';action.dispatchEvent(new Event('change',{bubbles:true}));
+    return !document.querySelector('#road-style-controls').hidden;
+  })()`);
+  if(!roadConfig)throw Error('Road border controls not available');
+  await paintSurface(v27Ready.start,v27Ready.start);
+  const beforeBorder=await run(`(()=>{const c=document.querySelector('#sculpt-canvas');const ctx=c.getContext('2d');return Array.from(ctx.getImageData(0,0,c.width,c.height).data.filter((_,i)=>i%64===0));})()`);
+  await run(`(()=>{
+    const enabled=document.querySelector('#road-border-enabled');
+    enabled.checked=true;enabled.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-left').value='road-border.bordure_naturelle';
+    document.querySelector('#road-border-right').value='road-border.bordure_beton';
+    const apply=document.querySelector('#road-border-apply');if(apply.disabled)throw Error('No selected road');
+    apply.click();
+  })()`);
+  for(let i=0;i<40;i++){if(await run("window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_beton')&&window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_naturelle')"))break;await sleep(100);}
+  const styled=await run('window.__sculptSurfaceProbe()');
+  if(!styled.features[0].border?.enabled||!styled.texturesLoaded.includes('road-border.bordure_beton')||!styled.texturesLoaded.includes('road-border.bordure_naturelle'))throw Error('Road border assets/model missing: '+JSON.stringify(styled));
+  await sleep(200);
+  const afterBorder=await run(`(()=>{const c=document.querySelector('#sculpt-canvas');return Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data.filter((_,i)=>i%64===0));})()`);
+  if(!afterBorder.some((v,i)=>v!==beforeBorder[i]))throw Error('Road border did not alter actual canvas pixels');
+  await run("document.querySelector('#road-curve-convert').click()");
+  const curved=await run('window.__sculptSurfaceProbe().features[0]');
+  if(!curved.knots||curved.knots<2)throw Error('Road curve knots missing');
+  await run(`(()=>{document.querySelector('#scene-export').click();const j=JSON.parse(document.querySelector('#json').value);
+    if(!j.surface.routes[0].knots||!j.surface.routes[0].border)throw Error('Road curve/style absent on export');
+    window.__roadBorderScene=document.querySelector('#json').value;
+    document.querySelector('#import').click();
+  })()`);
+  const reloadedRoad=await run('window.__sculptSurfaceProbe().features[0]');
+  if(!reloadedRoad.border?.enabled||!reloadedRoad.knots)throw Error('Road style/curve round trip failed');
+  // Restore the precise original fixture for downstream historical tests.
+  await run(`(()=>{document.querySelector('#json').value=window.__v27Scene;document.querySelector('#import').click();
+    const action=document.querySelector('#surface-action');action.value='paint';action.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  console.log('Road borders: actual WebP decoding, canvas pixels, optional style and curve round trip');
   // #526 REAL Chromium: use the actual TEXTURE select and mouse pointer.
   // One square tap creates exactly one normal WorldSurface zone; never a copy
   // of the terrain painter, never a second encounter or collision authority.
