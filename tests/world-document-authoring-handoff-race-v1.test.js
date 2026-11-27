@@ -46,3 +46,25 @@ test('an unchanged durable handoff still writes and is consumed exactly once',as
  assert.equal(sessionStorage.getItem(handoffKey),null);
  assert.equal(await access.readHandoff(),null);
 });
+
+// A durable Capture bridge delegates every explicit project command through
+// one native transaction; it never invokes the legacy storage.
+test('universe provisioning and archive commands are routed through one durable owner',async()=>{
+ const calls=[],result={id:'world-test1234'};
+ const native=Object.fromEntries(['list','load','createBlank','addBlank','copy','save','activate'].map(name=>[name,(...args)=>{calls.push([name,...args]);return result;}]));
+ let transactions=0;
+ const forbidden=new Proxy({}, {get(){throw Error('Legacy storage accessed');}});
+ const access=createWorldAuthoringAccessV1({storage:forbidden,sessionStorage:memoryStorage(),owner:{async run(command){transactions++;return command({projects:native});}},store:{}});
+ const id='unv_test1234',target='unv_other1234',options={width:2400,height:1600};
+ await access.projects.list(id);
+ await access.projects.createBlank(id,options);
+ await access.projects.load(id,result.id);
+ await access.projects.addBlank(id,options);
+ await access.projects.copy({fromWorldId:result.id,toProjectId:target,confirmed:true});
+ await access.projects.save(id,result);
+ await access.projects.activate(id,result.id);
+ assert.equal(transactions,7);
+ assert.deepEqual(calls,[['list',id],['createBlank',id,options],['load',id,result.id],['addBlank',id,options],['copy',{fromWorldId:result.id,toProjectId:target,confirmed:true}],['save',id,result],['activate',id,result.id]]);
+ const scoped=createWorldAuthoringAccessV1({storage:forbidden,sessionStorage:memoryStorage(),universeId:id,owner:{run(){throw Error('unused');}},store:{}});
+ assert.equal(scoped.projects,undefined);
+});

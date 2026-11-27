@@ -36,8 +36,21 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
   return command({library,projects,readDraft,saveDraft});
  }
  const list=()=>run(({library,projects})=>universeId===null?library.list():projects.list(universeId));
+ // Capture's universe composition requires commands across explicit project
+ // identities; route each through the same native transactional owner.
+ const projects=Object.freeze({
+  async list(id){return run(({projects})=>projects.list(id));},
+  async load(id,worldId){return run(({projects})=>projects.load(id,worldId));},
+  async createBlank(id,options){return run(({projects})=>projects.createBlank(id,options));},
+  async addBlank(id,options){return run(({projects})=>projects.addBlank(id,options));},
+  async copy(options){return run(({projects})=>projects.copy(options));},
+  async save(id,document){return run(({projects})=>projects.save(id,document));},
+  async activate(id,worldId){return run(({projects})=>projects.activate(id,worldId));}
+ });
  return Object.freeze({
   durable:Boolean(owner),
+  // Cross-universe operations only on the explicit unscoped composition.
+  ...(universeId===null?{projects}:{}),
   async list(){return list();},
   async load(id){return run(({library,projects})=>universeId===null?library.load(id):projects.load(universeId,id));},
   async readDraft(){return run(({readDraft})=>readDraft(universeId));},
