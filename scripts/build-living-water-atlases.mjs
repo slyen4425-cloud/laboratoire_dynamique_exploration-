@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 const SOURCE='Genesis_textures_animees_eau_lave.zip';
 const EXPECTED='cd1535c7211f80efb378f7ea57c68dab23c21c7d';
 const names=['eau_bleue_profonde','eau_turquoise','eau_riviere','eau_marais','lave'];
-export const FRAME_WIDTH=168,FRAME_HEIGHT=126,FRAME_COUNT=9;
+export const FRAME_WIDTH=168,FRAME_HEIGHT=126,SOURCE_FRAME_COUNT=9,SUBFRAMES=4,FRAME_COUNT=SOURCE_FRAME_COUNT*SUBFRAMES,ATLAS_COLUMNS=6,ATLAS_ROWS=6;
 const crcTable=Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=(n>>>1)^((n&1)?0xedb88320:0);return n>>>0;});
 function crc(b){let n=0xffffffff;for(const v of b)n=(n>>>8)^crcTable[(n^v)&255];return (n^0xffffffff)>>>0;}
 function unzip(b){
@@ -59,7 +59,7 @@ function decodeGif(b){
   for(let i=0;i<indices.length;i++){const c=indices[i]*3;rgb[i*3]=colors[c];rgb[i*3+1]=colors[c+1];rgb[i*3+2]=colors[c+2];}
   frames.push(rgb);
  }
- if(frames.length!==FRAME_COUNT)throw Error('Expected nine author frames');return {w,h,frames};
+ if(frames.length!==SOURCE_FRAME_COUNT)throw Error('Expected nine author frames');return {w,h,frames};
 }
 function tile(rgb,sw,sh){
  const w=FRAME_WIDTH,h=FRAME_HEIGHT,out=Buffer.alloc(w*h*3);
@@ -70,6 +70,9 @@ function tile(rgb,sw,sh){
   for(let c=0;c<3;c++){const at=(u,v)=>rgb[(Math.min(sh-1,v)*sw+Math.min(sw-1,u))*3+c];
    out[(y*w+x)*3+c]=Math.round((1-b)*((1-a)*at(x0,y0)+a*at(x0+1,y0))+b*((1-a)*at(x0,y0+1)+a*at(x0+1,y0+1)));}
  }
+ return sealTile(out,w,h);
+}
+function sealTile(out,w,h){
  const blend=(horizontal)=>{const n=horizontal?w:h,other=horizontal?h:w,strip=12;
   for(let j=0;j<other;j++)for(let d=0;d<strip;d++){const t=.5*(.5+.5*Math.cos(Math.PI*d/strip));
    const a=(horizontal?j*w+d:d*w+j)*3,b=(horizontal?j*w+n-1-d:(n-1-d)*w+j)*3;
@@ -77,10 +80,62 @@ function tile(rgb,sw,sh){
   }
  };blend(true);blend(false);return out;
 }
+// Deterministic, local block flow with bilinear sampling. Preserve all nine
+// approved keyframes; only the three between each pair are synthesized.
+// No optical-flow dependency or runtime procedural animation.
+const wrap=(v,n)=>((v%n)+n)%n;
+function motionField(a,b,w,h){
+ const step=12,cols=Math.ceil(w/step),rows=Math.ceil(h/step),field=[];
+ const luminance=(buf,x,y)=>{const i=(wrap(y,h)*w+wrap(x,w))*3;return (buf[i]*2+buf[i+1]*4+buf[i+2])/7;};
+ for(let gy=0;gy<rows;gy++)for(let gx=0;gx<cols;gx++){
+  const x=gx*step+step/2,y=gy*step+step/2;
+  let best=Infinity,dx=0,dy=0;
+  for(let v=-5;v<=5;v++)for(let u=-5;u<=5;u++){
+   let cost=(Math.abs(u)+Math.abs(v))*2;
+   for(let j=-6;j<=6;j+=3)for(let i=-6;i<=6;i+=3){
+    const delta=luminance(a,x+i,y+j)-luminance(b,x+i+u,y+j+v);
+    cost+=Math.abs(delta);
+   }
+   if(cost<best){best=cost;dx=u;dy=v;}
+  }
+  field.push([dx,dy]);
+ }
+ return {field,step,cols,rows};
+}
+function flowAt({field,step,cols,rows},x,y,c){
+ const u=x/step-.5,v=y/step-.5,i=Math.floor(u),j=Math.floor(v),a=u-i,b=v-j;
+ const get=(p,q)=>field[wrap(q,rows)*cols+wrap(p,cols)][c];
+ return (1-b)*((1-a)*get(i,j)+a*get(i+1,j))+b*((1-a)*get(i,j+1)+a*get(i+1,j+1));
+}
+function sample(buf,w,h,x,y,c){
+ const i=Math.floor(x),j=Math.floor(y),a=x-i,b=y-j;
+ const get=(p,q)=>buf[(wrap(q,h)*w+wrap(p,w))*3+c];
+ return (1-b)*((1-a)*get(i,j)+a*get(i+1,j))+b*((1-a)*get(i,j+1)+a*get(i+1,j+1));
+}
+export function interpolateSurfaceLoop(keyframes,w=FRAME_WIDTH,h=FRAME_HEIGHT){
+ if(keyframes.length!==SOURCE_FRAME_COUNT||keyframes.some(f=>f.length!==w*h*3)||w<24||h<24)throw Error('Invalid surface keyframes');
+ const result=[];
+ for(let k=0;k<keyframes.length;k++){
+  const a=keyframes[k],b=keyframes[(k+1)%keyframes.length];
+  const forward=motionField(a,b,w,h),backward=motionField(b,a,w,h);
+  result.push(a);
+  for(let n=1;n<SUBFRAMES;n++){
+   const t=n/SUBFRAMES,out=Buffer.alloc(w*h*3);
+   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const ax=x-t*flowAt(forward,x,y,0),ay=y-t*flowAt(forward,x,y,1);
+    const bx=x-(1-t)*flowAt(backward,x,y,0),by=y-(1-t)*flowAt(backward,x,y,1);
+    for(let c=0;c<3;c++)out[(y*w+x)*3+c]=Math.round((1-t)*sample(a,w,h,ax,ay,c)+t*sample(b,w,h,bx,by,c));
+   }
+   result.push(sealTile(out,w,h));
+  }
+ }
+ return result;
+}
 function pngChunk(name,data){const type=Buffer.from(name),header=Buffer.alloc(4),tail=Buffer.alloc(4);header.writeUInt32BE(data.length);tail.writeUInt32BE(crc(Buffer.concat([type,data])));return Buffer.concat([header,type,data,tail]);}
 function atlas(gif){
- const {w:sw,h:sh,frames}=decodeGif(gif),w=FRAME_WIDTH*3,h=FRAME_HEIGHT*3,stride=w*3+1,raw=Buffer.alloc(stride*h);
- for(let i=0;i<frames.length;i++){const img=tile(frames[i],sw,sh),x=(i%3)*FRAME_WIDTH,y=Math.floor(i/3)*FRAME_HEIGHT;
+ const {w:sw,h:sh,frames}=decodeGif(gif),w=FRAME_WIDTH*ATLAS_COLUMNS,h=FRAME_HEIGHT*ATLAS_ROWS,stride=w*3+1,raw=Buffer.alloc(stride*h);
+ const loop=interpolateSurfaceLoop(frames.map(frame=>tile(frame,sw,sh)));
+ for(let i=0;i<loop.length;i++){const img=loop[i],x=(i%ATLAS_COLUMNS)*FRAME_WIDTH,y=Math.floor(i/ATLAS_COLUMNS)*FRAME_HEIGHT;
   for(let j=0;j<FRAME_HEIGHT;j++)img.copy(raw,(y+j)*stride+1+x*3,j*FRAME_WIDTH*3,(j+1)*FRAME_WIDTH*3);}
  // PNG Sub filter, deterministic lossless RGB.
  for(let y=0;y<h;y++){const base=y*stride;raw[base]=1;for(let x=w*3;x>3;x--)raw[base+x]=(raw[base+x]-raw[base+x-3])&255;}
@@ -91,7 +146,7 @@ export function buildLivingWaterAtlases(root=process.cwd()){
  const dir=join(root,'assets/exploration/materials/forest/water/animated');
  const source=join(root,SOURCE);
  if(!existsSync(source)){
-  if(names.every(n=>existsSync(join(dir,n+'.png'))))return null;
+  if(names.every(n=>{const p=join(dir,n+'.png');if(!existsSync(p))return false;const b=readFileSync(p);return b.length>=24&&b.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'))&&b.readUInt32BE(16)===FRAME_WIDTH*ATLAS_COLUMNS&&b.readUInt32BE(20)===FRAME_HEIGHT*ATLAS_ROWS;}))return null;
   throw Error('Missing approved source ZIP and built water atlases');
  }
  const zip=readFileSync(source),sha=createHash('sha1').update('blob '+zip.length+'\0').update(zip).digest('hex');
@@ -99,7 +154,7 @@ export function buildLivingWaterAtlases(root=process.cwd()){
  const entries=unzip(zip);mkdirSync(dir,{recursive:true});const sizes={};
  for(const name of names){const data=atlas(entries.get(name+'.gif'));writeFileSync(join(dir,name+'.png'),data);sizes[name]=data.length;}
  const total=Object.values(sizes).reduce((a,b)=>a+b,0);
- if(total>2*1024*1024)throw Error('Water atlas budget exceeded '+total);
- console.log('LIVING WATER ATLAS BUILD '+JSON.stringify({sourceSha:sha,frames:45,dimensions:[504,378],bytes:total,sizes}));return {total,sizes};
+ if(total>6*1024*1024)throw Error('Water atlas budget exceeded '+total);
+ console.log('LIVING WATER ATLAS BUILD '+JSON.stringify({sourceSha:sha,sourceFrames:SOURCE_FRAME_COUNT*names.length,frames:FRAME_COUNT*names.length,dimensions:[FRAME_WIDTH*ATLAS_COLUMNS,FRAME_HEIGHT*ATLAS_ROWS],bytes:total,sizes}));return {total,sizes};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))buildLivingWaterAtlases(resolve(process.argv[2]??'.'));

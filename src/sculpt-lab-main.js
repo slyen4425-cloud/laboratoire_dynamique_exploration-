@@ -6,7 +6,7 @@ import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-author-atlas-v1';
 import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1';
-import {loadAnimatedSurfaceAtlas} from './render/animated-surface-sprites-v1.js';
+import {loadAnimatedSurfaceAtlas,SURFACE_RENDER_FPS} from './render/animated-surface-sprites-v1.js';
 import {SCULPT_WATER_MATERIAL_IDS,DEFAULT_SCULPT_WATER_MATERIAL} from './world/sculpt-water-materials-v1.js';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -1040,7 +1040,7 @@ function compositeLivingWater(snapshot){
   if(!waterLayerCanvas)waterLayerCanvas=document.createElement('canvas');
   if(waterLayerCanvas.width!==width||waterLayerCanvas.height!==height){waterLayerCanvas.width=width;waterLayerCanvas.height=height;waterLayerKey='';}
   const transform=ctx.getTransform(),fps=terrain.waterAnimationFps??8,foamPct=terrain.waterFoamPct??60;
-  const tick=Math.floor(performance.now()*fps/1000),timeSeconds=tick/fps;
+  const tick=Math.floor(performance.now()*SURFACE_RENDER_FPS/1000),timeSeconds=tick/SURFACE_RENDER_FPS;
   const key=[tick,fps,transform.a,transform.b,transform.c,transform.d,transform.e,transform.f,width,height,foamPct].join('|');
   if(key!==waterLayerKey||waterLayerSnapshot!==snapshot){
     const layer=waterLayerCanvas.getContext('2d');layer.setTransform(1,0,0,1,0,0);layer.clearRect(0,0,width,height);
@@ -1844,7 +1844,7 @@ function pumpWaterfallFrame(now){
   if(!animatedSceneryPresent()){waterfallPumpHandle=0;return;}
   const waterActive=livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain);
   const materialFps=activeMaterialAnimationFps();
-  const interval=1000/Math.max(12,waterActive?(terrain.waterAnimationFps??8):0,materialFps);
+  const interval=1000/Math.max(12,waterActive?SURFACE_RENDER_FPS:0,materialFps);
   if(now-waterfallLastPaintMs>=interval-1){waterfallLastPaintMs=now;if(!navigationTesting||materialFps>0)scheduleDraw();}
   waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
@@ -5833,10 +5833,10 @@ $('water-material').addEventListener('change',setWaterMaterial);
 function syncLivingWaterControls(){
  if(!livingWaterControls)return;
  $('water-fps').value=String(terrain.waterAnimationFps??8);$('water-foam').value=String(terrain.waterFoamPct??60);
- $('water-fps-value').textContent=$('water-fps').value+' FPS';$('water-foam-value').textContent=$('water-foam').value+' %';
+ $('water-fps-value').textContent=$('water-fps').value+' / 16';$('water-foam-value').textContent=$('water-foam').value+' %';
 }
 if(livingWaterControls){
- for(const [id,suffix] of [['water-fps',' FPS'],['water-foam',' %']]){
+ for(const [id,suffix] of [['water-fps',' / 16'],['water-foam',' %']]){
   $(id).addEventListener('input',()=>{$(id+'-value').textContent=$(id).value+suffix;});
   $(id).addEventListener('change',()=>{if(sculptPlayActive)return;const previous=terrain;
    terrain=setSculptWaterAnimation(terrain,{fps:Number($('water-fps').value),foamPct:Number($('water-foam').value)});
