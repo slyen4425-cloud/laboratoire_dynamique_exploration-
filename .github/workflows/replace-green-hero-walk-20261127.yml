@@ -2,7 +2,10 @@ name: Replace green hero approved walk frames (work only)
 on:
   push:
     branches: [work/exploration-hero-sprite-repair-20261126]
-    paths: [GenSRPG_heros_vert_remplacement_20261127.zip]
+    paths:
+      - GenSRPG_heros_vert_complet_test_jeu.zip
+      - scripts/replace-green-hero-walk-20261127.py
+      - .github/workflows/replace-green-hero-walk-20261127.yml
 permissions:
   contents: write
 jobs:
@@ -16,6 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python -m pip install Pillow==11.3.0
       - run: python scripts/replace-green-hero-walk-20261127.py
       - run: python scripts/replace-green-hero-walk-20261127.py --check
       - name: Commit only the existing official frame paths
