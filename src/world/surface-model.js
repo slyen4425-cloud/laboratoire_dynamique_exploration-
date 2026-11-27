@@ -1,3 +1,4 @@
+import {normalizeRouteKnots,routePointsFromKnots} from './road-edit-geometry-v1.js';
 const DEFAULT_BASE_MATERIAL = 'grass.forest';
 const DEFAULT_BASE_TERRAIN_FAMILY = 'forest';
 const DEFAULT_BASE_TRAVERSAL_RULE = 'terrain.ground';
@@ -88,7 +89,8 @@ function normalizeStrokeItem(
     return null;
   }
 
-  const points =
+  const knots = prefix === 'road' ? normalizeRouteKnots(item.knots) : null;
+  const points = knots ? routePointsFromKnots(knots).map(normalizePoint) :
     Array.isArray(item.points)
       ? item.points
           .map(normalizePoint)
@@ -135,6 +137,7 @@ function normalizeStrokeItem(
   if (prefix === 'road') {
     const border = normalizeRoadBorder(item.border);
     if (border) normalized.border = border;
+    if (knots) normalized.knots = knots;
   }
 
   return Object.freeze(normalized);
