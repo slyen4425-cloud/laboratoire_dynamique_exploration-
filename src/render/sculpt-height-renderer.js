@@ -1,4 +1,3 @@
-import {roadBorderCellPainter} from './road-border-renderer-v1.js';
 import {sculptWaterMaterialCells} from '../world/sculpt-water-materials-v1.js';
 import {surfaceMaterialFrame,animatedSurfaceSprite} from './animated-surface-sprites-v1.js';
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
@@ -570,7 +569,6 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   const {width:w,height:h,rise}=tile;
   const buckets=new Array(terrain.width*terrain.height);
   const patterns=new Map();
-  const drawBorders=roadBorderCellPainter(ctx,terrain,tile,surface.routes??[],paintImages);
   for(const feature of features){
     const img=paintImages.get(feature.materialId);
     if(!(img?.naturalWidth??img?.width))continue;
@@ -594,8 +592,8 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
     }
   }
   return (col,row,level,x,y)=>{
-    const items=buckets[row*terrain.width+col]??[];
-    if(!items.length&&!drawBorders?.hasCell(col,row))return 0;
+    const items=buckets[row*terrain.width+col];
+    if(!items?.length)return 0;
     // On fractional mobile DPR/zoom, the independently anti-aliased clips
     // can expose one physical pixel of the green base below a snow/road zone.
     // Underpaint ONLY with the same canonical opaque Material Registry pattern;
@@ -652,7 +650,6 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
       ctx.lineWidth=feature.width+6;ctx.globalAlpha=.20;ctx.stroke();
       ctx.lineWidth=feature.width;ctx.globalAlpha=.95;ctx.stroke();
     }
-    drawBorders?.(col,row,level);
     ctx.restore();return items.length;
   };
 }
