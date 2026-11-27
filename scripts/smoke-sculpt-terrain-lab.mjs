@@ -1632,6 +1632,21 @@ try{
   })()`);
   const reloadedRoad=await run('window.__sculptSurfaceProbe().features[0]');
   if(!reloadedRoad.border?.enabled||!reloadedRoad.knots)throw Error('Road style/curve round trip failed');
+  // Actual side toggles and cleaned concrete image, not just model options.
+  await paintSurface(v27Ready.start,v27Ready.start);
+  await run(`(()=>{const sides=document.querySelector('#road-border-sides');sides.value='left';sides.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-asset').value='road-border.bordure_beton';document.querySelector('#road-border-width').value='10';
+    const apply=document.querySelector('#road-border-apply');if(apply.disabled)throw Error('Road selection missing after reload');apply.click();})()`);
+  for(let i=0;i<40;i++){if(await run("window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_beton')"))break;await sleep(100);}
+  const oneSide=await run('window.__sculptSurfaceProbe()');
+  if(!oneSide.features[0].border?.enabled||oneSide.features[0].border.right||oneSide.features[0].border.left.width!==10||
+    !oneSide.texturesLoaded.includes('road-border.bordure_beton'))throw Error('One-side road border or cleaned asset unavailable');
+  await run(`(()=>{const sides=document.querySelector('#road-border-sides');sides.value='none';sides.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-apply').click();})()`);
+  if((await run('window.__sculptSurfaceProbe().features[0].border.enabled'))!==false)throw Error('Disable road borders failed');
+  await run("document.querySelector('#surface-undo').click()");
+  const restoredSide=await run('window.__sculptSurfaceProbe().features[0].border');
+  if(!restoredSide?.enabled||restoredSide.right||restoredSide.left.width!==10)throw Error('Visible undo did not restore previous border style');
   // Restore the precise original fixture for downstream historical tests.
   await run(`(()=>{document.querySelector('#json').value=window.__v27Scene;document.querySelector('#import').click();
     const action=document.querySelector('#surface-action');action.value='paint';action.dispatchEvent(new Event('change',{bubbles:true}));})()`);
