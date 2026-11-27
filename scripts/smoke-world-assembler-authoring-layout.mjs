@@ -19,13 +19,13 @@ const server=createServer(async(req,res)=>{
     let bytes=await readFile(path);
     if(durableFixture&&path===resolve(root,'src/sculpt-lab-main.js')){
       const original=bytes.toString('utf8');
-      const anchor='const sculptWorldAccess=createWorldAuthoringAccessV1({storage:window.localStorage,';
+      const anchor='const sculptWorldAccess=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,';
       if(!original.includes(anchor))throw Error('Sculpt composition root moved');
       bytes=original.replace(anchor,
         "const {createWorldDocumentIndexedDbStoreV1}=await import('./storage/world-document-indexeddb-store-v1.js');\n"+
         "const {createWorldDocumentTransactionalOwnerV1}=await import('./storage/world-document-transactional-owner-v1.js');\n"+
         'const durableStore=createWorldDocumentIndexedDbStoreV1(),durableOwner=createWorldDocumentTransactionalOwnerV1({store:durableStore});\n'+
-        'const sculptWorldAccess=createWorldAuthoringAccessV1({owner:durableOwner,store:durableStore,storage:window.localStorage,');
+        'const sculptWorldAccess=await openWorldDocumentReleaseAccessV1({owner:durableOwner,store:durableStore,storage:window.localStorage,');
     }
     if(durableFixture&&path===resolve(root,'src/builder/world-assembler-main.js')){
       const original=bytes.toString('utf8');
@@ -540,7 +540,6 @@ try{
       return {active:draft.areas.some(a=>a.label==='Zone IndexedDB réelle'),
         archived:projects.load(universe,draft.id).areas.some(a=>a.label==='Zone IndexedDB réelle')};
     });
-    window.__isolatedDurableEditor.dispose();
     return {...proof,noLegacy:localStorage.getItem('gensrpg.exploration.universe.workspace.v1:'+universe+':gensrpg.world-assembler.document.v1')===null};
   })()`);
   if(Object.values(durableUi).some(v=>v!==true))throw Error('Actual IndexedDB editor readback failed '+JSON.stringify(durableUi));
@@ -548,18 +547,10 @@ try{
   // Prove the real 2.5D authoring page on the same database, via a
   // revision-only handoff and its actual native controls. Only composition
   // roots are substituted by the isolated test server; editor code is unchanged.
-  const sculptArea=await run(`(async()=>{
-    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
-    const {createWorldDocumentTransactionalOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
-    const {createWorldAuthoringAccessV1}=await import('./src/storage/world-document-authoring-access-v1.js');
-    const store=createWorldDocumentIndexedDbStoreV1(),owner=createWorldDocumentTransactionalOwnerV1({store});
-    const access=createWorldAuthoringAccessV1({storage:localStorage,sessionStorage,universeId:'unv_transaction-test-2',owner,store});
-    const draft=await access.readDraft(),area=draft.areas.find(a=>a.label==='Zone IndexedDB réelle');
-    await access.writeHandoff(draft,area.id);
-    return area.id;
-  })()`);
+  const sculptArea=await run("window.__worldAssemblerProbe().selectedAreaId");
   durableFixture=true;
-  await send('Page.navigate',{url:new URL('./sculpt-lab.html?worldAssembler=1&universe=unv_transaction-test-2&areaId='+encodeURIComponent(sculptArea),pageUrl).href});
+  // Actual editor command must flush and write its revision-only handoff.
+  await run("document.querySelector('#world-workspace-map').click()");
   let sculptReady=false;
   for(let i=0;i<140;i++){
     try{sculptReady=await run("location.pathname.endsWith('/sculpt-lab.html')&&window.__sculptWorldProbe?.().editable===true&&window.__sculptWorldProbe?.().durableStorage===true&&!!window.__sculptEncounterEditorProbe?.().available");}catch{}

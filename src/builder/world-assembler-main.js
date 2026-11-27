@@ -6,7 +6,7 @@ import {
   setWorldAssemblerNodePosition,resetWorldAssemblerNodePositions,
   serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
-import {createWorldAuthoringAccessV1} from '../storage/world-document-authoring-access-v1.js';
+import {openWorldDocumentReleaseAccessV1} from '../storage/world-document-release-access-v1.js';
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
@@ -123,7 +123,7 @@ export async function installWorldAssembler({owner=null,store=null}={}){
   const params=new URLSearchParams(window.location.search);
   const universeId=params.get('universe');
   const worldProjects=universeId!==null;
-  const access=createWorldAuthoringAccessV1({storage:window.localStorage,sessionStorage:window.sessionStorage,
+  const access=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,sessionStorage:window.sessionStorage,
     universeId,owner,store,makeId:()=>crypto.randomUUID()});
   const worldStorage=universeId===null?window.localStorage:
     createExplorationUniverseWorkspaceStorageV1(window.localStorage,universeId);
@@ -298,9 +298,9 @@ export async function installWorldAssembler({owner=null,store=null}={}){
     transitionBusy=true;
     try{
       if(!await persist())return status('Monde non sauvegardé : exporte ton travail avant de jouer.',true);
-      // Native Jouer is migrated separately before enabling the durable owner.
-      if(access.durable)return status('Jouer non raccordé à IndexedDB dans ce lot de préparation.',true);
-      window.location.assign(event.currentTarget?.href??byId('world-play-open').href);
+      const target=new URL(byId('world-play-open').href,window.location.href);
+      if(universeId!==null)target.searchParams.set('universe',universeId);
+      window.location.assign(target.href);
     }finally{transitionBusy=false;}
   });
   function getSelected(){
@@ -917,7 +917,6 @@ export async function installWorldAssembler({owner=null,store=null}={}){
         }
       }
       if(!await persist())return;
-      if(access.durable)return status('Carte 2,5D non raccordée à IndexedDB dans ce lot de préparation.',true);
       await access.writeHandoff(draft,areaToOpen);
       // Selection is an ephemeral UI choice, never a second WorldDocument.
       if(areaToOpen!==selectedId){selectedId=areaToOpen;render();}

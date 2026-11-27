@@ -1,17 +1,19 @@
-import {createWorldAuthoringAccessV1} from '../storage/world-document-authoring-access-v1.js';
+import {openWorldDocumentReleaseAccessV1} from '../storage/world-document-release-access-v1.js';
+import {createExplorationUniverseWorkspaceStorageV1} from '../storage/exploration-universe-workspace-storage-v1.js';
 import {
   createNewExplorationPlay,readExplorationPlay,explorationPlayNavigationKey
 } from './exploration-play-session.js';
 
 const $=id=>document.getElementById(id);
 const message=(value,error=false)=>{$('play-status').textContent=value;$('play-status').dataset.error=String(error);};
-let world,playOptions;
-// The native play menu uses the same authoring reader as Sculpt and Capture.
-// The default remains legacy until the coordinated production cutover.
-const access=createWorldAuthoringAccessV1({storage:window.localStorage,sessionStorage:window.sessionStorage});
+let world,playOptions,access,playStorage;
+const universeId=new URL(document.URL).searchParams.get('universe');
 const playUrl=()=> './sculpt-lab.html?play=1'+
-  (playOptions?'&adventureSession='+encodeURIComponent(playOptions.sessionId):'');
+  (playOptions?'&adventureSession='+encodeURIComponent(playOptions.sessionId):'')+
+  (universeId?'&universe='+encodeURIComponent(universeId):'');
 try{
+  access=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,sessionStorage:window.sessionStorage,universeId});
+  playStorage=universeId===null?window.localStorage:createExplorationUniverseWorkspaceStorageV1(window.localStorage,universeId);
   const sessionId=new URL(document.URL).searchParams.get('adventureSession');
   if(sessionId!==null){
     explorationPlayNavigationKey(sessionId); // reject unsafe or empty identity
@@ -32,7 +34,7 @@ try{
     $('play-new').disabled=Boolean(playOptions);
     $('play-new').hidden=Boolean(playOptions);
     try{
-      const existing=readExplorationPlay(window.localStorage,world,playOptions);
+      const existing=readExplorationPlay(playStorage,world,playOptions);
       if(existing){
         $('play-continue').disabled=false;
         const savedArea=world.areas.find(a=>a.id===existing.currentAreaId);
@@ -55,17 +57,18 @@ $('play-new').addEventListener('click',async()=>{
     if(playOptions)throw Error('Nouvelle partie appartient à GenSRPG Aventure, pas au menu Exploration');
     world=await access.readDraft();
     if(!world)throw Error('Monde enregistré indisponible');
-    if(window.localStorage.getItem(playOptions?
+    if(playStorage.getItem(playOptions?
       explorationPlayNavigationKey(playOptions.sessionId):explorationPlayNavigationKey())&&
        !window.confirm('Nouvelle partie : remplacer uniquement le checkpoint de navigation précédent ?'))return;
-    createNewExplorationPlay(window.localStorage,world,playOptions);
+    createNewExplorationPlay(playStorage,world,playOptions);
     window.location.assign(playUrl());
   }catch(error){message(error.message,true);}
 });
 $('play-continue').addEventListener('click',async()=>{
   try{
+    if(!access)throw Error('Stockage WorldDocument indisponible');
     world=await access.readDraft();
-    if(!world||!readExplorationPlay(window.localStorage,world,playOptions))
+    if(!world||!readExplorationPlay(playStorage,world,playOptions))
       throw new Error('Aucune partie enregistrée');
     window.location.assign(playUrl());
   }catch(error){message(error.message,true);}

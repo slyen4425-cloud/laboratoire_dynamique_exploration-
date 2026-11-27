@@ -122,7 +122,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecov
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1,describeWorldAreaIncomingPortalsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
-import {createWorldAuthoringAccessV1} from './storage/world-document-authoring-access-v1.js';
+import {openWorldDocumentReleaseAccessV1} from './storage/world-document-release-access-v1.js';
 import {installWorldExternalBackupPanelV1} from './storage/world-document-external-backup-panel-v1.js';
 import {createSculptWorldPersistenceV1,installSculptWorldAutosaveV1} from './storage/sculpt-world-persistence-v1.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
@@ -181,7 +181,7 @@ for(const id of ['mode-ground','mode-water','mode-objects','mode-waypoints','mod
 }
 
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
-const sculptWorldAccess=createWorldAuthoringAccessV1({storage:window.localStorage,
+const sculptWorldAccess=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,
  sessionStorage:window.sessionStorage,universeId:sculptUniverseId});
 const worldStorage=sculptUniverseId===null?window.localStorage:
  createExplorationUniverseWorkspaceStorageV1(window.localStorage,sculptUniverseId);
