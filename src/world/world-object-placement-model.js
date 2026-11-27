@@ -4,6 +4,8 @@ import {
 import {normalizeCombatArenaIdV1} from './world-combat-arena-v1.js';
 import {normalizeWorldObjectShadowSettingsV1} from './world-object-shadow-settings-v1.js';
 
+import {normalizeWorldObjectInteractionV1} from './world-object-interaction-v1.js';
+
 export const WORLD_OBJECT_PLACEMENT_SCHEMA_VERSION = 1;
 
 export const WORLD_OBJECT_PLACEMENT_LIMITS = Object.freeze({
@@ -115,6 +117,7 @@ function normalizeOverrides(raw,kind) {
       : {};
 
   const combatArenaId = normalizeCombatArenaIdV1(source.combatArenaId);
+  const interaction=normalizeWorldObjectInteractionV1(source.interaction);
   return Object.freeze({
     traversalSurfaceFeatureIds:
       normalizeIds(
@@ -125,6 +128,7 @@ function normalizeOverrides(raw,kind) {
         source.visualVariantId
       ),
     ...(combatArenaId ? {combatArenaId} : {}),
+    ...(interaction ? {interaction} : {}),
     // Absent by default: older WorldDocuments keep their exact save shape.
     ...(normalizeWorldObjectShadowSettingsV1(source.shadow)
       ? {shadow:normalizeWorldObjectShadowSettingsV1(source.shadow)} : {}),
@@ -284,6 +288,7 @@ export function resolveWorldObjectPlacement(
       definition.collision ?? null,
     // Display-only override travels with the one authoritative placement.
     ...(placement.overrides?.shadow ? {shadow:placement.overrides.shadow} : {}),
+    ...(placement.overrides?.interaction ? {interaction:placement.overrides.interaction} : {}),
     // The physical stair corridor belongs to this SAME object placement.
     ...(definition.kind==='stairs'&&placement.overrides?.stairTraversal
       ?{stairTraversal:placement.overrides.stairTraversal}:{})
