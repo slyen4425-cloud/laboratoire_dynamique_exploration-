@@ -2415,7 +2415,7 @@ function begin(event){
   if(surfaceEditing){
     if(surfaceGesture)return;
     const point=surfacePointFromEvent(event,cell),action=$('surface-action').value;
-    if(action==='delete'){surfaceCommit(removeSculptSurfaceAt(surface,point));return;}
+    if(action==='delete'||(!roadEditControls&&action==='erase')){surfaceCommit(removeSculptSurfaceAt(surface,point));return;}
     surfaceGesture={pointerId:event.pointerId,action};
     if(action==='edit'){roadEditControls?.begin(point,12/Math.max(.32,zoom));return;}
     surfaceDrawing=true;surfaceLastCell='';surfaceStrokePoints=[point];scheduleDraw();return;
@@ -2882,7 +2882,7 @@ function stop(event){
     if(cancelled){scheduleDraw();return;}
     try{
       if(action==='erase')surfaceCommit(eraseSculptSurfaceStroke(surface,{points,width:Number($('surface-width').value)*SCULPT_TILE.width,
-        brushShape:$('surface-brush-shape').value,kind:$('surface-material').value==='road.dirt'?'routes':'zones'}));
+        brushShape:($('surface-brush-shape')?.value??'round'),kind:$('surface-material').value==='road.dirt'?'routes':'zones'}));
       else if(action==='curve'&&points.length===1)roadEditControls?.addAnchor(points[0]);
       else commitSurfacePath(points,action==='curve');
     }catch(error){status(error.message);}
@@ -4393,17 +4393,17 @@ function surfaceCommit(next){
 }
 function commitSurfacePath(points,curve=false){
   const materialId=curve?'road.dirt':$('surface-material').value;
-  const knots=curve?routeKnotsFromPoints(points):null;
+  const knots=curve?routeKnotsFromPoints(points,{width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height}):null;
   const before=surface;
   const changed=appendSculptSurfaceStroke(surface,{materialId,terrainFamilyId:surfacePaintFamilySelect?.value,points,
-    width:Number($('surface-width').value)*SCULPT_TILE.width,brushShape:curve?'round':$('surface-brush-shape').value,
+    width:Number($('surface-width').value)*SCULPT_TILE.width,brushShape:curve?'round':($('surface-brush-shape')?.value??'round'),
     ...(materialId==='road.dirt'?{border:roadEditControls?.border(),knots}:{} )});
   if(!surfaceCommit(changed)&&before.routes.length+before.zones.length>=80)status('Limite de tracés atteinte. Efface un tracé avant de continuer.');
 }
 roadEditControls=createRoadEditControls({getSurface:()=>surface,commit:surfaceCommit,redraw:scheduleDraw,status,
   getBounds:()=>({width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height})});
-roadEditControls.setCurveFinish(points=>commitSurfacePath(points,true));
-roadEditControls.refresh();
+roadEditControls?.setCurveFinish(points=>commitSurfacePath(points,true));
+roadEditControls?.refresh();
 function setSurfaceEditing(active){
   if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
@@ -4457,12 +4457,12 @@ $('surface-width').addEventListener('input',()=>{
 });
 $('surface-undo').addEventListener('click',()=>{
   if(!surfaceHistory.length)return;
-  surfaceRedo.push(surface);surface=surfaceHistory.pop();
+  surfaceRedo.push(surface);surface=surfaceHistory.pop();roadEditControls?.clear();
   updateSurfaceCount();
 });
 $('surface-redo').addEventListener('click',()=>{
   if(!surfaceRedo.length)return;
-  surfaceHistory.push(surface);surface=surfaceRedo.pop();
+  surfaceHistory.push(surface);surface=surfaceRedo.pop();roadEditControls?.clear();
   loadSurfacePaintAssets();updateSurfaceCount();
 });
 window.__sculptSurfaceProbe=()=>Object.freeze({
@@ -6090,7 +6090,7 @@ function mountSculptArea(snapshot,{preserveSharedLighting=false}={}){
   closeNpcDialogue();
   if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
-  surface=snapshot.surface;
+  surface=snapshot.surface;surfaceGesture=null;surfaceDrawing=false;roadEditControls?.clear();
   if(!sculptWorldDraft&&(!activeInteriorId||snapshot.objectShadowProfiles!==undefined))
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
       snapshot.objectShadowProfiles);
