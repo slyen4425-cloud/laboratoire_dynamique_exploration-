@@ -54,12 +54,17 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
   async remove(id,options){if(universeId!==null)throw Error('Suppression de monde de projet non autorisée');return run(({library})=>library.remove(id,options));},
   async writeHandoff(document,areaId){
    if(!owner)return saveWorldAssemblerHandoff(sessions,document,areaId);
+   const previous=sessions.getItem(WORLD_ASSEMBLER_HANDOFF_KEY);
    await owner.verifyCutover?.();
    const row=await store.read(draftKey);
    await owner.verifyCutover?.();
    if(!row||serializeWorldBuilderDraft(row.document)!==serializeWorldBuilderDraft(document)||
       !row.document.areas.some(a=>a.id===areaId))
     throw Error('Transfert bloqué : révision WorldDocument non confirmée');
+   // A newer transition may have completed while IndexedDB was reading.
+   // Do not replace its reference with an older asynchronous result.
+   if(sessions.getItem(WORLD_ASSEMBLER_HANDOFF_KEY)!==previous)
+    throw Error('Transfert modifié pendant la lecture : aucun transfert écrasé');
    // Only the reference crosses sessionStorage, not a second large map.
    sessions.setItem(WORLD_ASSEMBLER_HANDOFF_KEY,JSON.stringify({schemaVersion:2,worldId:document.id,areaId,revision:row.revision}));
   },
@@ -76,6 +81,8 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
    await owner.verifyCutover?.();
    if(!row||row.revision!==ref.revision||row.document.id!==ref.worldId||!row.document.areas.some(a=>a.id===ref.areaId))
     throw Error('Transfert de carte périmé : recharger le monde, aucune carte écrasée');
+   if(sessions.getItem(WORLD_ASSEMBLER_HANDOFF_KEY)!==raw)
+    throw Error('Transfert modifié pendant la lecture : nouveau transfert conservé');
    sessions.removeItem(WORLD_ASSEMBLER_HANDOFF_KEY);
    return Object.freeze({document:row.document,areaId:ref.areaId});
   }
