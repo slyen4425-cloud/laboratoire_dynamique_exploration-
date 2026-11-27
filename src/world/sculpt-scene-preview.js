@@ -8,6 +8,7 @@ import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-famil
 import {TERRAIN_FAMILY_IDS} from './terrain-family-registry.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js?rev=waterfalls-v3-ramp-v77';
+import {normalizeWorldObjectInteractionV1} from './world-object-interaction-v1.js';
 import {normalizeWorldObjectShadowSettingsV1,worldObjectShadowSettingsEqualV1,normalizeWorldObjectShadowProfilesV1} from './world-object-shadow-settings-v1.js';
 
 
@@ -127,7 +128,7 @@ export function appendSculptPreviewObject(objects,{
   },list.length,catalog);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX,stairTraversal}={},catalog=objectDefinitionCatalogV1){
+export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX,stairTraversal,interaction}={},catalog=objectDefinitionCatalogV1){
   const items=normalizeSculptPreviewObjects(objects,catalog);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
@@ -155,6 +156,7 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
       normalizeWorldObjectShadowSettingsV1(shadow);
     // The authored path follows this WorldObject when the stair is moved;
     // it is an offset from the original object's anchor, not a second ramp.
+    const nextInteraction=interaction===undefined?item.overrides.interaction??null:normalizeWorldObjectInteractionV1(interaction);
     const nextStairTraversal=stairTraversal===undefined
       ?item.overrides.stairTraversal??null:stairTraversal;
     if(nextTransform.scaleX===item.transform.scaleX&&
@@ -164,10 +166,11 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
        (nextTransform.flipX===true)===(item.transform.flipX===true)&&
        nextVariant===item.overrides.visualVariantId&&
        worldObjectShadowSettingsEqualV1(nextShadow,item.overrides.shadow)&&
-       JSON.stringify(nextStairTraversal)===JSON.stringify(item.overrides.stairTraversal??null))return item;
+       JSON.stringify(nextStairTraversal)===JSON.stringify(item.overrides.stairTraversal??null)&&
+       JSON.stringify(nextInteraction)===JSON.stringify(item.overrides.interaction??null))return item;
     return normalizeWorldObjectPlacement({...item,transform:nextTransform,
       overrides:{...item.overrides,visualVariantId:nextVariant,shadow:nextShadow,
-        stairTraversal:nextStairTraversal}},
+        stairTraversal:nextStairTraversal,interaction:nextInteraction}},
       i,catalog);
   }));
 }
