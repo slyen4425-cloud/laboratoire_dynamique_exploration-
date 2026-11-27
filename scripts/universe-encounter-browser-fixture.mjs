@@ -1,9 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {createCaptureUniverseDatabaseStoreV1} from '../combat-preview/src/contracts/capture-universe-database-store-v1.js';
-import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
-import {saveWorldAssemblerDraft} from '../src/builder/world-assembler-handoff.js';
-import {createExplorationUniverseWorkspaceStorageV1} from '../src/storage/exploration-universe-workspace-storage-v1.js';
+import {createExplorationUniverseWorldProjectsV1} from '../src/builder/exploration-universe-world-projects-v1.js';
 import {saveCombatHandoff} from '../src/encounters/combat-handoff-store.js';
 import {adventurePlayingPartyStorageKeyV1,ADVENTURE_PLAYING_PARTY_SCHEMA_V1} from '../src/encounters/adventure-playing-party-v1.js';
 import {adventurePublishedEncounterStorageKeyV1,ADVENTURE_PUBLISHED_ENCOUNTER_SCHEMA_V1} from '../src/encounters/adventure-published-encounters-v1.js';
@@ -32,8 +30,12 @@ export async function createUniverseEncounterBrowserFixture(snapshot){
   creatures:[{draft,statValues,loadout}],
   skills:release.skillTransfers.map(item=>item.draft).filter(skill=>draft.skillIds.includes(skill.id))});
  const testerSeed='for(const [k,v] of '+JSON.stringify([...items])+')localStorage.setItem(k,v);';
- const world=createBlankWorldBuilderDraft({id:'world-'+randomUUID(),width:1008,height:504});
- saveWorldAssemblerDraft(createExplorationUniverseWorkspaceStorageV1(local,universeId),world);
+ // Seed a genuinely owned historical project, then the browser's native
+ // release access migrates its archive, index and active draft atomically.
+ // A lone workspace draft is not a valid universe and must stay rejected.
+ const projects=createExplorationUniverseWorldProjectsV1({storage:local,makeId:randomUUID});
+ const world=projects.createBlank(universeId,{width:1008,height:504});
+ if(projects.load(universeId,world.id).id!==world.id)throw Error('Fixture world ownership missing');
  const scope={sessionId,worldId:world.id,combatSha:release.engineSha,version:1};
  const partyRef='adventure-party:'+sessionId,areaId=world.initialAreaId;
  session.set(adventurePublishedEncounterStorageKeyV1(sessionId),JSON.stringify({
