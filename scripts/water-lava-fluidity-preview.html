@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Genesis RPG — eau et lave, aperçu fluidité</title>
+<style>body{background:#182129;color:#eee;font:16px system-ui;margin:24px}main{max-width:1050px;margin:auto}h1{font-size:25px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}canvas{width:100%;height:auto;display:block;border-radius:8px}label{display:block;margin:16px 0}small{color:#b9c7cf}h2{font-size:18px}input{width:180px;vertical-align:middle}</style>
+<main><h1>Genesis RPG · Fluidité eau et lave</h1><p>Comparaison à durée de boucle égale : 9 images originales (à gauche) et 36 images avec mouvement interpolé (à droite). Les cinq atlas sont ceux produits par le build du lot, sans image de démonstration substituée.</p>
+<label>Vitesse du mouvement <input id="speed" type="range" min="1" max="16" value="8"> <output id="value">8 / 16</output></label><small>À 8/16 : boucle eau bleue 2,25 s. À 4/16 : 4,5 s. La cadence d'affichage reste à 24 Hz. Chaque vue montre une répétition 2 × 2 de la texture.</small><section id="list"></section></main>
+<script type="module">
+const names=[['eau_bleue_profonde','Eau profonde',1],['eau_turquoise','Eau turquoise',1],['eau_riviere','Rivière',1.2],['eau_marais','Marais',.75],['lave','Lave',.85]];
+const w=168,h=126,items=[];
+for(const [name,label,rate] of names){
+ const section=document.createElement('section');section.innerHTML='<h2>'+label+'</h2><div class="pair"><div><p>9 frames · ancienne cadence ralentie</p><canvas width="336" height="252"></canvas></div><div><p>36 frames · nouvelle cadence fluide</p><canvas width="336" height="252"></canvas></div></div>';document.querySelector('#list').append(section);
+ const img=new Image();img.src=name+'.png';await img.decode();if(img.naturalWidth!==1008||img.naturalHeight!==756)throw Error('Atlas incorrect '+name);
+ const [old,next]=section.querySelectorAll('canvas');items.push({img,rate,old:old.getContext('2d'),next:next.getContext('2d')});
+}
+const slider=document.querySelector('#speed'),value=document.querySelector('#value');let phase=0,last=performance.now(),tick=-1;
+function draw(ctx,img,index,alpha=1){ctx.globalAlpha=alpha;for(let y=0;y<2;y++)for(let x=0;x<2;x++)ctx.drawImage(img,(index%6)*w,Math.floor(index/6)*h,w,h,x*w,y*h,w,h);ctx.globalAlpha=1;}
+function frame(now){const dt=Math.min(.15,(now-last)/1000);last=now;phase+=dt*Number(slider.value)*2;value.value=slider.value+' / 16';const t=Math.floor(now*24/1000);if(t!==tick){tick=t;for(const i of items){const f=(phase*i.rate)%36,n=Math.floor(f);draw(i.old,i.img,Math.floor(f/4)*4);draw(i.next,i.img,n);draw(i.next,i.img,(n+1)%36,f-n);}}requestAnimationFrame(frame);}requestAnimationFrame(frame);
+</script></html>
