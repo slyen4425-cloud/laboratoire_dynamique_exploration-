@@ -69,6 +69,7 @@ import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
+import {createSculptMaterialFrameCacheV1} from './render/sculpt-material-frame-cache-v1.js';
 import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
 import {normalizeWorldLightingV1,WORLD_LIGHTING_DEFAULT_V1} from './world/world-lighting-v1.js';
 import {drawSculptWarmLightV1,drawSculptWorldCloudShadowsV1} from './render/sculpt-world-lighting-v1.js';
@@ -236,7 +237,6 @@ const activeSculptCollisionCatalog=()=>sculptGraphics?.collisionCatalog??sculptP
 const activeSculptMaterialRegistry=()=>sculptGraphics?.materialRegistry??registry;
 const sculptGraphicContext=()=>({catalog:activeSculptObjectCatalog(),materialRegistry:activeSculptMaterialRegistry()});
 const sculptMaterialAsset=id=>sculptGraphics?.resolveMaterialAsset(id)??resolveMaterialAsset(id);
-const sculptMaterialAnimation=id=>{const m=activeSculptMaterialRegistry().resolve(id);return sculptMaterialAsset(m?.assets?.base??m?.assets?.center)?.animation??null;};
 const sculptObjectAsset=id=>sculptGraphics?.resolveObjectAsset(id)??resolveWorldObjectAsset(id);
 // Until the shared world archive/transport owners accept local references,
 // do not expose placements that the world storage cannot save.
@@ -1161,9 +1161,10 @@ const terrainHasWater=(()=>{let last=null,wet=false;return t=>{
 };})();
 const images=new Map();
 const themes=[...sculptGroundMaterials];
-function personalStaticSurfaceChoices(){return (sculptGraphics?.personalSurfaceChoices??[]).filter(m=>!sculptMaterialAnimation(m.id));}
+const materialFrames=createSculptMaterialFrameCacheV1();
+function personalSurfaceChoices(){return sculptGraphics?.personalSurfaceChoices??[];}
 function refreshPersonalTextureOptions(){
-  const choices=localGraphicPlacementEnabled()?personalStaticSurfaceChoices():[];
+  const choices=localGraphicPlacementEnabled()?personalSurfaceChoices():[];
   themes.splice(0,themes.length,...sculptGroundMaterials,...choices.filter(m=>m.assetKind==='surface').map(m=>m.id));
   for(const [id,items] of [['material',choices.filter(m=>m.assetKind==='surface')],['surface-material',choices]]){
     const select=$(id),old=select.value;
@@ -1186,11 +1187,17 @@ const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()
 function imageFor(materialId,kind='surface'){
   const material=activeSculptMaterialRegistry().require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
-  const path=sculptMaterialAsset(id)?.path;
+  const asset=sculptMaterialAsset(id),path=asset?.path;
   if(!path)return Promise.resolve(null);
   if(images.has(id))return images.get(id);
   const promise=new Promise(resolve=>{
-    const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);
+    const img=new Image();img.onload=()=>{
+      // Reuse the native atlas descriptor; one mutable frame canvas per
+      // loaded material, never tile the entire atlas across the terrain.
+      try{resolve(asset.animation&&id.startsWith('user.texture.')?
+        materialFrames.create(img,asset,performance.now()/1000):img);}
+      catch(error){console.warn('Texture animée indisponible :',error);resolve(null);}
+    };img.onerror=()=>resolve(null);
     img.src=path;
   });
   images.set(id,promise);return promise;
@@ -1442,6 +1449,11 @@ function drawDecorativeFringeObjects(layer='back'){
 let previewObjectViewport=null;
 function draw(){
   framePending=false;
+  // Invalidate only when a visible material frame actually changes. Keep
+  // the sole native terrain/paint raster and all its occlusion semantics.
+  if(materialFrames.update(activeMaterialFrameSources(),performance.now()/1000)){
+    navTerrainCache=null;fringeRasterCache.clear();
+  }
   if(sculptBorderUiAreaKey!==sculptBorderAreaKey())syncSculptBorderControls();
   const {width,height}=dimensions(),dpr=Math.min(2,window.devicePixelRatio||1);
   const desiredW=Math.max(1,Math.floor(width*dpr)),desiredH=Math.max(1,Math.floor(height*dpr));
@@ -1816,14 +1828,22 @@ function draw(){
 // The existing Sculpt renderer remains the sole drawing path.
 let waterfallPumpHandle=0,waterfallLastPaintMs=0;
 function waterfallPresent(){return sculptPlayObjectDrawCache.get(placedObjects,{playing:navigationTesting}).some(o=>Boolean(sculptObjectAsset(o.visual?.assetId)?.animation));}
-function animatedSceneryPresent(){const l=currentSculptLighting();return waterfallPresent()||
+function activeMaterialFrameSources(){
+  const sources=[currentTexture];
+  for(const feature of [...surface.routes,...surface.zones])sources.push(surfacePaintImages.get(feature.materialId));
+  for(const chunk of decorativeFringe?.chunks??[])for(const feature of [...(chunk.surface?.routes??[]),...(chunk.surface?.zones??[])])sources.push(surfacePaintImages.get(feature.materialId));
+  return sources;
+}
+function activeMaterialAnimationFps(){return materialFrames.maxFps(activeMaterialFrameSources());}
+function animatedSceneryPresent(){const l=currentSculptLighting();return activeMaterialAnimationFps()>0||waterfallPresent()||
   !!(livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain))||
   !!(l?.cloudsEnabled&&l.cloudOpacityPct&&l.cloudSpeed&&!activeInteriorId&&!sculptWorldCurrentInterior());}
 function pumpWaterfallFrame(now){
   if(!animatedSceneryPresent()){waterfallPumpHandle=0;return;}
   const waterActive=livingWaterControls&&ribbonTextures.water?.visible&&terrainHasWater(terrain);
-  const interval=waterActive?Math.min(83,1000/(terrain.waterAnimationFps??8)):83;
-  if(now-waterfallLastPaintMs>=interval){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
+  const materialFps=activeMaterialAnimationFps();
+  const interval=1000/Math.max(12,waterActive?(terrain.waterAnimationFps??8):0,materialFps);
+  if(now-waterfallLastPaintMs>=interval-1){waterfallLastPaintMs=now;if(!navigationTesting||materialFps>0)scheduleDraw();}
   waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function ensureWaterfallPump(){
@@ -4382,7 +4402,7 @@ function loadSurfacePaintAssets(){
   if(edgeMaterials[surface.baseTerrainFamilyId])
     used.add(edgeMaterials[surface.baseTerrainFamilyId]);
   const pending=[];
-  for(const meta of [...SCULPT_SURFACE_MATERIALS,...personalStaticSurfaceChoices()]){
+  for(const meta of [...SCULPT_SURFACE_MATERIALS,...personalSurfaceChoices()]){
     if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
     pending.push(imageFor(meta.id,meta.assetKind).then(texture=>{
       if(!texture)return;
@@ -6590,8 +6610,6 @@ $('export').addEventListener('click',()=>{
 });
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value,sculptGraphicContext());
-  if([imported.surface.baseMaterialId,...imported.surface.routes.map(r=>r.materialId),...imported.surface.zones.map(z=>z.materialId)].some(id=>sculptMaterialAnimation(id)))
-    throw Error('Texture personnelle animée : raccordement du rendu en cours, scène non modifiée.');
   const raw=JSON.parse($('json').value);
   const nextInteriors=importSculptInteriors(raw.interiors??[],imported.objects);
   const incomingTemplates=normalizeSculptInteriorTemplates(raw.interiorTemplates??[]);
