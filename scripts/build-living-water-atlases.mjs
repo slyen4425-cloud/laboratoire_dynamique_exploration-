@@ -146,7 +146,7 @@ export function buildLivingWaterAtlases(root=process.cwd()){
  const dir=join(root,'assets/exploration/materials/forest/water/animated');
  const source=join(root,SOURCE);
  if(!existsSync(source)){
-  if(names.every(n=>existsSync(join(dir,n+'.png'))))return null;
+  if(names.every(n=>{const p=join(dir,n+'.png');if(!existsSync(p))return false;const b=readFileSync(p);return b.length>=24&&b.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'))&&b.readUInt32BE(16)===FRAME_WIDTH*ATLAS_COLUMNS&&b.readUInt32BE(20)===FRAME_HEIGHT*ATLAS_ROWS;}))return null;
   throw Error('Missing approved source ZIP and built water atlases');
  }
  const zip=readFileSync(source),sha=createHash('sha1').update('blob '+zip.length+'\0').update(zip).digest('hex');

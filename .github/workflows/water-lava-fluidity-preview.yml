@@ -1,0 +1,31 @@
+name: Water and lava fluidity visual proof
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-living-water-atlases.mjs'
+      - 'src/render/animated-surface-sprites-v1.js'
+      - 'scripts/water-lava-fluidity-preview.html'
+      - '.github/workflows/water-lava-fluidity-preview.yml'
+permissions:
+  contents: read
+jobs:
+  authored-atlas-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run build:water
+      - run: node --test tests/sculpt-living-water-v1.test.js
+      - name: Package real animated atlas comparison (no Pages deployment)
+        run: |
+          mkdir -p preview
+          cp scripts/water-lava-fluidity-preview.html preview/index.html
+          cp assets/exploration/materials/forest/water/animated/*.png preview/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: water-lava-fluidity-preview
+          path: preview/
+          if-no-files-found: error
