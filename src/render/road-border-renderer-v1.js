@@ -46,10 +46,12 @@ export function roadBorderSamples(routes){
         const span=Math.min(step,length-s),mid=s+span/2,p=sample(mid);
         const a=sample(mid-Math.min(2,span/2)),b=sample(mid+Math.min(2,span/2));
         const d=Math.hypot(b.x-a.x,b.y-a.y);if(d<1e-6)continue;
-        const dx=(b.x-a.x)/d,dy=(b.y-a.y)/d,edge=route.width/2+style.offset;
+        const dx=(b.x-a.x)/d,dy=(b.y-a.y)/d;
+        const half=route.width/2*(route.brushShape==='square'?Math.abs(dx)+Math.abs(dy):1),edge=half+style.offset;
         const pos={x:p.x-dy*edge*sign,y:p.y+dx*edge*sign};
         // Other road interiors suppress shared/intersecting edges.
-        if(routes.some(other=>other!==route&&contains(other,pos)))continue;
+        const boundary={x:p.x-dy*half*sign,y:p.y+dx*half*sign};
+        if(routes.some(other=>other!==route&&contains(other,boundary)))continue;
         output.push({...pos,angle:Math.atan2(dy,dx),sign,style,asset,thick,span,phase:s%period/period,period,index});
       }
     }
@@ -57,7 +59,7 @@ export function roadBorderSamples(routes){
   return output;
 }
 export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
-  if(!routes?.some(r=>r.border?.enabled))return ()=>{};
+  if(!routes?.some(r=>r.border?.enabled))return null;
   const buckets=new Map(),w=tile.width,h=tile.height;
   for(const stamp of roadBorderSamples(routes)){
     const img=images.get(stamp.asset.id);
@@ -70,6 +72,7 @@ export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
         buckets.get(key).push(stamp);
       }
   }
+  if(!buckets.size)return null;
   return (col,row,level)=>{
     for(const s of buckets.get(row*terrain.width+col)??[]){
       const imgs=images.get(s.asset.id);
