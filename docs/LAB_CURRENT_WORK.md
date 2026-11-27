@@ -1,3 +1,8 @@
+## 2026-11-27 — Isolation du lot routes non validé (NON GREEN)
+- Décision auteur 18h51 CET : routes encore en chantier, interdites de publication PWA. Réintégrer l'arbre stable 5f684c4 pour les seuls 14 chemins de #566, conserver intégralement #567 (pont Combat IndexedDB et fixture). ZIP auteur et historique préservés, branche routes existante non modifiée et checkpoint du main complet avec routes avant isolation.
+- START 991e8713977db58932b0c00020446ffdcfa10a9a ; branche `work/exploration-release-without-unvalidated-roads-20261127` ; checkpoint `checkpoint/exploration-before-road-release-isolation-20261127`. Le labo main revient temporairement aux routes précédentes ; travaux routes restent sur `work/exploration-road-borders-20261127` pour réintégration après validation auteur. Ne pas créer de second moteur, ne pas patcher le vendor PWA.
+- Contrôle arbre : hors journal, seules les modifications #567 doivent différer de 5f684c4. CI complète et HTTPS exact obligatoires avant adoption Capture puis #693.
+
 ## 2026-11-27 — Correctif pont Combat Aventure IndexedDB (NON GREEN)
 - START e471f4e2c6dc4fd492495db2ef30b701f2694c49 ; checkpoint `checkpoint/exploration-before-indexeddb-encounter-bridge-20261127`, branche `work/exploration-indexeddb-encounter-bridge-20261127`.
 - PWA #693 CI 46041483079 : le vrai duel démarre mais le pont propriétaire Exploration lit encore localStorage historique et refuse le monde. Remplacer uniquement ce lecteur par la composition officielle release, asynchrone et scopée univers, avec refus propriétaire non durable. Tester historique conserve import lazy. Aucun changement Combat, carte, ressources ni sauvegarde.

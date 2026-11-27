@@ -90,10 +90,7 @@ import {SCULPT_OBJECT_LIMIT,sculptObjectCanOccupyCell,listSculptPlaceableDefinit
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
   findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3-stairs-visible-r15-ramp-v77-dense-forest-20261115';
-import {createRoadEditControls} from './builder/road-edit-controls-v1.js';
-import {ROAD_BORDER_ASSETS} from './render/road-border-renderer-v1.js';
-import {routeKnotsFromPoints} from './world/road-edit-geometry-v1.js';
-import {resolveSculptSurfaceMaterial,createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,eraseSculptSurfaceStroke,
+import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS,sculptEncounterFamilyForMaterial,alignSculptSurfaceEncounterFamilies} from './world/sculpt-surface-paint.js';
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
 import {drawSquareSurfaceStrokePath} from './world/surface-brush-geometry.js';
@@ -348,8 +345,6 @@ if(surfaceBaseFamilySelect){
   surfacePaintFamilySelect.addEventListener('change',()=>{sculptPaintFamilyManuallyChosen=true;});
 }
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
-let surfaceGesture=null,roadEditControls=null;
-const roadBorderImagePromises=new Map();
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 let shadowControlsOwnerId=null; // UI identity only; WorldObject owns the settings.
@@ -1638,15 +1633,14 @@ function draw(){
   // A temporary stroke preview is visual only; WorldSurface is committed on
   // pointerup. No hidden draft geometry is persisted by the renderer.
   if(surfaceEditing){
-    roadEditControls?.draw(ctx,projectSurfacePoint,zoom);
-    const points=$('surface-action').value==='edit'?[]:surfaceDrawing&&surfaceStrokePoints.length?surfaceStrokePoints:
+    const points=surfaceDrawing&&surfaceStrokePoints.length?surfaceStrokePoints:
       hoverCell?[{x:(hoverCell.x+.5)*SCULPT_TILE.width,
         y:(hoverCell.y+.5)*SCULPT_TILE.height}]:[];
     if(points.length){
       const width=Number($('surface-width').value)*SCULPT_TILE.width;
       ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
       ctx.globalAlpha=.42;
-      const paintPreviewColor=$('surface-action').value==='erase'?'#ed7070':$('surface-material').value==='road.dirt'?'#d1a772':'#adedd1';
+      const paintPreviewColor=$('surface-material').value==='road.dirt'?'#d1a772':'#adedd1';
       const projected=points.map(p=>({
         x:p.x,y:p.y-sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
           Math.floor(p.y/SCULPT_TILE.height))*SCULPT_TILE.rise
@@ -2004,13 +1998,6 @@ function screenToCell(event){
   const row=Math.floor(y/SCULPT_TILE.height);
   return row>=0&&row<terrain.height?{x:col,y:row}:null;
 }
-function surfacePointFromEvent(event,cell){
-  const p=screenToWorldPoint(event),w=SCULPT_TILE.width,h=SCULPT_TILE.height;
-  return {x:Math.max(cell.x*w,Math.min((cell.x+1)*w-.001,p.x)),
-    y:Math.max(cell.y*h,Math.min((cell.y+1)*h-.001,p.y+sculptHeightAt(terrain,cell.x,cell.y)*SCULPT_TILE.rise))};
-}
-function projectSurfacePoint(p){return {x:p.x,y:p.y-sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),Math.floor(p.y/SCULPT_TILE.height))*SCULPT_TILE.rise};}
-function compactSurfacePoints(points){if(points.length<=512)return points;return Array.from({length:512},(_,i)=>points[Math.round(i*(points.length-1)/511)]);}
 function status(message){$('notice').textContent=message;}
 // R3 touch authoring. Terrain.ramps stays the only persisted source; a pending
 // foot or preview never writes to the map and never creates a WorldObject.
@@ -2378,8 +2365,7 @@ function begin(event){
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     if(objectEditing){handleDecorativeFringeObject(cell,event);return;}
     if(surfaceEditing){
-      if(['curve','edit'].includes($('surface-action').value)){status('Les courbes et poignées sont réservées à la carte jouable.');return;}
-      if(['erase','delete'].includes($('surface-action').value)){
+      if($('surface-action').value==='erase'){
         try{commitFringeSurface([fringeSurfacePoint(cell)],true)}
         catch(error){status(error.message)}
       }else fringeSurfaceGesture={pointerId:event.pointerId,
@@ -2461,15 +2447,15 @@ function begin(event){
     return;
   }
   if(surfaceEditing){
-    if(!['erase','delete','edit'].includes($('surface-action').value)&&$('surface-material').value.startsWith('user.material.')&&!localGraphicPlacementEnabled()){
+    if($('surface-action').value!=='erase'&&$('surface-material').value.startsWith('user.material.')&&!localGraphicPlacementEnabled()){
       status('Texture personnelle : placement réservé aux cartes extérieures.');return;
     }
-    if(surfaceGesture)return;
-    const point=surfacePointFromEvent(event,cell),action=$('surface-action').value;
-    if(action==='delete'||(!roadEditControls&&action==='erase')){surfaceCommit(removeSculptSurfaceAt(surface,point,activeSculptMaterialRegistry()));return;}
-    surfaceGesture={pointerId:event.pointerId,action};
-    if(action==='edit'){roadEditControls?.begin(point,12/Math.max(.32,zoom));return;}
-    surfaceDrawing=true;surfaceLastCell='';surfaceStrokePoints=[point];scheduleDraw();return;
+    const point={x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
+    if($('surface-action').value==='erase'){
+      surfaceCommit(removeSculptSurfaceAt(surface,point,activeSculptMaterialRegistry()));return;
+    }
+    surfaceDrawing=true;surfaceLastCell=cell.x+','+cell.y;surfaceStrokePoints=[point];
+    return;
   }
   // R3: slopes bypass the global mobile precision checkbox ONLY while
   // creating/erasing a slope. Other terrain brushes preserve their mode.
@@ -2647,15 +2633,28 @@ function stroke(event){
     return;
   }
   if(surfaceEditing){
-    if(surfaceGesture&&surfaceGesture.pointerId!==event.pointerId)return;
+    if(!surfaceDrawing){
+      if(event.pointerType!=='touch'){
+        hoverCell=screenToCell(event);scheduleDraw();
+      }
+      return;
+    }
     const cell=screenToCell(event);if(!cell)return;
     hoverCell=cell;
-    const point=surfacePointFromEvent(event,cell);
-    if(surfaceGesture?.action==='edit'){roadEditControls?.move(point);return;}
-    if(!surfaceDrawing){if(event.pointerType!=='touch')scheduleDraw();return;}
-    const last=surfaceStrokePoints.at(-1);
-    if(last&&Math.hypot(point.x-last.x,point.y-last.y)<2)return;
-    surfaceStrokePoints.push(point);scheduleDraw();return;
+    const key=cell.x+','+cell.y;
+    if(key===surfaceLastCell)return;
+    if(surfaceLastCell){
+      const [px,py]=surfaceLastCell.split(',').map(Number);
+      const steps=Math.max(Math.abs(cell.x-px),Math.abs(cell.y-py));
+      for(let i=1;i<steps;i++){
+        const x=Math.round(px+(cell.x-px)*i/steps),y=Math.round(py+(cell.y-py)*i/steps);
+        surfaceStrokePoints.push({x:(x+.5)*SCULPT_TILE.width,y:(y+.5)*SCULPT_TILE.height});
+      }
+    }
+    surfaceLastCell=key;
+    surfaceStrokePoints.push({x:(cell.x+.5)*SCULPT_TILE.width,
+      y:(cell.y+.5)*SCULPT_TILE.height});
+    scheduleDraw();return;
   }
   if(rampGesture){
     if(event.pointerId!==rampGesture.pointerId)return;
@@ -2924,20 +2923,16 @@ function stop(event){
     }
     return;
   }
-  if(surfaceGesture){
-    if(event.pointerId!==surfaceGesture.pointerId)return;
-    const action=surfaceGesture.action;surfaceGesture=null;surfaceDrawing=false;surfaceLastCell='';
-    const cancelled=event.type==='pointercancel'||event.type==='lostpointercapture';
-    if(action==='edit'){roadEditControls?.finish(cancelled);return;}
-    const points=compactSurfacePoints(surfaceStrokePoints);surfaceStrokePoints=[];
-    if(cancelled){scheduleDraw();return;}
-    try{
-      if(action==='erase')surfaceCommit(eraseSculptSurfaceStroke(surface,{points,width:Number($('surface-width').value)*SCULPT_TILE.width,
-        brushShape:($('surface-brush-shape')?.value??'round'),kind:resolveSculptSurfaceMaterial($('surface-material').value,activeSculptMaterialRegistry())?.kind==='route'?'routes':'zones'},activeSculptMaterialRegistry()));
-      else if(action==='curve'&&points.length===1)roadEditControls?.addAnchor(points[0]);
-      else commitSurfacePath(points,action==='curve');
-    }catch(error){status(error.message);}
-    scheduleDraw();return;
+  if(surfaceDrawing){
+    surfaceDrawing=false;surfaceLastCell='';
+    const changed=appendSculptSurfaceStroke(surface,{
+      materialId:$('surface-material').value,
+      terrainFamilyId:surfacePaintFamilySelect?.value,points:surfaceStrokePoints,
+      width:Number($('surface-width').value)*SCULPT_TILE.width,
+      brushShape:($('surface-brush-shape')?.value??'round')
+    },activeSculptMaterialRegistry());
+    surfaceStrokePoints=[];
+    surfaceCommit(changed);return;
   }
   if(rampGesture){
     const gesture=rampGesture;rampGesture=null;rampEnd=null;
@@ -4392,19 +4387,6 @@ function objectCommit(next){
 }
 // Surface authoring reuses WorldSurface v3; only this UI owns undo/redo.
 function loadSurfacePaintAssets(){
-  const usedBorders=new Set([...surface.routes,...(decorativeFringe?.chunks??[]).flatMap(c=>c.surface?.routes??[])].flatMap(r=>r.border?.enabled?[r.border.left?.assetId,r.border.right?.assetId]:[]));
-  const borderPending=[];
-  for(const asset of ROAD_BORDER_ASSETS){
-    if(!usedBorders.has(asset.id)||surfacePaintImages.has(asset.id))continue;
-    if(!roadBorderImagePromises.has(asset.id)){
-      const urls=asset.paths??[asset.path];
-      roadBorderImagePromises.set(asset.id,Promise.all(urls.map(url=>new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url;}))));
-    }
-    borderPending.push(roadBorderImagePromises.get(asset.id).then(imgs=>{
-      if(imgs.every(Boolean)){surfacePaintImages.set(asset.id,imgs);navTerrainCache=null;fringeRasterCache.clear();scheduleDraw();}
-      else {roadBorderImagePromises.delete(asset.id);status('Bordure non chargée : '+asset.label);}
-    }));
-  }
   const used=new Set([...surface.routes,...surface.zones,
     ...(decorativeFringe?.chunks??[]).flatMap(chunk=>[
       ...(chunk.surface?.routes??[]),...(chunk.surface?.zones??[])
@@ -4426,7 +4408,7 @@ function loadSurfacePaintAssets(){
   }
   // The map launch may await the exact existing surface image promises;
   // edits still use the same asynchronous image registry and cache.
-  return Promise.all([...pending,...borderPending]);
+  return Promise.all(pending);
 }
 function updateSurfaceCount(){
   // UI reads the same WorldSurface as the painter, undo and scene import.
@@ -4435,7 +4417,7 @@ function updateSurfaceCount(){
   $('surface-count').textContent=count+' route(s) / zone(s) peintes';
   $('surface-undo').disabled=!surfaceHistory.length;
   $('surface-redo').disabled=!surfaceRedo.length;
-  roadEditControls?.refresh();navTerrainCache=null;scheduleDraw();
+  navTerrainCache=null;scheduleDraw();
 }
 function surfaceCommit(next){
   if(JSON.stringify(next)===JSON.stringify(surface))return false;
@@ -4445,19 +4427,6 @@ function surfaceCommit(next){
   status('Peinture enregistrée sur la scène · exporter la scène pour sauvegarder');
   return true;
 }
-function commitSurfacePath(points,curve=false){
-  const materialId=curve?'road.dirt':$('surface-material').value;
-  const knots=curve?routeKnotsFromPoints(points,{width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height}):null;
-  const before=surface;
-  const changed=appendSculptSurfaceStroke(surface,{materialId,terrainFamilyId:surfacePaintFamilySelect?.value,points,
-    width:Number($('surface-width').value)*SCULPT_TILE.width,brushShape:curve?'round':($('surface-brush-shape')?.value??'round'),
-    ...(resolveSculptSurfaceMaterial(materialId,activeSculptMaterialRegistry())?.kind==='route'?{border:roadEditControls?.border(),knots}:{} )},activeSculptMaterialRegistry());
-  if(!surfaceCommit(changed)&&before.routes.length+before.zones.length>=80)status('Limite de tracés atteinte. Efface un tracé avant de continuer.');
-}
-roadEditControls=createRoadEditControls({getSurface:()=>surface,commit:surfaceCommit,redraw:scheduleDraw,status,
-  getBounds:()=>({width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height}),getRegistry:activeSculptMaterialRegistry});
-roadEditControls?.setCurveFinish(points=>commitSurfacePath(points,true));
-roadEditControls?.refresh();
 function setSurfaceEditing(active){
   if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
@@ -4467,7 +4436,7 @@ function setSurfaceEditing(active){
   if(active&&objectEditing)setObjectEditing(false);
   if(active&&navigationTesting)setNavigationTesting(false);
   surfaceEditing=!!active;
-  if(!surfaceEditing){surfaceDrawing=false;surfaceGesture=null;surfaceStrokePoints=[];surfaceLastCell='';roadEditControls?.clear();}
+  if(!surfaceEditing){surfaceDrawing=false;surfaceStrokePoints=[];surfaceLastCell='';}
   document.body.classList.toggle('surface-editing',surfaceEditing);
   $('surface-palette').hidden=!surfaceEditing;
   $('mode-surface').classList.toggle('active',surfaceEditing);
@@ -4511,12 +4480,12 @@ $('surface-width').addEventListener('input',()=>{
 });
 $('surface-undo').addEventListener('click',()=>{
   if(!surfaceHistory.length)return;
-  surfaceRedo.push(surface);surface=surfaceHistory.pop();roadEditControls?.clear();
+  surfaceRedo.push(surface);surface=surfaceHistory.pop();
   updateSurfaceCount();
 });
 $('surface-redo').addEventListener('click',()=>{
   if(!surfaceRedo.length)return;
-  surfaceHistory.push(surface);surface=surfaceRedo.pop();roadEditControls?.clear();
+  surfaceHistory.push(surface);surface=surfaceRedo.pop();
   loadSurfacePaintAssets();updateSurfaceCount();
 });
 window.__sculptSurfaceProbe=()=>Object.freeze({
@@ -4524,8 +4493,7 @@ window.__sculptSurfaceProbe=()=>Object.freeze({
   routes:surface.routes.length,zones:surface.zones.length,
   baseTerrainFamilyId:surface.baseTerrainFamilyId,
   features:[...surface.routes,...surface.zones].map(f=>({
-    id:f.id,materialId:f.materialId,terrainFamilyId:f.terrainFamilyId,width:f.width,points:f.points.length,
-    ...(f.border?{border:f.border}:{}),...(f.knots?{knots:f.knots.length}: {})
+    id:f.id,materialId:f.materialId,terrainFamilyId:f.terrainFamilyId,width:f.width,points:f.points.length
   })),
   texturesLoaded:[...surfacePaintImages.keys()],
   undoCount:surfaceHistory.length
@@ -5793,7 +5761,7 @@ $('new-map-form').addEventListener('submit',event=>{
   mountSculptArea(blank);
   refreshSculptEncounterEditor();
   drawing=false;strokeUndo=null;strokePoints=[];lastCell='';
-  surfaceStrokePoints=[];surfaceDrawing=false;surfaceGesture=null;roadEditControls?.clear();navLastState='';
+  surfaceStrokePoints=[];surfaceDrawing=false;navLastState='';
   $('json').value='';$('json').hidden=true;
   updatePrecisionActions();setNewMapPanel(false);fit();
   if(sculptWorldDraft)refreshSculptWorldPanel();
@@ -6195,7 +6163,7 @@ function mountSculptArea(snapshot,{preserveSharedLighting=false}={}){
   closeNpcDialogue();
   if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
-  surface=snapshot.surface;surfaceGesture=null;surfaceDrawing=false;roadEditControls?.clear();
+  surface=snapshot.surface;
   if(!sculptWorldDraft&&(!activeInteriorId||snapshot.objectShadowProfiles!==undefined))
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
       snapshot.objectShadowProfiles);
@@ -6667,7 +6635,7 @@ $('import').addEventListener('click',()=>{
   updateObjectCount();syncObjectSelectedControls();
   placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
   updateActorCount();syncActorSelectedControls();
-  surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;surfaceGesture=null;roadEditControls?.clear();
+  surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   sculptEncounterConfig=imported.encounterConfig??sculptPreviewEncounterConfig;
   sculptExteriorEncounters=imported.exteriorEncounters;
   sculptEncounterAreaCache=null;
