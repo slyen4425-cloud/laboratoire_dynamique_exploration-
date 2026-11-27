@@ -16,7 +16,9 @@ const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript'
  '.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
  try{
-  const path=resolve(contentRoot,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
+  const pathname=new URL(req.url,'http://localhost').pathname;
+  if(pathname==='/__legacy_world_fixture__'){res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-store'}).end('<!doctype html><title>Historical world seed</title>');return;}
+  const path=resolve(contentRoot,'.'+decodeURIComponent(pathname));
   if(!path.startsWith(contentRoot+sep)){res.writeHead(403).end();return;}
   const bytes=await readFile(path);
   res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
@@ -46,7 +48,7 @@ try{
  chrome=spawn(binary,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
   '--no-first-run','--disable-extensions','--window-size=1400,900',
   '--remote-debugging-port=0','--user-data-dir='+profile,
-  'http://127.0.0.1:'+port+'/world-assembler.html'],{stdio:['ignore','ignore','pipe']});
+  'http://127.0.0.1:'+port+'/__legacy_world_fixture__'],{stdio:['ignore','ignore','pipe']});
  const chromePort=await new Promise((ok,fail)=>{
   let stderr='';const timeout=setTimeout(()=>fail(Error('DevTools timeout '+stderr.slice(-500))),45000);
   chrome.stderr.on('data',chunk=>{stderr+=String(chunk);
@@ -58,7 +60,7 @@ try{
  let target;
  for(let i=0;i<100;i++){
   const targets=await(await fetch('http://127.0.0.1:'+chromePort+'/json')).json();
-  target=targets.find(t=>t.type==='page'&&t.url.includes('world-assembler.html'));
+  target=targets.find(t=>t.type==='page'&&t.url.includes('__legacy_world_fixture__'));
   if(target)break;await sleep(150);
  }
  if(!target)throw Error('Chromium tab missing');
@@ -98,12 +100,12 @@ try{
  // A blank initial Chrome document can be "complete" while localStorage is
  // forbidden. Require the actual HTTP world editor origin before seeding.
  await until('location.href.startsWith("http://127.0.0.1:'+port+
-   '/world-assembler.html") && document.readyState==="complete"',
+   '/__legacy_world_fixture__") && document.readyState==="complete"',
    'initial HTTP world editor navigation');
  await run(`(()=>{
   localStorage.setItem('gensrpg.world-assembler.document.v1',${JSON.stringify(serialized)});
-  sessionStorage.setItem('gensrpg.world-assembler.handoff.v1',
-    ${JSON.stringify(JSON.stringify({schemaVersion:1,document:world,areaId:ground}))});
+  // No legacy handoff is manufactured: the actual release migrates the draft.
+  // The requested area is carried by the native URL.
  })()`);
  await call('Page.navigate',{url:'http://127.0.0.1:'+port+
    '/sculpt-lab.html?worldAssembler=1&areaId='+encodeURIComponent(ground)});
@@ -118,6 +120,12 @@ try{
    returnButton:!document.querySelector('#interior-area-return').hidden,
    hasUniqueInspector:document.querySelectorAll('#interior-area-bar').length===1};
  })()`,'linked house inspector');
+ const migrated=await run(`(async()=>{
+  const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+  const value=await access.readDraft();
+  return access.durable&&value?.id===${JSON.stringify(world.id)}&&localStorage.getItem('gensrpg.world-assembler.document.v1')===${JSON.stringify(serialized)};
+ })()`);
+ if(!migrated)throw Error('Actual release failed historical document migration / source preservation');
  if(!Object.values(opened).every(Boolean))
    throw Error('Linked house still loses editor controls '+JSON.stringify(opened));
  const enabled=await run(`(()=>{
@@ -175,7 +183,7 @@ try{
  if(!first.areaId)throw Error('Upper floor missing');
  const floorOne=first.areaId;
  const houseState=await run(`(async()=>{
-  const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+  const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
   const base=doc?.areas.find(a=>a.id===${JSON.stringify(ground)});
   const upper=doc?.areas.find(a=>a.id===${JSON.stringify(floorOne)});
   const floorPortals=doc?.portals.filter(p=>
@@ -194,7 +202,7 @@ try{
  await until(`window.__sculptWorldProbe?.()?.areaId===${JSON.stringify(exterior)}`,
   'return to exterior');
  const home=await run(`(async()=>{
-  const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+  const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
   return {interior:doc?.areas.find(a=>a.id===${JSON.stringify(ground)}),
    floor:doc?.areas.find(a=>a.id===${JSON.stringify(floorOne)}),
    hasHouse:doc?.areas.find(a=>a.id===${JSON.stringify(exterior)})?.objects

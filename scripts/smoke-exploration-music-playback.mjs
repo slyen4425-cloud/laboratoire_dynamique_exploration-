@@ -10,12 +10,14 @@ const root=process.cwd();
 const mime={'.html':'text/html','.js':'text/javascript','.json':'application/json',
   '.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.mp3':'audio/mpeg',
   '.png':'image/png'};
+const servedMp3=new Set();
 const server=createServer(async(req,res)=>{
   try {
     const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
     const path=resolve(root,'.'+pathname);
     if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
     const data=await readFile(path);
+    if(pathname.includes('/exploration-v1/')&&extname(path)==='.mp3'&&data.length>0)servedMp3.add(pathname);
     res.writeHead(200,{'Content-Type':mime[extname(path)]??'application/octet-stream',
       'Cache-Control':'no-store'}).end(data);
   } catch{res.writeHead(404).end('not found');}
@@ -104,7 +106,9 @@ try {
   if(state?.state!=='playing'||state.mediaCurrentTime<=0.15)
     throw Error('Music did not actually advance after native Tester click: '+JSON.stringify(state));
   const track=state.track;
-  const playingUrl=await run("performance.getEntriesByType('resource').filter(x=>x.name.includes('/exploration-v1/')).map(x=>x.name)");
+  // Resource Timing can omit media requests when the buffer fills with terrain assets.
+  // The isolated HTTP server records actual successful MP3 reads independently.
+  const playingUrl=[...servedMp3];
   if(!/^exploration-[1-4]$/.test(track)||!playingUrl.some(x=>x.includes('.mp3')))
     throw Error('No actual bundled Exploration MP3 loaded: '+JSON.stringify({state,playingUrl}));
   // Tester changes the navigation chrome layout on mobile; never reuse the

@@ -149,7 +149,9 @@ try{
  const gameWorld=serializeWorldBuilderDraft(
    createBlankWorldBuilderDraft({id:'ci-native-play',width:36*28,height:24*21})
  );
- await read(`localStorage.setItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)},${JSON.stringify(gameWorld)});`);
+ const legacyBeforePlay=await read(`localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})`);
+ const seededWorld=await read(`(async()=>{const [{openWorldDocumentReleaseAccessV1},{serializeWorldBuilderDraft}]=await Promise.all([import('/src/storage/world-document-release-access-v1.js'),import('/src/builder/world-builder-draft.js')]);const access=await openWorldDocumentReleaseAccessV1();if(!access.durable)throw Error('Jouer smoke requires the durable release owner');const document=JSON.parse(${JSON.stringify(gameWorld)});await access.saveDraft(document,await access.readDraft());return serializeWorldBuilderDraft(await access.readDraft());})()`);
+ if(seededWorld!==gameWorld)throw Error('Canonical IndexedDB fixture did not persist exactly');
  await send('Page.navigate',{url:new URL('./play.html',url).href});
  let menu;
  for(let i=0;i<70;i++){
@@ -199,7 +201,7 @@ try{
  // GenSRPG's consumer owns New Game: create the scoped navigation only via
  // the public Exploration API, never by clicking Lab New Game.
  const legacyCheckpoint=await read("localStorage.getItem('gensrpg.exploration.play.navigation.v1')");
- const createdScoped=await read("(async()=>{const [{createNewExplorationPlay},{readWorldAssemblerDraft}]=await Promise.all([import('/src/play/exploration-play-session.js'),import('/src/builder/world-assembler-handoff.js')]);const world=readWorldAssemblerDraft(localStorage);return createNewExplorationPlay(localStorage,world,{sessionId:'ci-adventure-a'}).sessionId;})()");
+ const createdScoped=await read("(async()=>{const [{createNewExplorationPlay},{openWorldDocumentReleaseAccessV1}]=await Promise.all([import('/src/play/exploration-play-session.js'),import('/src/storage/world-document-release-access-v1.js')]);const world=await (await openWorldDocumentReleaseAccessV1()).readDraft();return createNewExplorationPlay(localStorage,world,{sessionId:'ci-adventure-a'}).sessionId;})()");
  if(createdScoped!=='ci-adventure-a')throw Error('Official Exploration scoped creation failed');
  await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
  let scopedMenu;
@@ -263,7 +265,8 @@ try{
     resumedScoped.session!=='ci-adventure-a')
    throw Error('Real Sculpt engine did not resume the correct GenSRPG session: '+JSON.stringify(resumedScoped));
  console.log('GREEN scoped GenSRPG AdventureSession: native Canvas, isolated checkpoints, menu and resume');
- const savedDocument=await read(`(async()=> (await import('./src/storage/world-document-web-storage-codec-v1.js')).decodeWorldDocumentStorageV1(localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})))()`);
+ const savedDocument=await read(`(async()=>{const [{openWorldDocumentReleaseAccessV1},{serializeWorldBuilderDraft}]=await Promise.all([import('/src/storage/world-document-release-access-v1.js'),import('/src/builder/world-builder-draft.js')]);const access=await openWorldDocumentReleaseAccessV1();if(!access.durable)throw Error('Jouer lost the durable release owner');return serializeWorldBuilderDraft(await access.readDraft());})()`);
+ if(await read(`localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})`)!==legacyBeforePlay)throw Error('Gameplay mutated the retained legacy WorldDocument');
  if(savedDocument!==gameWorld)throw Error('Gameplay changed World Builder canonical document unexpectedly');
  console.log('GREEN native Jouer/Continuer: same 2.5D rendered map, collision, checkpoint, no editor');
  console.log('GREEN native 2.5D immutable checked-out source compositor and World Builder entry '+

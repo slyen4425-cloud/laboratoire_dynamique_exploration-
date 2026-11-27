@@ -396,8 +396,8 @@ try{
 
  // Play the same authored dresseur in a saved WorldDocument via World Builder → Jouer.
  await run(`(async()=>{
-  const [{createBlankWorldBuilderDraft},{saveWorldAssemblerDraft}]=await Promise.all([
-   import('./src/builder/world-builder-draft.js'),import('./src/builder/world-assembler-handoff.js')
+  const [{createBlankWorldBuilderDraft},{openWorldDocumentReleaseAccessV1}]=await Promise.all([
+   import('./src/builder/world-builder-draft.js'),import('./src/storage/world-document-release-access-v1.js')
   ]);
   const world=createBlankWorldBuilderDraft({id:'world-test-dresseur',width:36*28,height:24*21});
   const area=world.areas.find(entry=>entry.id===world.initialAreaId);
@@ -406,7 +406,7 @@ try{
   area.actors.push({...${JSON.stringify(configured.actor)},id:'wild-play-smoke',x:spawn.x+30,y:spawn.y,
    npc:{kind:'wild',name:'Sauvage Jouer',movement:{mode:'static',radius:90},
     wildCreature:{creatureId:'crea_mossback',level:20,npcInstance:{schema:'capture-npc-opponent-instance-v1',displayName:'Sauvage Jouer',statAllocations:{health:7}}}}});
-  saveWorldAssemblerDraft(localStorage,world);
+  const access=await openWorldDocumentReleaseAccessV1();await access.saveDraft(world,await access.readDraft());
  })()`);
  await command('Page.navigate',{url:new URL('/world-assembler.html',url).href});
  await until("location.pathname.endsWith('/world-assembler.html') && document.querySelector('#world-play-open')",'World Builder play entry');
