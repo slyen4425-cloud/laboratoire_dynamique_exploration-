@@ -54,5 +54,5 @@ export function createObjectLibraryLayoutControls({root,getSelected,onChange,sto
  $('reload').addEventListener('click',load);
  function sync(){populate(target,state.layout.categories,'Classement natif',state.layout.assignments[getSelected()]??'');$('assign').disabled=!ready||busy||!getSelected();}
  refresh();load();
- return Object.freeze({getLayout:()=>state.layout,sync});
+ return Object.freeze({getLayout:()=>state.layout,sync,reload:load});
 }

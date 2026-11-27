@@ -5532,7 +5532,7 @@ function refreshLocalSculptGraphics(){
   };
   graphicCatalogReload=graphicCatalogReload.catch(()=>{}).then(run);return graphicCatalogReload;
 }
-if($('graphic-library-import-form'))mountSculptGraphicImport({root:$('graphic-library-import-form'),terrainFamilies:()=>sculptWorldDraft?.terrainFamilies??terrainFamilyRegistry.list(),onLibraryChanged:refreshLocalSculptGraphics});
+if($('graphic-library-import-form'))mountSculptGraphicImport({root:$('graphic-library-import-form'),terrainFamilies:()=>sculptWorldDraft?.terrainFamilies??terrainFamilyRegistry.list(),onLibraryChanged:refreshLocalSculptGraphics,onLayoutRestored:()=>objectLibraryLayoutControls?.reload()});
 if($('object-library-tree')){
   objectLibraryPicker=createObjectLibraryPicker({
     root:$('object-library-tree'),search:$('object-library-search'),summary:$('object-library-selected'),

@@ -6,6 +6,8 @@ import {createUserMaterialRecord} from '../materials/user-material-library.js';
 import {createUserWorldObjectRecord} from '../objects/user-object-library.js';
 import {createUserMaterialStore} from '../storage/user-material-store.js';
 import {createUserWorldObjectStore} from '../storage/user-world-object-store.js';
+import {createObjectLibraryLayoutStore} from '../storage/object-library-layout-store-v1.js';
+import {normalizeObjectLibraryLayout} from '../objects/object-library-layout-v1.js';
 import {GRAPHIC_IMPORT_MAX_BYTES,GRAPHIC_IMPORT_MAX_DIMENSION,GRAPHIC_IMPORT_MAX_PIXELS} from './graphic-animation-v1.js';
 export const GRAPHIC_LIBRARY_BACKUP_KIND='gensrpg-graphic-library-v1';
 export const GRAPHIC_LIBRARY_BACKUP_MAX_BYTES=64*1024*1024;
@@ -50,7 +52,29 @@ async function validateImage(blob,meta){
  try{if(bitmap.width!==meta.width||bitmap.height!==meta.height)throw Error('Dimensions de l’image différentes des métadonnées.');}
  finally{bitmap.close();}
 }
-export function createGraphicLibraryBackup({objectStore=createUserWorldObjectStore(),materialStore=createUserMaterialStore(),subtle=globalThis.crypto?.subtle,checkImage=validateImage}={}){
+// Additive merge: preserve local IDs, assignments and sibling order.
+function mergeLayout(local,imported){
+ const current=normalizeObjectLibraryLayout(local),incoming=normalizeObjectLibraryLayout(imported);
+ const categories=[...current.categories],byId=new Map(categories.map(c=>[c.id,c]));
+ for(const c of incoming.categories){
+  const previous=byId.get(c.id);
+  if(previous&&(previous.label!==c.label||previous.parentId!==c.parentId))throw Error('Conflit de catégorie locale : '+c.label);
+  if(!previous){categories.push(c);byId.set(c.id,c);}
+ }
+ const assignments=Object.assign(Object.create(null),current.assignments);
+ for(const [id,target] of Object.entries(incoming.assignments)){
+  if(Object.hasOwn(assignments,id)&&assignments[id]!==target)throw Error('Conflit de classement local : '+id);
+  assignments[id]=target;
+ }
+ return normalizeObjectLibraryLayout({version:1,categories,assignments});
+}
+const layoutSignature=layout=>JSON.stringify([layout.categories,Object.entries(layout.assignments).sort(([a],[b])=>a.localeCompare(b))]);
+export const GRAPHIC_LIBRARY_LAYOUT_MAX_BYTES=1024*1024;
+function checkedLayout(raw){
+ if(!raw||JSON.stringify(raw).length>GRAPHIC_LIBRARY_LAYOUT_MAX_BYTES)throw Error('Classement graphique invalide ou trop volumineux.');
+ return normalizeObjectLibraryLayout(raw);
+}
+export function createGraphicLibraryBackup({objectStore=createUserWorldObjectStore(),materialStore=createUserMaterialStore(),layoutStore=createObjectLibraryLayoutStore(),subtle=globalThis.crypto?.subtle,checkImage=validateImage}={}){
  const stores={object:objectStore,material:materialStore};
  function requireCrypto(){if(!subtle?.digest)throw Error('Vérification cryptographique indisponible.');}
  async function list(){
@@ -68,16 +92,24 @@ export function createGraphicLibraryBackup({objectStore=createUserWorldObjectSto
     const record=canonicalRecord(raw,type,raw.blob);
     assets.push({type,meta:metadata(record),sha256:await digest(record.blob,subtle),data:encode(new Uint8Array(await record.blob.arrayBuffer()))});
    }
-   return {kind:GRAPHIC_LIBRARY_BACKUP_KIND,version:1,assets};
+   const layout=layoutStore?checkedLayout((await layoutStore.load()).layout):undefined;
+   return {kind:GRAPHIC_LIBRARY_BACKUP_KIND,version:1,assets,...(layout?{layout}:{})};
   },
   async restore(raw){
    requireCrypto();
    if(typeof raw==='string'){
-    if(raw.length>Math.ceil(GRAPHIC_LIBRARY_BACKUP_MAX_BYTES*4/3)+MAX_RECORDS*4096)throw Error('Fichier de sauvegarde trop volumineux.');
+    if(raw.length>Math.ceil(GRAPHIC_LIBRARY_BACKUP_MAX_BYTES*4/3)+MAX_RECORDS*4096+GRAPHIC_LIBRARY_LAYOUT_MAX_BYTES)throw Error('Fichier de sauvegarde trop volumineux.');
     raw=JSON.parse(raw);
    }
    if(raw?.kind!==GRAPHIC_LIBRARY_BACKUP_KIND||raw.version!==1||!Array.isArray(raw.assets)||raw.assets.length>MAX_RECORDS)
      throw Error('Format de sauvegarde graphique inconnu.');
+   let layoutPlan=null;
+   if(Object.hasOwn(raw,'layout')){
+    if(!layoutStore)throw Error('Stockage du classement indisponible.');
+    const incoming=checkedLayout(raw.layout),current=await layoutStore.load();
+    const next=checkedLayout(mergeLayout(current.layout,incoming));
+    layoutPlan={next,revision:current.revision,changed:layoutSignature(next)!==layoutSignature(normalizeObjectLibraryLayout(current.layout))};
+   }
    const prepared=[],ids=new Set();let total=0;
    // Preflight the entire package, including real image decoding and hashes.
    for(const entry of raw.assets){
@@ -105,6 +137,7 @@ export function createGraphicLibraryBackup({objectStore=createUserWorldObjectSto
      }else reused++;
      if(!await verifiedEqual(existing,record,type,subtle))throw Error('Conflit ou relecture impossible : '+record.id);
     }
+    if(layoutPlan?.changed)await layoutStore.save(layoutPlan.next,layoutPlan.revision);
    }catch(error){throw Error('Restauration interrompue après '+added+' ajout(s) ; aucun écrasement. Réessaie avec le même fichier. '+error.message);}
    return Object.freeze({added,reused});
   }
