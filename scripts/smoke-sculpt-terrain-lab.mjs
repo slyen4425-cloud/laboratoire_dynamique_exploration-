@@ -3898,7 +3898,9 @@ try{
     document.querySelector('#area-add-form').requestSubmit();
     const result=window.__worldAssemblerProbe();
     const dungeonId=result.areaIds.at(-1);
-    const saved=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    for(let i=0;i<150&&!window.__worldAssemblerProbe?.().saved;i++)await new Promise(resolve=>setTimeout(resolve,100));
+    if(!window.__worldAssemblerProbe?.().saved)throw Error('WorldDocument commit not acknowledged');
+    const saved=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     const dungeon=saved.areas.find(a=>a.id===dungeonId);
     return {...result,dungeonId,siteKind:dungeon?.siteKind,
       host: saved.portals.find(p=>p.targetAreaId===dungeonId)?.sourceAreaId,
@@ -4208,7 +4210,7 @@ try{
     try{returned2p5d=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();
       if(!probe)return null;
-      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       return {...probe,dungeon:doc.areas.find(a=>a.id==='grotte-du-nord'),
         exterior:doc.areas.find(a=>a.id==='area-principale')};
     })()`);}catch{}
@@ -4295,7 +4297,7 @@ try{
     await sleep(110);
     try{unifiedBack=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();if(!probe)return null;
-      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       return {...probe,created:doc.areas.find(a=>a.label==='Grande clairière')};
     })()`);}catch{}
     if(unifiedBack)break;
@@ -4310,11 +4312,11 @@ try{
   // then enter the old URL to verify the tactile return after refresh.
   const legacyId=unifiedBack.selectedAreaId;
   const legacySaved=await run(`(async()=>{
-    const key='gensrpg.world-assembler.document.v1';
-    const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+    const previous=await access.readDraft(),draft=structuredClone(previous);
     const target=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     target.width=2400;target.height=1600;delete target.sculptTerrain;
-    (await import('./src/builder/world-assembler-handoff.js')).saveWorldAssemblerDraft(localStorage,draft);
+    await access.saveDraft(draft,previous);
     return {id:target.id,width:target.width,height:target.height};
   })()`);
   if(legacySaved.width!==2400||legacySaved.height!==1600)
@@ -4358,7 +4360,7 @@ try{
     try{compatibleMap=await run(`(async()=>{
       const probe=window.__sculptWorldProbe?.();
       if(!probe)return null;
-      const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const world=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       const legacy=world.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {probe,legacyWidth:legacy?.width,legacyHeight:legacy?.height,
         initialAreaId:world.initialAreaId,path:location.pathname};
@@ -4408,7 +4410,7 @@ try{
     await sleep(110);
     try{legacyReturn=await run(`(async()=>{
       const p=window.__worldAssemblerProbe?.();if(!p)return null;
-      const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const draft=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       const area=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {selected:p.selectedAreaId,area,portalCount:p.portalCount};
     })()`);}catch{}
@@ -4440,7 +4442,9 @@ try{
   await repairClick;
   socket.removeEventListener('message',observeRepairDialog);
   const repairedRoute=await run(`(async()=>{
-    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    for(let i=0;i<150&&!window.__worldAssemblerProbe?.().saved;i++)await new Promise(resolve=>setTimeout(resolve,100));
+    if(!window.__worldAssemblerProbe?.().saved)throw Error('WorldDocument commit not acknowledged');
+    const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     const first=doc.areas.find(a=>a.id===doc.initialAreaId);
     const outgoing=doc.portals.filter(p=>p.sourceAreaId===doc.initialAreaId);
@@ -4467,7 +4471,9 @@ try{
     document.querySelector('.world-preset-details').open=true;
     card.closest('.map-preset-shelf').open=true;card.click();
     document.querySelector('#world-map-preset-create').click();
-    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    for(let i=0;i<150&&!window.__worldAssemblerProbe?.().saved;i++)await new Promise(resolve=>setTimeout(resolve,100));
+    if(!window.__worldAssemblerProbe?.().saved)throw Error('WorldDocument commit not acknowledged');
+    const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');
     const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
       p.trigger?.kind==='object-anchor');

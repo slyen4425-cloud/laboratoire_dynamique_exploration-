@@ -195,7 +195,7 @@ try{
   let returned;
   try {
   returned=await waitFor(`(async()=>{const probe=window.__worldAssemblerProbe?.();
-    const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    const world=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     return probe&&location.pathname==='/world-assembler.html'&&world
       ?{probe,path:location.pathname,world}:null;})()`,'2.5D -> same World Builder round trip');
   } catch(error) {
@@ -205,7 +205,7 @@ try{
       feedback:document.querySelector('#world-portal-feedback')?.textContent,
       footer:document.querySelector('#notice')?.textContent,
       assembler:typeof window.__worldAssemblerProbe==='function',
-      saved:!!localStorage.getItem('gensrpg.world-assembler.document.v1')
+      saved:window.__worldAssemblerProbe?.().saved??null
     }))()`);
     throw Error(error.message+' diagnostics='+JSON.stringify(details));
   }

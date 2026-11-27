@@ -17,6 +17,14 @@ const server=createServer(async(req,res)=>{
     const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
     if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
     let bytes=await readFile(path);
+    // This isolated harness explicitly retains the historical owner while it
+    // seeds raw legacy fixtures and checks the separate transactional owner.
+    // Other browser smokes run the unmodified release with IndexedDB active.
+    if(path===resolve(root,'src/storage/world-document-release-access-v1.js')){
+      const original=bytes.toString('utf8'),anchor="WORLD_DOCUMENT_RELEASE_OWNER_V1='indexeddb'";
+      if(!original.includes(anchor))throw Error('Release owner cutover moved');
+      bytes=original.replace(anchor,"WORLD_DOCUMENT_RELEASE_OWNER_V1='legacy'");
+    }
     if(durableFixture&&path===resolve(root,'src/sculpt-lab-main.js')){
       const original=bytes.toString('utf8');
       const anchor='const sculptWorldAccess=await openWorldDocumentReleaseAccessV1({storage:window.localStorage,';

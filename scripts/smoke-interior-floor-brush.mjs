@@ -147,7 +147,7 @@ try{
  await run("document.querySelector('#world-area-return').click()");
  const saved=await until(`(async()=>{
   const probe=window.__worldAssemblerProbe?.();
-  const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+  const world=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
   const area=world?.areas?.find(a=>a.id===${JSON.stringify(id)});
   return probe&&area&&location.pathname==='/world-assembler.html'?{area,probe}:null;
  })()`,'WorldArea save');

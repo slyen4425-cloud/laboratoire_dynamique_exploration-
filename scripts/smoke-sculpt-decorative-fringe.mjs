@@ -93,7 +93,7 @@ try{
   if(libraryUi.error||!libraryUi.wasOpened||libraryUi.count1!==1||libraryUi.count2!==0||libraryUi.count3!==2||
     libraryUi.final!==0||libraryUi.official!==3||libraryUi.local!==null)
     throw Error('Local map library UI regression '+JSON.stringify(libraryUi));
-  const areaId=await run("(async()=>{ const [{createBlankWorldBuilderDraft},{saveWorldAssemblerDraft}]=await Promise.all([import('./src/builder/world-builder-draft.js'),import('./src/builder/world-assembler-handoff.js')]); const world=createBlankWorldBuilderDraft({id:'border-check',width:1008,height:504});saveWorldAssemblerDraft(localStorage,world);return world.initialAreaId;})()");
+  const areaId=await run("(async()=>{ const [{createBlankWorldBuilderDraft},{openWorldDocumentReleaseAccessV1}]=await Promise.all([import('./src/builder/world-builder-draft.js'),import('./src/storage/world-document-release-access-v1.js')]); const world=createBlankWorldBuilderDraft({id:'border-check',width:1008,height:504});const access=await openWorldDocumentReleaseAccessV1();await access.saveDraft(world,await access.readDraft());return world.initialAreaId;})()");
   if(!areaId)throw Error('Cannot create map');
   await command('Page.navigate',{url:url+'/sculpt-lab.html?worldAssembler=1&areaId='+encodeURIComponent(areaId)});
   const mounted=await until("window.__sculptFringeProbe?.().available && window.__sculptFringeProbe()", 'mounted WorldArea');

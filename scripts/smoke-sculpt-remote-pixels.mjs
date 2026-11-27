@@ -199,7 +199,7 @@ try{
  // GenSRPG's consumer owns New Game: create the scoped navigation only via
  // the public Exploration API, never by clicking Lab New Game.
  const legacyCheckpoint=await read("localStorage.getItem('gensrpg.exploration.play.navigation.v1')");
- const createdScoped=await read("(async()=>{const [{createNewExplorationPlay},{readWorldAssemblerDraft}]=await Promise.all([import('/src/play/exploration-play-session.js'),import('/src/builder/world-assembler-handoff.js')]);const world=readWorldAssemblerDraft(localStorage);return createNewExplorationPlay(localStorage,world,{sessionId:'ci-adventure-a'}).sessionId;})()");
+ const createdScoped=await read("(async()=>{const [{createNewExplorationPlay},{openWorldDocumentReleaseAccessV1}]=await Promise.all([import('/src/play/exploration-play-session.js'),import('/src/storage/world-document-release-access-v1.js')]);const world=await (await openWorldDocumentReleaseAccessV1()).readDraft();return createNewExplorationPlay(localStorage,world,{sessionId:'ci-adventure-a'}).sessionId;})()");
  if(createdScoped!=='ci-adventure-a')throw Error('Official Exploration scoped creation failed');
  await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
  let scopedMenu;

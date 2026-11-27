@@ -148,7 +148,7 @@ try{
  const generated=await evaluate(`(async()=>{
   const {createBlankWorldBuilderDraft}=await import('/src/builder/world-builder-draft.js');
   const {worldAreaSizeFromTiles}=await import('/src/builder/world-area-size-command.js');
-  const {saveWorldAssemblerDraft}=await import('/src/builder/world-assembler-handoff.js');
+  const {openWorldDocumentReleaseAccessV1}=await import('/src/storage/world-document-release-access-v1.js');
   const {createNewExplorationPlay}=await import('/src/play/exploration-play-session.js');
   const {createUserHeroDefinitionV1}=await import('/src/actors/user-hero-definition-v1.js');
   const {createUserHeroStoreV1}=await import('/src/storage/user-hero-store-v1.js');
@@ -184,7 +184,7 @@ try{
   const world=createBlankWorldBuilderDraft({id:'world-hero-real-play',...size});
   if(world.areas[0].width!==size.width||world.areas[0].height!==size.height)
    throw Error('WorldBuilder modified authored playable dimensions');
-  saveWorldAssemblerDraft(localStorage,world);
+  const access=await openWorldDocumentReleaseAccessV1();await access.saveDraft(world,await access.readDraft());
   const sessionId='session-hero-real-play';
   const checkpoint=createNewExplorationPlay(localStorage,world,{sessionId});
   sessionStorage.setItem('gensrpg.capture.v2.hero-selection.v1:'+sessionId,
