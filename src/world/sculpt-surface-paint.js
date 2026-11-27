@@ -1,3 +1,4 @@
+import {eraseSurfaceStrokeParts} from './road-edit-geometry-v1.js';
 // The sculpt preview stores standard WorldSurface v3 routes/zones directly.
 // This editor adapter does not create a second route model or WorldDocument.
 import {normalizeWorldSurface} from './surface-model.js';
@@ -72,7 +73,7 @@ export function normalizeSculptSurface(raw={}){
     baseTraversalRuleId:source.baseTraversalRuleId,routes,zones,rivers:[]});
 }
 export function appendSculptSurfaceStroke(raw,{
-  materialId,terrainFamilyId=null,points=[],width=50,brushShape='round'
+  materialId,terrainFamilyId=null,points=[],width=50,brushShape='round',border,knots
 }={}){
   const surface=normalizeSculptSurface(raw);
   const meta=lookup.get(materialId);
@@ -95,7 +96,11 @@ export function appendSculptSurfaceStroke(raw,{
       :(sculptEncounterFamilyForMaterial(materialId)??
         (meta.kind==='route'?'road':surface.baseTerrainFamilyId))
   };
-  if(meta.kind==='route')feature.traversalRuleId='terrain.road';
+  if(meta.kind==='route'){
+    feature.traversalRuleId='terrain.road';
+    if(border)feature.border=border;
+    if(knots)feature.knots=knots;
+  }
   return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]});
 }
 function distanceToSegment(point,a,b){
@@ -118,4 +123,30 @@ export function removeSculptSurfaceAt(raw,point){
   if(!found)return surface;
   return normalizeSculptSurface({...surface,
     [found.kind]:surface[found.kind].filter(f=>f.id!==found.id)});
+}
+
+// One transaction per gesture; no partial edit on overflow.
+export function eraseSculptSurfaceStroke(raw,{points,width,brushShape='round',kind='all'}){
+  const surface=normalizeSculptSurface(raw);
+  if(!Number.isFinite(width)||width<=0||!Array.isArray(points)||!points.length)return surface;
+  const ids=new Set([...surface.routes,...surface.zones].map(f=>f.id));
+  let serial=1;
+  const nextId=()=>{while(ids.has('sculpt-surface-'+serial))serial++;const id='sculpt-surface-'+serial++;ids.add(id);return id;};
+  const result={...surface};
+  for(const key of ['routes','zones']){
+    if(kind!=='all'&&kind!==key)continue;
+    result[key]=surface[key].flatMap(feature=>{
+      const parts=eraseSurfaceStrokeParts(feature,points,width,brushShape);
+      if(parts.length===1&&parts[0]===feature.points)return [feature];
+      const {knots,...base}=feature;
+      return parts.map((part,i)=>({...base,id:i===0?feature.id:nextId(),points:part}));
+    });
+  }
+  if(result.routes.length+result.zones.length>SCULPT_SURFACE_LIMIT)
+    throw Error('Gomme : limite de tracés atteinte, aucune modification appliquée.');
+  return normalizeSculptSurface(result);
+}
+export function editSculptRoute(raw,id,patch){
+  const surface=normalizeSculptSurface(raw);
+  return normalizeSculptSurface({...surface,routes:surface.routes.map(r=>r.id===id?{...r,...patch,id:r.id}:r)});
 }
