@@ -77,11 +77,21 @@ test('real native GenSRPG Jouer only enables encounters after scope and Core han
 
 test('frozen Tester previews never import the scoped Adventure readers during module startup',()=>{
  const bridge=read('integration/combat-bridge/exploration-encounter.js');
- const readers=['world-assembler-handoff.js','adventure-published-encounters-v1.js','adventure-playing-party-v1.js'];
+ const readers=['world-document-release-access-v1.js','adventure-published-encounters-v1.js','adventure-playing-party-v1.js'];
  for(const reader of readers){
   const filename=reader.replaceAll('.','\\.');
   assert.doesNotMatch(bridge,new RegExp("from\\s*['\"][^'\"]*"+filename+"['\"]"));
   assert.match(bridge,new RegExp("import\\(['\"][^'\"]*"+filename+"['\"]\\)"));
  }
  assert.match(bridge,/encounterSessionId===undefined\?undefined:\s*await readAdventureCombatParty\(handoff,authorBundle,universeId\)/);
+});
+
+test('Adventure combat reads only the scoped durable WorldDocument owner',()=>{
+ const bridge=read('integration/combat-bridge/exploration-encounter.js');
+ const party=bridge.slice(bridge.indexOf('async function readAdventureCombatParty'),bridge.indexOf('async function launch()'));
+ assert.match(party,/await openWorldDocumentReleaseAccessV1\(\{\s*storage:window\.localStorage,sessionStorage:window\.sessionStorage,universeId\s*\}\)/);
+ assert.match(party,/if\(!access\.durable\)throw/);
+ assert.match(party,/const world=await access\.readDraft\(\)/);
+ assert.doesNotMatch(party,/readWorldAssemblerDraft|createExplorationUniverseWorkspaceStorageV1/);
+ assert.match(party,/worldId:world\.id/);
 });
