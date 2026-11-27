@@ -6,7 +6,7 @@ import {WORLD_ASSEMBLER_HANDOFF_KEY as handoffKey} from '../src/builder/world-as
 
 function memoryStorage(){
  const map=new Map();
- return {getItem:key=>map.get(key)??null,setItem:(key,value)=>map.set(key,String(value)),removeItem:key=>map.delete(key)};
+ return {getItem:key=>map.get(key)??null,setItem:(key,value)=>map.set(key,String(value)),removeItem:key=>map.delete(key),get length(){return map.size;},key:index=>[...map.keys()][index]??null};
 }
 function setup(){
  const document=createBlankWorldBuilderDraft({id:'Monde_alpha'});
