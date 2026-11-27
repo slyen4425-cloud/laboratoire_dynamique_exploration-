@@ -129,5 +129,20 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
   const index=read();write({...index,activeWorldId:world});
   return document;
  }
- return Object.freeze({list,load:owned,createBlank,addBlank,copy,activate,save});
+ // Explicit multiplayer import only. Preserve the host identity and canonical
+ // bytes; never alias a WorldDocument already owned by another universe.
+ function importShared(id,document,{confirmed=false}={}){
+  if(confirmed!==true)throw Error('Import du monde du salon : confirmation requise');
+  const index=read(),p=entry(id,index);
+  if(!p||!worldId.test(document?.id??''))throw Error('Univers ou identité du monde reçu incompatible');
+  const world=document.id;
+  const other=index.projects.find(x=>x.id!==id&&x.worldIds.includes(world));
+  if(other)throw Error('WorldDocument déjà attribué à un autre univers');
+  // Native archive.save validates and refuses divergent existing bytes.
+  // Under IndexedDB archive and project index are in the same transaction.
+  archive.save(document,{replace:false});
+  if(!p.worldIds.includes(world))register(id,world,{extend:true});
+  return owned(id,world);
+ }
+ return Object.freeze({list,load:owned,createBlank,addBlank,copy,activate,save,importShared});
 }

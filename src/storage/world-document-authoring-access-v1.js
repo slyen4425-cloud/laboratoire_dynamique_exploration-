@@ -45,7 +45,8 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
   async addBlank(id,options){return run(({projects})=>projects.addBlank(id,options));},
   async copy(options){return run(({projects})=>projects.copy(options));},
   async save(id,document){return run(({projects})=>projects.save(id,document));},
-  async activate(id,worldId){return run(({projects})=>projects.activate(id,worldId));}
+  async activate(id,worldId){return run(({projects})=>projects.activate(id,worldId));},
+  async importShared(id,document,options){return run(({projects})=>projects.importShared(id,document,options));}
  });
  return Object.freeze({
   durable:Boolean(owner),
@@ -63,6 +64,10 @@ export function createWorldAuthoringAccessV1({storage,sessionStorage,universeId=
   },
   async archive(document,{replace=false}={}){return run(({library,projects})=>universeId===null?library.save(document,{replace}):projects.save(universeId,document));},
   async activate(id){return run(({library,projects})=>universeId===null?library.activate(id):projects.activate(universeId,id));},
+  async importShared(document,{confirmed=false}={}){
+   if(confirmed!==true)throw Error('Import du monde du salon : confirmation requise');
+   return run(({library,projects})=>universeId===null?library.save(document,{replace:false}):projects.importShared(universeId,document,{confirmed:true}));
+  },
   async addBlank(options){if(universeId===null)throw Error('Projet univers requis');return run(({projects})=>projects.addBlank(universeId,options));},
   async remove(id,options){if(universeId!==null)throw Error('Suppression de monde de projet non autorisée');return run(({library})=>library.remove(id,options));},
   async writeHandoff(document,areaId){
