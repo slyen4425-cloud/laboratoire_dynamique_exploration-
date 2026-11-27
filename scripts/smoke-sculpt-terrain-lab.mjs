@@ -4277,13 +4277,44 @@ try{
   // The reporter's real failure: the header disappears in immersive mode,
   // so the ordinary Monde tab is not reachable. Reload first to prove that
   // handoff consumption does not strand the selected WorldArea either.
+  // A new WorldArea gets its native terrain materialized on first mount.
+  // Wait for that exact autosave acknowledgement before testing reload.
+  // Never accept a beforeunload warning that could discard pending changes.
+  let initialSave=null;
+  for(let i=0;i<150;i++){
+    initialSave=await run(`(async()=>{
+      const probe=window.__sculptWorldProbe();
+      const status=document.querySelector('#world-storage-status')?.textContent;
+      const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+      const doc=await access.readDraft();
+      const area=doc?.areas.find(a=>a.id===probe.areaId);
+      return {status,durable:access.durable,pending:probe.storagePending,areaId:area?.id,width:area?.sculptTerrain?.width,height:area?.sculptTerrain?.height};
+    })()`);
+    if(initialSave.durable&&!initialSave.pending&&initialSave.status?.includes('Carte sauvegardée')&&initialSave.width===40&&initialSave.height===31)break;
+    await sleep(100);
+  }
+  if(!initialSave?.durable||initialSave.pending||!initialSave.status?.includes('Carte sauvegardée')||initialSave.width!==40||initialSave.height!==31)
+    throw Error('Initial mounted map not committed before reload: '+JSON.stringify(initialSave));
+  console.log('IndexedDB reload gate: initial terrain committed',JSON.stringify(initialSave));
+  let reloadWarning=null;
+  const observeReloadWarning=event=>{
+    const packet=JSON.parse(event.data);
+    if(packet.method!=='Page.javascriptDialogOpening'||packet.params?.type!=='beforeunload')return;
+    reloadWarning=packet.params.message||'beforeunload';
+    // Reject the departure; a warning here is a regression, not consent.
+    void send('Page.handleJavaScriptDialog',{accept:false}).catch(error=>{fatalCdpError=error;});
+  };
+  socket.addEventListener('message',observeReloadWarning);
   await send('Page.reload',{ignoreCache:true});
   let reloadedMap=null;
   for(let i=0;i<90;i++){
     await sleep(110);
     try{reloadedMap=await run("window.__sculptWorldProbe?.()??null");}catch{}
+    if(reloadWarning)break;
     if(reloadedMap?.areaId)break;
   }
+  socket.removeEventListener('message',observeReloadWarning);
+  if(reloadWarning)throw Error('Committed map unexpectedly blocked reload: '+reloadWarning);
   if(reloadedMap?.areaId!==unifiedMap.areaId||reloadedMap.terrainWidth!==40)
     throw Error('Sculpt WorldArea lost after refresh; session handoff is one-shot: '+
       JSON.stringify(reloadedMap));
