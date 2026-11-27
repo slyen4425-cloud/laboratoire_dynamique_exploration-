@@ -1469,7 +1469,10 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
    <small>Exemple : utilise l’herbe classique ou la variante 2 et choisis « Haute herbe » pour augmenter les rencontres sans changer le visuel.</small>
    <label>Action <select id="surface-action">
     <option value="paint">Peindre une route / une zone</option>
-    <option value="erase">Effacer au toucher</option>
+    <option value="erase">Gomme locale (glisser)</option>
+    <option value="curve">Tracer une route courbe</option>
+    <option value="edit">Sélectionner / modifier une route</option>
+    <option value="delete">Supprimer un tracé entier</option>
    </select></label>
    <label>Forme du pinceau de texture
     <select id="surface-brush-shape" aria-label="Forme du pinceau des textures">
@@ -1480,6 +1483,22 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
    <label>Largeur <output id="surface-width-value">3 cases</output>
     <input type="range" id="surface-width" min="1" max="12" step="0.5" value="3">
    </label>
+   <fieldset id="road-style-controls" hidden>
+    <legend>Routes · bordures et tracé</legend>
+    <output id="road-selected">Aucune route sélectionnée</output>
+    <label><input type="checkbox" id="road-border-enabled"> Activer les bordures automatiques</label>
+    <label>Gauche <select id="road-border-left"><option value="">Aucune</option></select></label>
+    <label>Droite <select id="road-border-right"><option value="">Aucune</option></select></label>
+    <label>Réglages du côté <select id="road-border-side"><option value="left">Gauche</option><option value="right">Droite</option></select></label>
+    <label>Largeur bordure <input id="road-border-width" type="number" min="1" max="128" value="8"></label>
+    <label>Échelle <input id="road-border-scale" type="number" min=".1" max="4" step=".1" value="1"></label>
+    <label>Décalage <input id="road-border-offset" type="number" min="-64" max="64" value="0"></label>
+    <label>Espacement cailloux <input id="road-border-spacing" type="number" min="0" max="128" value="2"></label>
+    <label>Opacité (%) <input id="road-border-opacity" type="number" min="0" max="100" value="100"></label>
+    <button type="button" id="road-border-apply" disabled>Appliquer à la route sélectionnée</button>
+    <button type="button" id="road-curve-convert" disabled>Convertir en courbe éditable</button>
+    <small>En mode Modifier, touche une route, puis déplace les points ou poignées directement sur la carte.</small>
+   </fieldset>
   </div>
  </details>
  <details class="surface-settings-group">
