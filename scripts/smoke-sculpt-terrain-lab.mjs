@@ -4425,7 +4425,36 @@ try{
   // tactile return rather than silently opening some other Area.
   const legacyUrl=new URL('/sculpt-lab.html?worldAssembler=1&areaId='+
     encodeURIComponent(legacyId),url).href;
+  // The compatible area was just mounted. Its initial native snapshot is
+  // asynchronous, unlike the old localStorage implementation. Wait for the
+  // same owner's actual acknowledgement before leaving through a direct URL.
+  let compatibleSaved=null;
+  for(let i=0;i<150;i++){
+    compatibleSaved=await run(`(async()=>{
+      const probe=window.__sculptWorldProbe();
+      const status=document.querySelector('#world-storage-status')?.textContent;
+      const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+      const doc=await access.readDraft();
+      const area=doc?.areas.find(a=>a.id===probe.areaId);
+      const legacy=doc?.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+      return {status,durable:access.durable,pending:probe.storagePending,id:area?.id,
+        width:area?.sculptTerrain?.width,height:area?.sculptTerrain?.height,
+        legacyWidth:legacy?.width,legacyHeight:legacy?.height};
+    })()`);
+    if(compatibleSaved.durable&&!compatibleSaved.pending&&compatibleSaved.status?.includes('Carte sauvegardée')&&
+       compatibleSaved.width===compatibleMap.probe.terrainWidth&&compatibleSaved.height===compatibleMap.probe.terrainHeight)break;
+    await sleep(100);
+  }
+  if(!compatibleSaved?.durable||compatibleSaved.pending||!compatibleSaved.status?.includes('Carte sauvegardée')||
+     compatibleSaved.id!==compatibleMap.probe.areaId||compatibleSaved.width!==compatibleMap.probe.terrainWidth||
+     compatibleSaved.height!==compatibleMap.probe.terrainHeight||compatibleSaved.legacyWidth!==2400||compatibleSaved.legacyHeight!==1600)
+    throw Error('Compatible map not committed before direct historical navigation: '+JSON.stringify(compatibleSaved));
+  console.log('IndexedDB legacy gate: compatible map saved before direct URL',JSON.stringify(compatibleSaved));
+  reloadWarning=null;
+  socket.addEventListener('message',observeReloadWarning);
   await send('Page.navigate',{url:legacyUrl});
+  socket.removeEventListener('message',observeReloadWarning);
+  if(reloadWarning)throw Error('Committed compatible map unexpectedly blocked navigation: '+reloadWarning);
   let legacyMap=null;
   for(let i=0;i<90;i++){
     await sleep(110);
