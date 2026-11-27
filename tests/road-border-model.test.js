@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {normalizeWorldSurface} from '../src/world/surface-model.js';
 import {createSculptSurface,appendSculptSurfaceStroke,eraseSculptSurfaceStroke,editSculptRoute,normalizeSculptSurface} from '../src/world/sculpt-surface-paint.js';
 import {routeKnotsFromPoints} from '../src/world/road-edit-geometry-v1.js';
-import {roadBorderSamples,roadSideContour,roadBorderCellPainter} from '../src/render/road-border-renderer-v1.js';
+import {roadBorderSamples,roadSideContour,roadBorderCellPainter,roadBorderFadeProfile} from '../src/render/road-border-renderer-v1.js';
 
 const route={id:'route-a',width:50,materialId:'road.dirt',terrainFamilyId:'road',
   traversalRuleId:'terrain.road',points:[{x:20,y:30},{x:80,y:40}]};
@@ -99,4 +99,13 @@ test('road ribbon uses whole source tiles rather than cropped micro-strips',()=>
   for(let col=0;col<20;col++)for(let row=0;row<20;row++)if(paint.hasCell(col,row))paint(col,row,2);
   assert.ok(calls.length>10);
   assert.ok(calls.every(args=>args.length===5),'full texture image draws only');
+});
+
+test('only the baked ground fringe is attenuated; wood and individual rocks retain their original pixels',()=>{
+  assert.equal(roadBorderFadeProfile('road-border.bordure_bois'),null);
+  assert.equal(roadBorderFadeProfile('road-border.cailloux'),null);
+  for(const name of ['naturelle','cailloux','pierre_taillee','beton','neige']){
+    const profile=roadBorderFadeProfile('road-border.bordure_'+name);
+    assert.ok(profile.start>=.5&&profile.end>profile.start&&profile.end<.75);
+  }
 });
