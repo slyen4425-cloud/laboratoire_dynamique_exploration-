@@ -49,7 +49,7 @@ test('World return survives fullscreen and refresh without a parallel world-stat
  assert.match(main,/world-workspace-return-float'\)\.addEventListener\('click'/);
  assert.match(main,/initialSaved=await access\.readDraft\(\)/);
   assert.match(main,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
- assert.match(main,/createWorldAuthoringAccessV1/);
+ assert.match(main,/await openWorldDocumentReleaseAccessV1\(/);
  assert.match(main,/commit:\(document,expected\)=>access\.saveDraft\(document,expected\)/);
  assert.match(main,/await save\(persistCurrentWorldSculpt\(\)\)/);
  assert.match(assembler,/areaId=\s*'\+encodeURIComponent\(areaToOpen\)/);

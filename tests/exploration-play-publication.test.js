@@ -33,8 +33,10 @@ test('native Play menu and real Sculpt runtime retain GenSRPG scoped navigation 
  assert.match(entry,/searchParams\.get\('adventureSession'\)/);
  assert.match(entry,/\$\('play-new'\)\.disabled=Boolean\(playOptions\)/);
  assert.match(entry,/\$\('play-new'\)\.hidden=Boolean\(playOptions\)/);
- assert.match(entry,/createNewExplorationPlay\(window\.localStorage,world,playOptions\)/);
- assert.match(entry,/readExplorationPlay\(window\.localStorage,world,playOptions\)/);
+ assert.match(entry,/createNewExplorationPlay\(playStorage,world,playOptions\)/);
+ assert.match(entry,/readExplorationPlay\(playStorage,world,playOptions\)/);
+ assert.match(entry,/playStorage=universeId===null\?window\.localStorage:createExplorationUniverseWorkspaceStorageV1\(window\.localStorage,universeId\)/);
+ assert.match(entry,/await openWorldDocumentReleaseAccessV1\(\{storage:window\.localStorage,sessionStorage:window\.sessionStorage,universeId\}\)/);
  assert.match(sculpt,/searchParams\.get\('adventureSession'\)/);
  assert.match(sculpt,/readExplorationPlay\(worldStorage,world,playOptions\)/);
   assert.match(sculpt,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);

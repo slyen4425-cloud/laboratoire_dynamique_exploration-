@@ -21,6 +21,6 @@ test('Hero selection never replaces navigation, collision, or camera owner',()=>
  assert.match(source,/navigationActorRenderer\.draw/);
  assert.match(source,/isBlocked\(navigationWorld\(\),point/);
  assert.match(source,/const world=await access\.readDraft\(\)/);
- assert.match(source,/createWorldAuthoringAccessV1/);
+ assert.match(source,/await openWorldDocumentReleaseAccessV1\(/);
   assert.match(source,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
 });
