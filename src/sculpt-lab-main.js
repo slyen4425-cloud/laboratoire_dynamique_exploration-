@@ -79,7 +79,7 @@ import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=scul
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {createObjectLibraryPicker} from './objects/object-library-picker-v1.js';
 import {mountSculptGraphicImport} from './assets/sculpt-graphic-import-controls-v1.js';
-import {loadSculptGraphicCatalog} from './assets/sculpt-graphic-catalog-v1.js';
+import {loadSculptGraphicCatalog,assertSculptWorldGraphicsAvailableV1} from './assets/sculpt-graphic-catalog-v1.js';
 import {createObjectLibraryLayoutControls} from './objects/object-library-layout-controls-v1.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
@@ -238,10 +238,9 @@ const activeSculptMaterialRegistry=()=>sculptGraphics?.materialRegistry??registr
 const sculptGraphicContext=()=>({catalog:activeSculptObjectCatalog(),materialRegistry:activeSculptMaterialRegistry()});
 const sculptMaterialAsset=id=>sculptGraphics?.resolveMaterialAsset(id)??resolveMaterialAsset(id);
 const sculptObjectAsset=id=>sculptGraphics?.resolveObjectAsset(id)??resolveWorldObjectAsset(id);
-// Until the shared world archive/transport owners accept local references,
-// do not expose placements that the world storage cannot save.
-const localGraphicPlacementEnabled=()=>!sculptWorldDraft&&!sculptPlayRequested&&
- new URLSearchParams(location.search).get('worldAssembler')!=='1'&&!activeInteriorId;
+// Local assets use the canonical WorldArea serializer. Keep personal placement
+// out of standalone interiors and frange until those codecs are migrated.
+const localGraphicPlacementEnabled=()=>!sculptPlayRequested&&!activeInteriorId&&!sculptWorldCurrentInterior();
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 // V79: one active area at a time. Detached exterior snapshot is a temporary
 // editor view of the SAME scene while an interior is open, not a second terrain.
@@ -1165,7 +1164,7 @@ const materialFrames=createSculptMaterialFrameCacheV1();
 function personalSurfaceChoices(){return sculptGraphics?.personalSurfaceChoices??[];}
 function refreshPersonalTextureOptions(){
   const choices=localGraphicPlacementEnabled()?personalSurfaceChoices():[];
-  themes.splice(0,themes.length,...sculptGroundMaterials,...choices.filter(m=>m.assetKind==='surface').map(m=>m.id));
+  themes.splice(0,themes.length,...sculptGroundMaterials,...personalSurfaceChoices().filter(m=>m.assetKind==='surface').map(m=>m.id));
   for(const [id,items] of [['material',choices.filter(m=>m.assetKind==='surface')],['surface-material',choices]]){
     const select=$(id),old=select.value;
     select.querySelector('[data-personal-textures]')?.remove();
@@ -2452,7 +2451,7 @@ function begin(event){
   }
   if(surfaceEditing){
     if($('surface-action').value!=='erase'&&$('surface-material').value.startsWith('user.material.')&&!localGraphicPlacementEnabled()){
-      status('Texture personnelle : carte principale autonome uniquement pour le moment.');return;
+      status('Texture personnelle : placement réservé aux cartes extérieures.');return;
     }
     const point={x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
     if($('surface-action').value==='erase'){
@@ -5391,7 +5390,7 @@ function applyObjectAtCell(cell){
   }
   const definitionId=$('object-definition').value;
   if(definitionId.startsWith('user.objectdef.')&&!localGraphicPlacementEnabled()){
-    status('Objet personnel : raccordement de la sauvegarde du monde encore requis.');return;
+    status('Objet personnel : placement réservé aux cartes extérieures.');return;
   }
   // Placement and drag use one Scene Preview authoring permission.
   if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y,activeSculptObjectCatalog())){
@@ -5532,6 +5531,7 @@ let graphicCatalogReload=Promise.resolve();
 function refreshLocalSculptGraphics(){
   const run=async()=>{
     const next=await loadSculptGraphicCatalog(),previous=sculptGraphics;
+    try{assertSculptWorldGraphicsAvailableV1(sculptWorldDraft,next);}catch(error){next.dispose();throw error;}
     const refs=[...placedObjects,...(decorativeFringe?.objects??[]),...(outsideAreaSnapshot?.objects??[]),
       ...sculptInteriors.flatMap(i=>i.objects??[]),...objectHistory.flat(),...objectRedo.flat()];
     if(refs.some(o=>o.objectDefinitionId?.startsWith('user.objectdef.')&&!next.catalog.get(o.objectDefinitionId))){
@@ -6342,7 +6342,7 @@ function openSelectedSculptInterior(){
   if(activeInteriorId)return;
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   const resolved=resolveWorldObjectPlacements(selected?[selected]:[],
-    objectDefinitionCatalogV1)[0];
+    activeSculptObjectCatalog())[0];
   if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
   if(sculptWorldDraft){
     if(sculptPlayRequested||navigationTesting){status('Passe en édition 2,5D pour lier une maison.');return;}
@@ -6355,7 +6355,7 @@ function openSelectedSculptInterior(){
       });
       // Validate the destination BEFORE replacing the current displayed Area.
       const target=link.document.areas.find(a=>a.id===link.targetAreaId);
-      const scene=sculptWorldAreaScene(target);
+      const scene=sculptWorldAreaScene(target,sculptGraphicContext());
       sculptWorldDraft=link.document;
       saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       mountWorldSculptArea(link.targetAreaId,scene);
@@ -7158,7 +7158,7 @@ function commitCurrentSculptWorldArea(){
   // the save even though the editor shows the author-selected elements.
   const updated=saveSculptWorldArea({
     ...sculptWorldDraft,encounterConfig:sculptEncounterConfig
-  },sculptWorldAreaId,captureSculptArea());
+  },sculptWorldAreaId,captureSculptArea(),sculptGraphicContext());
   const areas=updated.areas.map(a=>a.id===sculptWorldAreaId
     ?{...a,encounters:sculptExteriorEncounters}:a);
   // One EncounterConfig on the whole document, same Builder commands.
@@ -7175,7 +7175,7 @@ function mountWorldSculptArea(areaId,validatedScene=null){
   document.querySelector('header p').textContent='Un seul monde · deux panneaux · '+area.width/28+' × '+area.height/21+' cases';
   // Use the already validated destination scene after a real Portal. Rebuilding
   // it two or three times on the same transition blocks Android's render thread.
-  const scene=validatedScene??sculptWorldAreaScene(area);
+  const scene=validatedScene??sculptWorldAreaScene(area,sculptGraphicContext());
   sculptWorldAreaId=areaId;
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
@@ -7289,7 +7289,7 @@ async function traverseSculptWorldPortal(){
   try{
     let target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
     let validatedTargetScene=null;
-    try{validatedTargetScene=sculptWorldAreaScene(target);}
+    try{validatedTargetScene=sculptWorldAreaScene(target,sculptGraphicContext());}
     catch(error){
       if(sculptPlayActive||portal.trigger?.kind!=='point'||!playableExteriorArea(sculptWorldArea()))throw error;
       if(!window.confirm('Cette sortie mène à une ancienne zone non jouable en 2,5D. '+ 
@@ -7304,7 +7304,7 @@ async function traverseSculptWorldPortal(){
       portal=sculptWorldDraft.portals.find(p=>p.id===portal.id);
       if(!portal)throw Error('Portal réparé introuvable');
       target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-      validatedTargetScene=sculptWorldAreaScene(target);
+      validatedTargetScene=sculptWorldAreaScene(target,sculptGraphicContext());
     }
     // The SAME runtime Portal resolver used by the 2D world document.
     // Gameplay may traverse existing Portals but cannot commit an authored map.
@@ -7319,7 +7319,7 @@ async function traverseSculptWorldPortal(){
     // Editor repair can change document bytes, so it always revalidates once.
     const destinationScene=sculptPlayActive&&transition.currentAreaId===target.id
       ?validatedTargetScene
-      :sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId));
+      :sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId),sculptGraphicContext());
     if(!destinationScene)throw Error('Scene de destination invalide');
     if(navigationTesting)setNavigationTesting(false);
     mountWorldSculptArea(transition.currentAreaId,destinationScene);
@@ -7456,6 +7456,7 @@ async function installSculptPlayMode(){
   try{
     const world=readWorldAssemblerDraft(worldStorage);
     if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
+    assertSculptWorldGraphicsAvailableV1(world,sculptGraphics);
     const checkpoint=readExplorationPlay(worldStorage,world,playOptions);
     if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
     // GenSRPG sends ONLY a short-lived projection of the true Combat
@@ -7645,6 +7646,8 @@ function installSculptWorldAreaEditing(){
     sculptWorldStatus('Session World Builder absente. Retourne au constructeur de mondes.',true);
     return;
   }
+  try{assertSculptWorldGraphicsAvailableV1(transfer.document,sculptGraphics);}
+  catch(error){document.body.classList.add('world-area-unavailable');sculptWorldStatus(error.message,true);return;}
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
   $('world-area-portal-panel').hidden=false;
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
@@ -7657,7 +7660,7 @@ function installSculptWorldAreaEditing(){
   function downloadWorldSculptRecovery(){
     if(!sculptWorldAreaMounted)throw Error('Aucune WorldArea éditée à récupérer');
     const snapshot=snapshotSculptWorldAreaForRecovery(
-      sculptWorldDraft,sculptWorldAreaId,captureSculptArea());
+      sculptWorldDraft,sculptWorldAreaId,captureSculptArea(),sculptGraphicContext());
     const recovery={...snapshot,
       areas:snapshot.areas.map(a=>a.id===sculptWorldAreaId
         ?{...a,encounters:sculptExteriorEncounters}:a),
@@ -8137,7 +8140,7 @@ sculptBootReady=true;fit();
 // Frozen V80 does not include the WorldArea Portal button. Modern Sculpt
 // keeps its canonical action; the legacy editor must still boot completely.
 $('world-portal-traverse')?.addEventListener('click',traverseSculptWorldPortal);
-if($('graphic-library-import-form')||sculptPlayRequested){
+if($('graphic-library-import-form')||sculptPlayRequested||new URLSearchParams(location.search).get('worldAssembler')==='1'){
   try{await refreshLocalSculptGraphics();}
   catch(error){status('Bibliothèque personnelle indisponible : '+error.message);}
 }

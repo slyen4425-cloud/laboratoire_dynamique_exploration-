@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createSculptGraphicCatalog,loadSculptGraphicCatalog} from '../src/assets/sculpt-graphic-catalog-v1.js';
+import {createSculptGraphicCatalog,loadSculptGraphicCatalog,assertSculptWorldGraphicsAvailableV1} from '../src/assets/sculpt-graphic-catalog-v1.js';
 import {createUserWorldObjectRecord} from '../src/objects/user-object-library.js';
 import {createUserMaterialRecord} from '../src/materials/user-material-library.js';
 import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument,validateWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
@@ -65,5 +65,20 @@ test('portable WorldDocument archive preserves personal IDs before library resto
   assert.equal(validateWorldBuilderDraft(wrong).valid,false);
   assert.throws(()=>serializeWorldBuilderDraft(wrong),/object-definition-unknown/);
   assert.deepEqual(sculptWorldAreaScene(restored.areas[0],g).objects,edited.objects);
+ }finally{g.dispose();}
+});
+
+test('all world areas require personal resources before editor or play; missing library never alters references',()=>{
+ const g=createSculptGraphicCatalog({objectRecords:[object],materialRecords:[material],urlApi:urls()});
+ try{
+  const world=createBlankWorldBuilderDraft({id:'graphic-all-areas',width:224,height:168});
+  const area=world.areas[0],scene=sculptWorldAreaScene(area,g);
+  const edited={...scene,objects:appendSculptPreviewObject(scene.objects,{definitionId:object.definitionId,x:100,y:80},g.catalog),surface:appendSculptSurfaceStroke(scene.surface,{materialId:material.id,points:[{x:40,y:50}]},g.materialRegistry)};
+  const saved=saveSculptWorldArea(world,area.id,edited,g),serialized=serializeWorldBuilderDraft(saved);
+  assert.equal(assertSculptWorldGraphicsAvailableV1(saved,g),true);
+  assert.throws(()=>assertSculptWorldGraphicsAvailableV1(saved,null),/personnelle manquante/);
+  const partial=createSculptGraphicCatalog({objectRecords:[object],urlApi:urls()});
+  try{assert.throws(()=>assertSculptWorldGraphicsAvailableV1(saved,partial),/Texture personnelle manquante/);}finally{partial.dispose();}
+  assert.equal(serializeWorldBuilderDraft(saved),serialized);
  }finally{g.dispose();}
 });

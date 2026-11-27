@@ -55,3 +55,33 @@ export async function loadSculptGraphicCatalog({objectStore=createUserWorldObjec
  const [objectRecords,materialRecords]=await Promise.all([objectStore.list(),materialStore.list()]);
  return createSculptGraphicCatalog({objectRecords,materialRecords,urlApi});
 }
+
+// Resolve all personal references BEFORE opening the world or switching its
+// library projection. Missing content must never become an empty object or
+// a default texture in a reduced saved document.
+export function assertSculptWorldGraphicsAvailableV1(world,graphics){
+ const requireObjects=objects=>{
+  for(const o of objects??[]){
+   const id=o.objectDefinitionId;if(!id?.startsWith('user.objectdef.'))continue;
+   const d=graphics?.catalog?.get(id);
+   if(!d||!graphics.resolveObjectAsset(d.visual?.assetId))
+    throw Error('Ressource graphique personnelle manquante : '+id+' · restaure la bibliothèque.');
+  }
+ };
+ const requireSurface=surface=>{
+  if(!surface)return;
+  const ids=[surface.baseMaterialId,...(surface.routes??[]).map(f=>f.materialId),...(surface.zones??[]).map(f=>f.materialId),...(surface.rivers??[]).map(f=>f.materialId)];
+  for(const id of ids){
+   if(!id?.startsWith('user.material.'))continue;
+   const m=graphics?.materialRegistry?.resolve(id);
+   if(!m||!graphics.resolveMaterialAsset(m.assets?.base??m.assets?.center))
+    throw Error('Texture personnelle manquante : '+id+' · restaure la bibliothèque.');
+  }
+ };
+ for(const area of world?.areas??[]){
+  requireObjects(area.objects);requireSurface(area.surface);
+  requireObjects(area.decorativeFringe?.objects);
+  for(const chunk of area.decorativeFringe?.chunks??[])requireSurface(chunk.surface);
+ }
+ return true;
+}
