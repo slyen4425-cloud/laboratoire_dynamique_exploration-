@@ -51,7 +51,7 @@ test('all existing prefab houses create usable 2.5D WorldArea interiors and cano
 
 test('old destinations that cannot open in Sculpt are disabled before pressing Enter',()=>{
  const s=src('src/sculpt-lab-main.js');
- assert.match(s,/sculptWorldAreaScene\(target\)/);
+ assert.match(s,/sculptWorldAreaScene\(target,sculptGraphicContext\(\)\)/);
  assert.match(s,/Passage impossible en 2,5D/);
  assert.match(s,/button.disabled=true/);
  assert.match(s,/sculptWorldCurrentInterior\(\)/);

@@ -93,7 +93,7 @@ try{
   throw Error('Official import UI absent '+JSON.stringify(importResult));
  const doc=await until(`(async()=>{
   const p=window.__worldAssemblerProbe?.();
-  const data=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+  const data=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
   return p?.worldId==='relief-canyon-pilot-v1'&&data?.id===p.worldId
    ?{path:location.pathname,p,data}:null;
  })()`,'imported canyon WorldDocument');
@@ -123,7 +123,7 @@ try{
   const waterMotion=await run(`(async()=>{
     const {drawReliefRiverGlints, drawReliefRiverBankFoam} =
       await import('./src/render/relief-water-overlay.js?smoke=organic-reflections-v6');
-    const area=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage).areas[0];
+    const area=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft()).areas[0];
     function renderWater(seconds){
       const probe=document.createElement('canvas');
       probe.width=850;probe.height=330;

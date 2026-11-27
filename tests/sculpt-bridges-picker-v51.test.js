@@ -53,8 +53,8 @@ test('V51 mobile object picker includes bridges and native placement over author
   const js=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(html,/<option value="bridge">[^<]*Ponts<\/option>/);
   assert.match(html,/id="object-variant-wrap"[^>]*>Vue \/ orientation/);
-  assert.match(js,/const definition=objectDefinitionCatalogV1.get\(definitionId\)/);
-  assert.match(js,/sculptObjectCanOccupyCell\(terrain,definitionId,cell\.x,cell\.y\)/);
-  assert.match(js,/sculptPreviewVariants\(definitionId\)/);
+  assert.match(js,/const definition=activeSculptObjectCatalog\(\)\.get\(definitionId\)/);
+  assert.match(js,/sculptObjectCanOccupyCell\(terrain,definitionId,cell\.x,cell\.y,activeSculptObjectCatalog\(\)\)/);
+  assert.match(js,/sculptPreviewVariants\(definitionId,activeSculptObjectCatalog\(\)\)/);
   assert.match(js,/categories:\[\.\.\.\$\('object-category'\)\.options\]/);
 });

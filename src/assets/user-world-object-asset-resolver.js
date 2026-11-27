@@ -1,3 +1,4 @@
+import {normalizeGraphicAnimation} from './graphic-animation-v1.js';
 export function createUserWorldObjectAssetResolver(
   records,
   {
@@ -38,6 +39,7 @@ export function createUserWorldObjectAssetResolver(
         id: record.assetId,
         kind: 'user-world-object-visual',
         path,
+        ...(record.animation?{animation:normalizeGraphicAnimation(record.animation,record.width,record.height)}:{}),
         provenance: 'user-local',
         render: Object.freeze({
           rotationOffsetDeg: 0,

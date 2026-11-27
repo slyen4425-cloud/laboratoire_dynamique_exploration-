@@ -1,5 +1,5 @@
 import {routeKnotsFromPoints,routePointsFromKnots} from '../world/road-edit-geometry-v1.js';
-import {editSculptRoute} from '../world/sculpt-surface-paint.js';
+import {editSculptRoute,resolveSculptSurfaceMaterial} from '../world/sculpt-surface-paint.js';
 import {ROAD_BORDER_ASSETS} from '../render/road-border-renderer-v1.js';
 const defaults={width:8,scale:1,offset:0,spacing:2,opacity:1};
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -8,7 +8,7 @@ function distance(p,a,b){
   const dx=b.x-a.x,dy=b.y-a.y,d=dx*dx+dy*dy,t=d?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/d)):0;
   return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);
 }
-export function createRoadEditControls({getSurface,commit,redraw,status,getBounds,root=document}){
+export function createRoadEditControls({getSurface,commit,redraw,status,getBounds,getRegistry=()=>null,root=document}){
   const $=id=>root.getElementById(id);
   const action=$('surface-action'),material=$('surface-material'),panel=$('road-style-controls');
   if(!panel)return null; // V80 markup is intentionally unchanged.
@@ -52,7 +52,7 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
   function refresh(){
     if(id&&!route()){id=null;drag=null;}
     const selected=route(),editing=action.value==='edit',curve=action.value==='curve';
-    panel.hidden=!(material.value==='road.dirt'||editing||curve);
+    panel.hidden=!(resolveSculptSurfaceMaterial(material.value,getRegistry())?.kind==='route'||editing||curve);
     $('road-selected').textContent=selected?'Route sélectionnée · '+selected.id:'Aucune route sélectionnée';
     $('road-border-apply').disabled=!selected||!editing;
     $('road-curve-convert').disabled=!selected||!!selected.knots||!editing;
@@ -65,12 +65,12 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
   });
   $('road-border-apply').addEventListener('click',()=>{
     if(!route())return;
-    commit(editSculptRoute(getSurface(),id,{border:border(),width:Number($('surface-width').value)*28,brushShape:$('surface-brush-shape').value}));refresh();redraw();
+    commit(editSculptRoute(getSurface(),id,{border:border(),width:Number($('surface-width').value)*28,brushShape:$('surface-brush-shape').value},getRegistry()));refresh();redraw();
   });
   $('road-curve-convert').addEventListener('click',()=>{
     if(!route())return;
     const knots=routeKnotsFromPoints(route().points,getBounds());if(!knots)return;
-    commit(editSculptRoute(getSurface(),id,{knots,brushShape:'round'}));refresh();redraw();
+    commit(editSculptRoute(getSurface(),id,{knots,brushShape:'round'},getRegistry()));refresh();redraw();
   });
   function setCurveFinish(fn){
     $('road-curve-finish').addEventListener('click',()=>{if(pending.length<2)return;const points=pending;pending=[];fn(points);refresh();redraw();});
@@ -82,7 +82,7 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
     if(action.value!=='edit')id=null;
     refresh();redraw();
   });
-  material.addEventListener('change',()=>{if(material.value!=='road.dirt'&&['curve','edit'].includes(action.value)){action.value='paint';pending=[];id=null;drag=null;}refresh();redraw();});
+  material.addEventListener('change',()=>{if(resolveSculptSurfaceMaterial(material.value,getRegistry())?.kind!=='route'&&['curve','edit'].includes(action.value)){action.value='paint';pending=[];id=null;drag=null;}refresh();redraw();});
   function begin(point,radius){
     const selected=route();
     if(selected?.knots){
@@ -114,7 +114,7 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
   function finish(cancelled=false){
     if(!drag)return false;
     const knots=drag.knots;drag=null;
-    if(!cancelled&&route())commit(editSculptRoute(getSurface(),id,{knots}));refresh();redraw();return true;
+    if(!cancelled&&route())commit(editSculptRoute(getSurface(),id,{knots},getRegistry()));refresh();redraw();return true;
   }
   function draw(ctx,project,zoom){
     const selected=route(),editing=action.value==='edit';

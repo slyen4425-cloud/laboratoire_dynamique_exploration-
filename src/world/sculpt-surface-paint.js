@@ -25,18 +25,26 @@ export const SCULPT_SURFACE_MATERIALS=Object.freeze([
 ]);
 export const SCULPT_SURFACE_LIMIT=80;
 const lookup=new Map(SCULPT_SURFACE_MATERIALS.map(x=>[x.id,x]));
+export function resolveSculptSurfaceMaterial(id,registry=null){
+  if(lookup.has(id))return lookup.get(id);
+  if(typeof id!=='string'||!/^user\.material\.(surface|path)\./.test(id))return null;
+  const material=registry?.resolve(id);
+  if(!material||!['surface','path'].includes(material.kind)||!id.startsWith('user.material.'+material.kind+'.'))return null;
+  return Object.freeze({id,label:material.label,assetKind:material.kind,
+    kind:material.kind==='path'?'route':'zone',defaultTerrainFamilyId:material.terrainFamilyId});
+}
 /* Painter-authoring default only: the persisted WorldSurface remains the
    unique encounter authority. Unknown/indoor materials keep their author's
    semantic family rather than guessing from their picture. */
-export function sculptEncounterFamilyForMaterial(materialId){
-  return lookup.get(materialId)?.defaultTerrainFamilyId??null;
+export function sculptEncounterFamilyForMaterial(materialId,registry=null){
+  return resolveSculptSurfaceMaterial(materialId,registry)?.defaultTerrainFamilyId??null;
 }
 // Explicit opt-in repair for older maps with a painted texture and mismatched
 // semantic family. Preserves IDs, original geometry, collisions and save format.
-export function alignSculptSurfaceEncounterFamilies(raw){
-  const surface=normalizeSculptSurface(raw);
+export function alignSculptSurfaceEncounterFamilies(raw,registry=null){
+  const surface=normalizeSculptSurface(raw,registry);
   const reconcile=(items)=>items.map(feature=>{
-    const family=sculptEncounterFamilyForMaterial(feature.materialId);
+    const family=sculptEncounterFamilyForMaterial(feature.materialId,registry);
     return family&&family!==feature.terrainFamilyId
       ?{...feature,terrainFamilyId:family}
       :feature;
@@ -45,22 +53,27 @@ export function alignSculptSurfaceEncounterFamilies(raw){
   // snow world presets may legitimately use a legacy grass background material.
   return normalizeSculptSurface({...surface,
     routes:reconcile(surface.routes),zones:reconcile(surface.zones)
-  });
+  },registry);
 }
 
 const cleanPoints=(points)=>Array.isArray(points)?points.filter(p=>
   Number.isFinite(p?.x)&&Number.isFinite(p?.y)&&p.x>=0&&p.y>=0).slice(0,512)
   .map(p=>({x:p.x,y:p.y})):[];
 export const createSculptSurface=()=>normalizeWorldSurface({routes:[],zones:[],rivers:[]});
-export function normalizeSculptSurface(raw={}){
+export function normalizeSculptSurface(raw={},registry=null){
   const source=raw&&typeof raw==='object'?raw:{};
   if((source.rivers?.length??0)>0)throw Error('Peinture sculptable : rivière non prise en charge ici');
+  if(typeof source.baseMaterialId==='string'&&source.baseMaterialId.startsWith('user.material.')&&
+    resolveSculptSurfaceMaterial(source.baseMaterialId,registry)?.assetKind!=='surface')
+    throw Error('Peinture sculptable : texture de base personnelle manquante ou incompatible : '+source.baseMaterialId);
   const routes=Array.isArray(source.routes)?source.routes:[];
   const zones=Array.isArray(source.zones)?source.zones:[];
   if(routes.length+zones.length>SCULPT_SURFACE_LIMIT)
     throw Error('Trop de routes et zones pour ce laboratoire');
   for(const item of [...routes,...zones]){
-    const meta=lookup.get(item?.materialId);
+    const meta=resolveSculptSurfaceMaterial(item?.materialId,registry);
+    if(!meta&&typeof item?.materialId==='string'&&item.materialId.startsWith('user.material.'))
+      throw Error('Peinture sculptable : ressource graphique personnelle manquante : '+item.materialId);
     if(!meta || (routes.includes(item)?meta.kind!=='route':meta.kind!=='zone') ||
       (item.brushShape!==undefined&&!['round','square'].includes(item.brushShape)) ||
       !Number.isFinite(item.width)||item.width<6||item.width>480 ||
@@ -74,9 +87,9 @@ export function normalizeSculptSurface(raw={}){
 }
 export function appendSculptSurfaceStroke(raw,{
   materialId,terrainFamilyId=null,points=[],width=50,brushShape='round',border,knots
-}={}){
-  const surface=normalizeSculptSurface(raw);
-  const meta=lookup.get(materialId);
+}={},registry=null){
+  const surface=normalizeSculptSurface(raw,registry);
+  const meta=resolveSculptSurfaceMaterial(materialId,registry);
   const pts=cleanPoints(points);
   if(!meta||pts.length===0||
       surface.routes.length+surface.zones.length>=SCULPT_SURFACE_LIMIT)return surface;
@@ -93,7 +106,7 @@ export function appendSculptSurfaceStroke(raw,{
     // an explicit override remains possible for custom encounter biomes.
     terrainFamilyId:typeof terrainFamilyId==='string'&&terrainFamilyId.trim()
       ?terrainFamilyId.trim()
-      :(sculptEncounterFamilyForMaterial(materialId)??
+      :(sculptEncounterFamilyForMaterial(materialId,registry)??
         (meta.kind==='route'?'road':surface.baseTerrainFamilyId))
   };
   if(meta.kind==='route'){
@@ -101,7 +114,7 @@ export function appendSculptSurfaceStroke(raw,{
     if(border)feature.border=border;
     if(knots)feature.knots=knots;
   }
-  return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]});
+  return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]},registry);
 }
 function distanceToSegment(point,a,b){
   const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy;
@@ -109,8 +122,8 @@ function distanceToSegment(point,a,b){
     ((point.x-a.x)*dx+(point.y-a.y)*dy)/length));
   return Math.hypot(point.x-a.x-t*dx,point.y-a.y-t*dy);
 }
-export function removeSculptSurfaceAt(raw,point){
-  const surface=normalizeSculptSurface(raw);
+export function removeSculptSurfaceAt(raw,point,registry=null){
+  const surface=normalizeSculptSurface(raw,registry);
   let found=null;
   for(const kind of ['zones','routes']){
     for(const feature of surface[kind]){
@@ -122,12 +135,12 @@ export function removeSculptSurfaceAt(raw,point){
   }
   if(!found)return surface;
   return normalizeSculptSurface({...surface,
-    [found.kind]:surface[found.kind].filter(f=>f.id!==found.id)});
+    [found.kind]:surface[found.kind].filter(f=>f.id!==found.id)},registry);
 }
 
 // One transaction per gesture; no partial edit on overflow.
-export function eraseSculptSurfaceStroke(raw,{points,width,brushShape='round',kind='all'}){
-  const surface=normalizeSculptSurface(raw);
+export function eraseSculptSurfaceStroke(raw,{points,width,brushShape='round',kind='all'},registry=null){
+  const surface=normalizeSculptSurface(raw,registry);
   if(!Number.isFinite(width)||width<=0||!Array.isArray(points)||!points.length)return surface;
   const ids=new Set([...surface.routes,...surface.zones].map(f=>f.id));
   let serial=1;
@@ -144,9 +157,9 @@ export function eraseSculptSurfaceStroke(raw,{points,width,brushShape='round',ki
   }
   if(result.routes.length+result.zones.length>SCULPT_SURFACE_LIMIT)
     throw Error('Gomme : limite de tracés atteinte, aucune modification appliquée.');
-  return normalizeSculptSurface(result);
+  return normalizeSculptSurface(result,registry);
 }
-export function editSculptRoute(raw,id,patch){
-  const surface=normalizeSculptSurface(raw);
-  return normalizeSculptSurface({...surface,routes:surface.routes.map(r=>r.id===id?{...r,...patch,id:r.id}:r)});
+export function editSculptRoute(raw,id,patch,registry=null){
+  const surface=normalizeSculptSurface(raw,registry);
+  return normalizeSculptSurface({...surface,routes:surface.routes.map(r=>r.id===id?{...r,...patch,id:r.id}:r)},registry);
 }

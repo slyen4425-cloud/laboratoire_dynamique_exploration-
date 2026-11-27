@@ -96,7 +96,7 @@ test('editor binds one surface family selection with an explicit undoable repair
   const script=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(html,/id="surface-align-families"/);
   assert.match(script,/\$\('surface-material'\)\.addEventListener\('change'/);
-  assert.match(script,/sculptEncounterFamilyForMaterial\(\$\('surface-material'\)\.value\)/);
-  assert.match(script,/alignSculptSurfaceEncounterFamilies\(surface\)/);
+  assert.match(script,/sculptEncounterFamilyForMaterial\(\$\('surface-material'\)\.value,activeSculptMaterialRegistry\(\)\)/);
+  assert.match(script,/alignSculptSurfaceEncounterFamilies\(surface,activeSculptMaterialRegistry\(\)\)/);
   assert.match(script,/surfaceCommit\(aligned\)/);
 });

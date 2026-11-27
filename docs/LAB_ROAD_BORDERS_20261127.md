@@ -25,3 +25,6 @@ Demande auteur 27/11 : travailler uniquement sur cette branche, ne pas fusionner
 - npm run build:road-borders matérialise les 14 WebP depuis le ZIP source vérifié ; npm test le fait automatiquement. Le smoke Chromium construit aussi les ressources. Aucun PNG source/ZIP supplémentaire n'est livré ; l'archive originale demeure dans Git. L'intégration PWA ultérieure devra appeler ce build avant copie et exclure le ZIP.
 - Les portions décoratives hors carte restent sur le contrat historique ; import utilisateur et presets à coordonner avec le propriétaire de la bibliothèque (#564). La limite 80 tracés est conservée en attendant un test de charge et le lot de sauvegarde #561. Les 32 nœuds/512 points sont bornés.
 - Tests du modèle, de découpe, des courbes et des croisements ; smoke navigateur ajouté pour pixels, chargement et sauvegarde. CI exacte et validation mobile encore nécessaires. Pas de promotion main/public/PWA sans autorisation.
+
+## Autorisation de promotion du 27/11
+CI initiale a3d6ba5 : 1508 tests réussis, 3 jobs GREEN (46020593997). Auteur autorise explicitement la fusion Exploration main pour recette. Réconciliation avec main 5f684c4 (sauvegardes #561, bibliothèque #564), conservation du registre des matériaux personnels. Nouvelle CI nécessaire avant fusion. Pas de raccord PWA.

@@ -106,6 +106,6 @@ test('one level button pair in current editor, V80 compatibility preserved',()=>
 test('custom family type and sole base material control are saved canonically',()=>{
   assert.match(html,/id="sculpt-family-name"[^>]+placeholder="Ex\. Marais/);
   for(const kind of ['terrain','route','river'])assert.match(html,new RegExp('<option value="'+kind+'">'));
-  assert.match(script,/surfaceCommit\(normalizeSculptSurface\(\{\.\.\.surface,baseMaterialId:next\}\)\)/);
+  assert.match(script,/surfaceCommit\(normalizeSculptSurface\(\{\.\.\.surface,baseMaterialId:next\},activeSculptMaterialRegistry\(\)\)\)/);
   assert.equal([...html.matchAll(/id="material"/g)].length,1);
 });

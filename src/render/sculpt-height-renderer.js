@@ -573,7 +573,7 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   const drawBorders=roadBorderCellPainter(ctx,terrain,tile,surface.routes??[],paintImages);
   for(const feature of features){
     const img=paintImages.get(feature.materialId);
-    if(!img?.naturalWidth)continue;
+    if(!(img?.naturalWidth??img?.width))continue;
     if(!patterns.has(feature.materialId)){
       const pattern=ctx.createPattern(img,'repeat');
       if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')

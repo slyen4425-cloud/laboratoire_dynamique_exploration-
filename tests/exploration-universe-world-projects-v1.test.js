@@ -65,3 +65,24 @@ test('two projects use separate native WorldAssembler drafts and can add maps wi
  assert.equal(JSON.parse(s.getItem(scopeB)).id,B.id);
  assert.equal(s.getItem('gensrpg.world-assembler.document.v1'),null);
 });
+
+import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
+test('confirmed shared world import is additive, idempotent, scoped and never activates or overwrites a draft',()=>{
+ const s=store();s.removeItem('gensrpg.world-assembler.document.v1');let i=0;
+ const p=createExplorationUniverseWorldProjectsV1({storage:s,makeId:()=>String(++i).padStart(8,'0')});
+ const A=p.createBlank(a),B=p.createBlank(b),before=s.snapshot();
+ const host=createBlankWorldBuilderDraft({id:'world-host1234'});
+ assert.throws(()=>p.importShared(a,host),/confirmation/);
+ assert.deepEqual(s.snapshot(),before);
+ assert.equal(p.importShared(a,host,{confirmed:true}).id,host.id);
+ assert.equal(p.list(a).length,2);assert.equal(p.list(b).length,1);
+ const after=s.snapshot();
+ assert.equal(p.importShared(a,host,{confirmed:true}).id,host.id);
+ assert.deepEqual(s.snapshot(),after);
+ assert.throws(()=>p.importShared(b,host,{confirmed:true}),/autre univers/);
+ const changed={...host,areas:host.areas.map(area=>({...area,label:'Différent'}))};
+ assert.throws(()=>p.importShared(a,changed,{confirmed:true}),/existe déjà/);
+ assert.deepEqual(s.snapshot(),after);
+ assert.equal(serializeWorldBuilderDraft(p.load(a,host.id)),serializeWorldBuilderDraft(host));
+ for(const [project,doc] of [[a,A],[b,B]])assert.equal(s.getItem('gensrpg.exploration.universe.workspace.v1:'+project+':gensrpg.world-assembler.document.v1'),before['gensrpg.exploration.universe.workspace.v1:'+project+':gensrpg.world-assembler.document.v1']);
+});

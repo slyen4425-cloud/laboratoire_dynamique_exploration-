@@ -48,10 +48,7 @@ import {
   readWorldBuilderTestSession,
   saveWorldBuilderTestHandoff
 } from './world-builder-test-handoff.js?rev=surface-traversal-replay-v1';
-import {
-  readWorldAssemblerHandoff,
-  saveWorldAssemblerHandoff
-} from './world-assembler-handoff.js';
+import {openWorldDocumentReleaseAccessV1} from '../storage/world-document-release-access-v1.js';
 import {
   clampBuilderZoom,
   computeBuilderView,
@@ -558,9 +555,10 @@ function updateWorldObjectOverrides(
 
 const builderParams = new URLSearchParams(window.location.search);
 const worldAssemblerMode = builderParams.get('worldAssembler') === '1';
-const assemblerSession = worldAssemblerMode
-  ? readWorldAssemblerHandoff(window.sessionStorage)
-  : null;
+const assemblerUniverseId=builderParams.get('universe');
+const assemblerAccess=worldAssemblerMode?await openWorldDocumentReleaseAccessV1({universeId:assemblerUniverseId}):null;
+const assemblerSession = worldAssemblerMode?await assemblerAccess.readHandoff():null;
+let assemblerExpectedDraft=assemblerAccess?.durable?assemblerSession?.document:null;
 if(worldAssemblerMode&&!assemblerSession)
   throw Error('World Builder : transfert du monde introuvable ou expiré');
 const isReliefCanyonPilot = builderParams.get('demo') === 'relief-canyon-v1';
@@ -7554,16 +7552,18 @@ addEventListener(
 $('world-assembler-back').hidden=!worldAssemblerMode;
 $('world-assembler-open').hidden=worldAssemblerMode;
 if(worldAssemblerMode){
-  $('world-assembler-back').addEventListener('click',()=>{
+  $('world-assembler-back').addEventListener('click',async()=>{
+    const back=$('world-assembler-back');if(back.disabled)return;back.disabled=true;
     try{
       // The existing detailed Builder validates its authoritative draft first;
       // handoff is a transient canonical WorldDocument, not a second save.
       const document=importWorldBuilderDocument(serializeWorldBuilderDraft(draft));
-      saveWorldAssemblerHandoff(window.sessionStorage,document,selectedAreaId);
-      window.location.assign('./world-assembler.html?return=1');
+      if(assemblerAccess.durable){await assemblerAccess.saveDraft(document,assemblerExpectedDraft);assemblerExpectedDraft=document;}
+      await assemblerAccess.writeHandoff(document,selectedAreaId);
+      window.location.assign('./world-assembler.html?return=1'+(assemblerUniverseId?'&universe='+encodeURIComponent(assemblerUniverseId):''));
     }catch(error){
       setStatus('Retour au monde bloqué : '+error.message,true);
-    }
+    }finally{back.disabled=false;}
   });
 }
 refreshControls();

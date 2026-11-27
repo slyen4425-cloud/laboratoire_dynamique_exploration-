@@ -13,7 +13,7 @@ const SCHEMA=INDEX;
 const project=/^unv_[a-z0-9-]{8,80}$/;
 const worldId=/^world-[a-z0-9-]{8,80}$/;
 const isProject=id=>typeof id==='string'&&project.test(id);
-function validate(index){
+export function validateExplorationUniverseWorldIndexV1(index){
  if(!index||typeof index!=='object'||Array.isArray(index)||
   Object.keys(index).sort().join(',')!=='activeWorldId,projects,schema,version'||
   index.schema!==SCHEMA||index.version!==1||!Array.isArray(index.projects)||
@@ -40,9 +40,9 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
   if(raw===null)return {schema:SCHEMA,version:1,projects:[],activeWorldId:null};
   let value;
   try{value=JSON.parse(raw)}catch{throw new Error('Index des projets WorldDocument illisible; conservation intégrale');}
-  return validate(value);
+  return validateExplorationUniverseWorldIndexV1(value);
  }
- const write=index=>{storage.setItem(INDEX,JSON.stringify(validate(index)));return index};
+ const write=index=>{storage.setItem(INDEX,JSON.stringify(validateExplorationUniverseWorldIndexV1(index)));return index};
  const entry=(id,index=read())=>{
   if(!isProject(id))throw new TypeError('Identifiant de projet généré requis');
   return index.projects.find(p=>p.id===id)??null;
@@ -129,5 +129,20 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
   const index=read();write({...index,activeWorldId:world});
   return document;
  }
- return Object.freeze({list,load:owned,createBlank,addBlank,copy,activate,save});
+ // Explicit multiplayer import only. Preserve the host identity and canonical
+ // bytes; never alias a WorldDocument already owned by another universe.
+ function importShared(id,document,{confirmed=false}={}){
+  if(confirmed!==true)throw Error('Import du monde du salon : confirmation requise');
+  const index=read(),p=entry(id,index);
+  if(!p||!worldId.test(document?.id??''))throw Error('Univers ou identité du monde reçu incompatible');
+  const world=document.id;
+  const other=index.projects.find(x=>x.id!==id&&x.worldIds.includes(world));
+  if(other)throw Error('WorldDocument déjà attribué à un autre univers');
+  // Native archive.save validates and refuses divergent existing bytes.
+  // Under IndexedDB archive and project index are in the same transaction.
+  archive.save(document,{replace:false});
+  if(!p.worldIds.includes(world))register(id,world,{extend:true});
+  return owned(id,world);
+ }
+ return Object.freeze({list,load:owned,createBlank,addBlank,copy,activate,save,importShared});
 }

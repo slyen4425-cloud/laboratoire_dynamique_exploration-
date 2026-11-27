@@ -231,6 +231,29 @@ body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset
 #object-palette select,#waypoints-palette select{padding:7px;min-height:36px}
 #object-palette input[type=range]{accent-color:#7ee0c5}
 #object-count{color:#a7f3db}
+#object-legacy-selection[hidden]{display:none!important}
+#graphic-library-import{border:1px solid #4f8980;border-radius:9px;padding:6px;min-width:0;overflow-wrap:anywhere}
+#graphic-library-import summary{cursor:pointer;padding:7px 2px;font-weight:700}
+#graphic-library-import label{display:block;margin:5px 0}
+#graphic-library-import input,#graphic-library-import select,#graphic-library-import button{max-width:100%;min-width:0;box-sizing:border-box}
+#graphic-library-import canvas{max-width:100%;height:auto;background:repeating-conic-gradient(#233745 0% 25%,#425765 0% 50%) 0 0/16px 16px}
+#graphic-library-import output{display:block;overflow-wrap:anywhere}
+#object-library-picker{border:1px solid #4f8980;border-radius:9px;padding:6px;min-width:0;background:#173840ab}
+#object-library-picker summary{cursor:pointer;overflow-wrap:anywhere;font-weight:700;padding:7px 2px;min-height:28px}
+#object-library-picker>summary{color:#b8f3db}
+#object-library-search{box-sizing:border-box;width:100%;min-width:0;padding:7px;border-radius:6px}
+#object-library-tree{display:grid;gap:5px;margin-top:6px}
+#object-library-tree details{border:1px solid #49716c;border-radius:7px;padding:3px 5px;min-width:0}
+#object-library-tree details details{margin:3px 0 3px 6px}
+#object-library-tree button{width:100%;text-align:left;white-space:normal;overflow-wrap:anywhere;min-height:38px;margin:2px 0;padding:5px 7px}
+#object-library-tree button[aria-pressed="true"]{border-color:#a7f3db;background:#32665b;color:#fff}
+#object-library-selected{font-size:.72rem;color:#e3f8ee}
+#object-library-tree p{margin:4px}
+#object-library-layout{border-top:1px solid #4f8980;margin-top:8px;padding-top:6px}
+#object-library-layout label{margin:5px 0}
+#object-library-layout input,#object-library-layout select{box-sizing:border-box;min-width:0;width:100%}
+#object-library-layout button{width:100%;min-height:36px;margin:2px 0;white-space:normal}
+#object-library-layout output{display:block;color:#b8f3db;overflow-wrap:anywhere;margin-top:4px}
 
 /* The one canonical WorldDocument waypoint inspector has moved out of Objets. */
 #waypoints-palette details{border:1px solid #4c817a;border-radius:8px;padding:6px}
@@ -1291,6 +1314,15 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
   <strong id="world-area-current-name">Zone</strong>
   <small id="world-area-current-kind">WorldArea 2,5D</small>
   <button id="world-area-return" type="button">💾 Enregistrer · Retour au World Builder</button>
+  <output id="world-storage-status" role="status" aria-live="polite" hidden>Carte ouverte</output>
+  <details id="world-external-backup-panel">
+ <summary>💾 Copies de secours sur disque</summary>
+ <small>Copies du monde courant, toutes les 5 minutes si modifié, pendant l'édition. Ni médias ni parties inclus.</small>
+ <button id="world-external-backup-folder" type="button">Choisir un dossier PC</button>
+ <button id="world-external-backup-now" type="button" disabled>Copier maintenant / réautoriser</button>
+ <button id="world-external-backup-stop" type="button" disabled>Désactiver</button>
+ <output id="world-external-backup-status" role="status" aria-live="polite">Copies externes désactivées</output>
+</details>
   <button id="world-area-return-house" type="button" hidden>🏠 Retour à la maison sur la carte 2,5D</button>
   <label>1. Vers quelle carte ?
    <select id="world-area-passages-target" aria-label="Choisir la zone de destination"></select>
@@ -1590,6 +1622,26 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
  <div id="object-controls">
  <strong>🌳 Objets et acteurs de carte</strong>
  <button type="button" id="actor-open">👥 Acteurs de map</button>
+ <details id="graphic-library-import"><summary>Importer une ressource graphique</summary><div id="graphic-library-import-form"></div></details>
+ <details id="object-library-picker"><summary>Bibliothèque d’objets · <span id="object-library-selected">Choisir</span></summary>
+  <label>Rechercher <input id="object-library-search" type="search" placeholder="Ex. maison neige, tonneau…" autocomplete="off"></label>
+  <div id="object-library-tree" aria-label="Catégories et sous-catégories d’objets"></div>
+  <details id="object-library-layout"><summary>Organiser mes catégories</summary>
+   <label>Catégorie <select data-library-layout="category"></select></label>
+   <label>Nom <input data-library-layout="name" maxlength="80" placeholder="Ex. Mon village"></label>
+   <label>Parent <select data-library-layout="parent"></select></label>
+   <button type="button" data-library-layout="add">Créer une catégorie</button>
+   <button type="button" data-library-layout="rename">Renommer</button>
+   <button type="button" data-library-layout="move">Déplacer</button>
+   <div class="object-actions"><button type="button" data-library-layout="up">↑ Monter</button><button type="button" data-library-layout="down">↓ Descendre</button></div>
+   <button type="button" data-library-layout="remove">Retirer le dossier vide</button>
+   <label>Ranger le modèle sélectionné dans <select data-library-layout="target"></select></label>
+   <button type="button" data-library-layout="assign">Appliquer le classement</button>
+   <button type="button" data-library-layout="reload">Recharger le classement</button>
+   <output data-library-layout="status" role="status" aria-live="polite"></output>
+  </details>
+ </details>
+ <div id="object-legacy-selection">
  <label>Catégorie
   <select id="object-category" aria-label="Catégorie d’objets">
    <option value="building">Bâtiments</option><option value="tree">Arbres</option>
@@ -1597,6 +1649,7 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
   </select>
  </label>
  <label>Visuel existant <select id="object-definition" aria-label="Objet à placer"></select></label>
+ </div>
  <label id="object-variant-wrap" hidden>Vue / orientation de l’objet
   <select id="object-variant" aria-label="Vue de la maison, avant côté ou arrière"></select>
  </label>
@@ -2106,6 +2159,6 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126-object-library-tree-v1-personal-layout-v1-graphic-import-storage-v1-local-object-runtime-v1-local-texture-runtime-v1"></script>
 </body>
 </html>

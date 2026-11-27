@@ -31,7 +31,8 @@ if(!chromePath)throw Error('Chromium unavailable');
 await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});
 const profile=await mkdtemp(resolve(tmpdir(),'exploration-sculpt-smoke-'));
 let chrome,socket;
-const sleep=(ms)=>new Promise(ok=>setTimeout(ok,ms));
+let fatalCdpError=null;
+const sleep=(ms)=>new Promise((ok,fail)=>setTimeout(()=>fatalCdpError?fail(fatalCdpError):ok(),ms));
 try{
   const url='http://127.0.0.1:'+server.address().port+
     '/sculpt-lab.html?rev=sculpt-terrain-pilot-r1';
@@ -62,7 +63,8 @@ try{
     const id=++seq;
     const watchdog=setTimeout(()=>{
       pending.delete(id);
-      fail(Error('Chromium Runtime.evaluate did not return within 60s: '+String(expression).slice(0,180)));
+      fatalCdpError=Error('Chromium Runtime.evaluate did not return within 60s: '+String(expression).slice(0,300));
+      console.error(fatalCdpError.message);fail(fatalCdpError);
     },60000);
     pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
     socket.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression,returnByValue:true,awaitPromise:true}}));
@@ -136,7 +138,8 @@ try{
     const id=++seq;
     const watchdog=setTimeout(()=>{
       pending.delete(id);
-      fail(Error('Chromium CDP '+method+' did not return within 60s'));
+      fatalCdpError=Error('Chromium CDP '+method+' did not return within 60s');
+      console.error(fatalCdpError.message);fail(fatalCdpError);
     },60000);
     pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
     socket.send(JSON.stringify({id,method,params}));
@@ -847,6 +850,56 @@ try{
     throw Error('V18 real material image/pixel or data-isolation regression: '+JSON.stringify(visualsV18));
   console.log('V18 native visual palette real pixels:',JSON.stringify(visualsV18));
   await run("const pick=document.querySelector('#water-material');pick.value='water.clear_blue';pick.dispatchEvent(new Event('change',{bubbles:true}));");
+
+  // Personal categories use the real IndexedDB metadata owner and the same
+  // selection controls as native placements. Do not alter any scene IDs.
+  const libraryLayout=await run(`(async()=>{
+    document.querySelector('#mode-objects').click();
+    const picker=document.querySelector('#object-library-picker');
+    picker.open=true;
+    const tree=document.querySelector('#object-library-tree');
+    const manager=document.querySelector('#object-library-layout');
+    manager.open=true;
+    const q=id=>manager.querySelector('[data-library-layout="'+id+'"]');
+    const until=async check=>{
+      for(let i=0;i<100;i++){if(check())return;await new Promise(r=>setTimeout(r,30));}
+      throw Error('Library control did not settle: '+q('status').textContent);
+    };
+    await until(()=>!q('add').disabled);
+    const fixture='objectdef.building.house.blue_cottage.01';
+    const native=tree.querySelector('[data-object-definition="'+fixture+'"]');
+    if(!native)throw Error('Native fixture missing from tree');
+    native.click();
+    picker.open=true;
+    q('category').value='';q('category').dispatchEvent(new Event('change'));
+    q('name').value='Smoke village';q('add').click();
+    await until(()=>!q('add').disabled&&q('category').value);
+    const village=q('category').value;
+    q('category').value='';q('category').dispatchEvent(new Event('change'));
+    q('parent').value=village;q('name').value='Neige';q('add').click();
+    await until(()=>!q('add').disabled&&q('category').value&&q('category').value!==village);
+    const snow=q('category').value;
+    q('target').value=snow;q('assign').click();
+    await until(()=>!q('assign').disabled&&tree.querySelector('[data-personal-category="'+snow+'"] [data-object-definition="'+fixture+'"]'));
+    const store=(await import('./src/storage/object-library-layout-store-v1.js')).createObjectLibraryLayoutStore();
+    const saved=await store.load();
+    const assigned=saved.layout.assignments[fixture]===snow;
+    q('name').value='Hiver';q('rename').click();
+    await until(()=>!q('rename').disabled&&tree.querySelector('[data-personal-category="'+snow+'"] summary').textContent.includes('Hiver'));
+    const identity=document.querySelector('#object-definition').value===fixture;
+    const count=tree.querySelectorAll('[data-object-definition="'+fixture+'"]').length;
+    q('target').value='';q('assign').click();
+    await until(()=>!q('assign').disabled&&!tree.querySelector('[data-personal-category="'+snow+'"] [data-object-definition="'+fixture+'"]'));
+    q('remove').click();await until(()=>!q('add').disabled&&!tree.querySelector('[data-personal-category="'+snow+'"]'));
+    q('category').value=village;q('category').dispatchEvent(new Event('change'));q('remove').click();
+    await until(()=>!q('add').disabled&&!tree.querySelector('[data-personal-category="'+village+'"]'));
+    manager.open=false;picker.open=false;
+    if(window.__sculptObjectsProbe().active)document.querySelector('#mode-objects').click();
+    return {assigned,identity,count,cleaned:(await store.load()).layout.categories.length===0};
+  })()`);
+  if(!libraryLayout.assigned||!libraryLayout.identity||libraryLayout.count!==1||!libraryLayout.cleaned)
+    throw Error('Personal library layout regression: '+JSON.stringify(libraryLayout));
+  console.log('Personal object library IndexedDB + native selection:',JSON.stringify(libraryLayout));
 
   // V20: REAL canvas pointer places a native catalog WorldObject, then undo,
   // redo, removal, scene export/import and native asset loading are exercised.
@@ -3939,7 +3992,9 @@ try{
     document.querySelector('#area-add-form').requestSubmit();
     const result=window.__worldAssemblerProbe();
     const dungeonId=result.areaIds.at(-1);
-    const saved=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    for(let i=0;i<150&&!window.__worldAssemblerProbe?.().saved;i++)await new Promise(resolve=>setTimeout(resolve,100));
+    if(!window.__worldAssemblerProbe?.().saved)throw Error('WorldDocument commit not acknowledged');
+    const saved=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     const dungeon=saved.areas.find(a=>a.id===dungeonId);
     return {...result,dungeonId,siteKind:dungeon?.siteKind,
       host: saved.portals.find(p=>p.targetAreaId===dungeonId)?.sourceAreaId,
@@ -4218,6 +4273,7 @@ try{
     return reached;
   };
   const stagedWorldPortal=await placePortalAtSpawnViaObjects('grotte-du-nord');
+  console.log('IndexedDB portal gate: host marker placed',stagedWorldPortal.portal.id);
   const placedWorldPortal=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe(),
@@ -4227,7 +4283,12 @@ try{
       placedWorldPortal.sculpt.traverseVisible)
     throw Error('Automatic host Portal must not show an Enter action: '+
       JSON.stringify({stagedWorldPortal,placedWorldPortal}));
+  console.log('IndexedDB portal gate: Tester enabled, traversing host');
   const enteredDungeon=await walkThroughPortal('grotte-du-nord','Host to dungeon',stagedWorldPortal.portal.id);
+  const savedHostGate=await run(`(async()=>{const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();return {durable:access.durable,trigger:(await access.readDraft()).portals.find(p=>p.id===${JSON.stringify(stagedWorldPortal.portal.id)})?.trigger};})()`);
+  if(!savedHostGate.durable||JSON.stringify(savedHostGate.trigger)!==JSON.stringify(stagedWorldPortal.portal.trigger))
+    throw Error('Host portal mounted before its canonical IndexedDB commit: '+JSON.stringify(savedHostGate));
+  console.log('IndexedDB portal gate: entered dungeon after confirmed host save');
   if(enteredDungeon.world.siteKind!=='dungeon'||
      enteredDungeon.world.terrainWidth!==18||!enteredDungeon.nav.player)
     throw Error('Canonical automatic Portal did not mount dungeon: '+JSON.stringify(enteredDungeon));
@@ -4239,7 +4300,12 @@ try{
   if(!placedDungeonReturn.nav.enabled||placedDungeonReturn.sculpt.traverseVisible)
     throw Error('Dungeon return auto Portal should not need Enter: '+
       JSON.stringify({stagedDungeonReturn,placedDungeonReturn}));
+  console.log('IndexedDB portal gate: dungeon return marker placed, traversing');
   const backOutside=await walkThroughPortal('area-principale','Dungeon to host',stagedDungeonReturn.portal.id);
+  const savedReturnGate=await run(`(async()=>{const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();return {durable:access.durable,trigger:(await access.readDraft()).portals.find(p=>p.id===${JSON.stringify(stagedDungeonReturn.portal.id)})?.trigger};})()`);
+  if(!savedReturnGate.durable||JSON.stringify(savedReturnGate.trigger)!==JSON.stringify(stagedDungeonReturn.portal.trigger))
+    throw Error('Dungeon portal mounted before its canonical IndexedDB commit: '+JSON.stringify(savedReturnGate));
+  console.log('IndexedDB portal gate: returned after confirmed dungeon save');
   if(backOutside.world.areaId!=='area-principale')
     throw Error('Dungeon -> host auto Portal failed: '+JSON.stringify(backOutside));
   await run("document.querySelector('#world-area-return').click();true");
@@ -4249,7 +4315,7 @@ try{
     try{returned2p5d=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();
       if(!probe)return null;
-      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       return {...probe,dungeon:doc.areas.find(a=>a.id==='grotte-du-nord'),
         exterior:doc.areas.find(a=>a.id==='area-principale')};
     })()`);}catch{}
@@ -4302,13 +4368,44 @@ try{
   // The reporter's real failure: the header disappears in immersive mode,
   // so the ordinary Monde tab is not reachable. Reload first to prove that
   // handoff consumption does not strand the selected WorldArea either.
+  // A new WorldArea gets its native terrain materialized on first mount.
+  // Wait for that exact autosave acknowledgement before testing reload.
+  // Never accept a beforeunload warning that could discard pending changes.
+  let initialSave=null;
+  for(let i=0;i<150;i++){
+    initialSave=await run(`(async()=>{
+      const probe=window.__sculptWorldProbe();
+      const status=document.querySelector('#world-storage-status')?.textContent;
+      const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+      const doc=await access.readDraft();
+      const area=doc?.areas.find(a=>a.id===probe.areaId);
+      return {status,durable:access.durable,pending:probe.storagePending,areaId:area?.id,width:area?.sculptTerrain?.width,height:area?.sculptTerrain?.height};
+    })()`);
+    if(initialSave.durable&&!initialSave.pending&&initialSave.status?.includes('Carte sauvegardée')&&initialSave.width===40&&initialSave.height===31)break;
+    await sleep(100);
+  }
+  if(!initialSave?.durable||initialSave.pending||!initialSave.status?.includes('Carte sauvegardée')||initialSave.width!==40||initialSave.height!==31)
+    throw Error('Initial mounted map not committed before reload: '+JSON.stringify(initialSave));
+  console.log('IndexedDB reload gate: initial terrain committed',JSON.stringify(initialSave));
+  let reloadWarning=null;
+  const observeReloadWarning=event=>{
+    const packet=JSON.parse(event.data);
+    if(packet.method!=='Page.javascriptDialogOpening'||packet.params?.type!=='beforeunload')return;
+    reloadWarning=packet.params.message||'beforeunload';
+    // Reject the departure; a warning here is a regression, not consent.
+    void send('Page.handleJavaScriptDialog',{accept:false}).catch(error=>{fatalCdpError=error;});
+  };
+  socket.addEventListener('message',observeReloadWarning);
   await send('Page.reload',{ignoreCache:true});
   let reloadedMap=null;
   for(let i=0;i<90;i++){
     await sleep(110);
     try{reloadedMap=await run("window.__sculptWorldProbe?.()??null");}catch{}
+    if(reloadWarning)break;
     if(reloadedMap?.areaId)break;
   }
+  socket.removeEventListener('message',observeReloadWarning);
+  if(reloadWarning)throw Error('Committed map unexpectedly blocked reload: '+reloadWarning);
   if(reloadedMap?.areaId!==unifiedMap.areaId||reloadedMap.terrainWidth!==40)
     throw Error('Sculpt WorldArea lost after refresh; session handoff is one-shot: '+
       JSON.stringify(reloadedMap));
@@ -4336,7 +4433,7 @@ try{
     await sleep(110);
     try{unifiedBack=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();if(!probe)return null;
-      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       return {...probe,created:doc.areas.find(a=>a.label==='Grande clairière')};
     })()`);}catch{}
     if(unifiedBack)break;
@@ -4351,11 +4448,11 @@ try{
   // then enter the old URL to verify the tactile return after refresh.
   const legacyId=unifiedBack.selectedAreaId;
   const legacySaved=await run(`(async()=>{
-    const key='gensrpg.world-assembler.document.v1';
-    const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+    const previous=await access.readDraft(),draft=structuredClone(previous);
     const target=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     target.width=2400;target.height=1600;delete target.sculptTerrain;
-    (await import('./src/builder/world-assembler-handoff.js')).saveWorldAssemblerDraft(localStorage,draft);
+    await access.saveDraft(draft,previous);
     return {id:target.id,width:target.width,height:target.height};
   })()`);
   if(legacySaved.width!==2400||legacySaved.height!==1600)
@@ -4399,7 +4496,7 @@ try{
     try{compatibleMap=await run(`(async()=>{
       const probe=window.__sculptWorldProbe?.();
       if(!probe)return null;
-      const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const world=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       const legacy=world.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {probe,legacyWidth:legacy?.width,legacyHeight:legacy?.height,
         initialAreaId:world.initialAreaId,path:location.pathname};
@@ -4419,7 +4516,36 @@ try{
   // tactile return rather than silently opening some other Area.
   const legacyUrl=new URL('/sculpt-lab.html?worldAssembler=1&areaId='+
     encodeURIComponent(legacyId),url).href;
+  // The compatible area was just mounted. Its initial native snapshot is
+  // asynchronous, unlike the old localStorage implementation. Wait for the
+  // same owner's actual acknowledgement before leaving through a direct URL.
+  let compatibleSaved=null;
+  for(let i=0;i<150;i++){
+    compatibleSaved=await run(`(async()=>{
+      const probe=window.__sculptWorldProbe();
+      const status=document.querySelector('#world-storage-status')?.textContent;
+      const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+      const doc=await access.readDraft();
+      const area=doc?.areas.find(a=>a.id===probe.areaId);
+      const legacy=doc?.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+      return {status,durable:access.durable,pending:probe.storagePending,id:area?.id,
+        width:area?.sculptTerrain?.width,height:area?.sculptTerrain?.height,
+        legacyWidth:legacy?.width,legacyHeight:legacy?.height};
+    })()`);
+    if(compatibleSaved.durable&&!compatibleSaved.pending&&compatibleSaved.status?.includes('Carte sauvegardée')&&
+       compatibleSaved.width===compatibleMap.probe.terrainWidth&&compatibleSaved.height===compatibleMap.probe.terrainHeight)break;
+    await sleep(100);
+  }
+  if(!compatibleSaved?.durable||compatibleSaved.pending||!compatibleSaved.status?.includes('Carte sauvegardée')||
+     compatibleSaved.id!==compatibleMap.probe.areaId||compatibleSaved.width!==compatibleMap.probe.terrainWidth||
+     compatibleSaved.height!==compatibleMap.probe.terrainHeight||compatibleSaved.legacyWidth!==2400||compatibleSaved.legacyHeight!==1600)
+    throw Error('Compatible map not committed before direct historical navigation: '+JSON.stringify(compatibleSaved));
+  console.log('IndexedDB legacy gate: compatible map saved before direct URL',JSON.stringify(compatibleSaved));
+  reloadWarning=null;
+  socket.addEventListener('message',observeReloadWarning);
   await send('Page.navigate',{url:legacyUrl});
+  socket.removeEventListener('message',observeReloadWarning);
+  if(reloadWarning)throw Error('Committed compatible map unexpectedly blocked navigation: '+reloadWarning);
   let legacyMap=null;
   for(let i=0;i<90;i++){
     await sleep(110);
@@ -4449,7 +4575,7 @@ try{
     await sleep(110);
     try{legacyReturn=await run(`(async()=>{
       const p=window.__worldAssemblerProbe?.();if(!p)return null;
-      const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+      const draft=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
       const area=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {selected:p.selectedAreaId,area,portalCount:p.portalCount};
     })()`);}catch{}
@@ -4481,7 +4607,9 @@ try{
   await repairClick;
   socket.removeEventListener('message',observeRepairDialog);
   const repairedRoute=await run(`(async()=>{
-    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    for(let i=0;i<150&&!window.__worldAssemblerProbe?.().saved;i++)await new Promise(resolve=>setTimeout(resolve,100));
+    if(!window.__worldAssemblerProbe?.().saved)throw Error('WorldDocument commit not acknowledged');
+    const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     const first=doc.areas.find(a=>a.id===doc.initialAreaId);
     const outgoing=doc.portals.filter(p=>p.sourceAreaId===doc.initialAreaId);
@@ -4508,7 +4636,9 @@ try{
     document.querySelector('.world-preset-details').open=true;
     card.closest('.map-preset-shelf').open=true;card.click();
     document.querySelector('#world-map-preset-create').click();
-    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
+    for(let i=0;i<150&&!window.__worldAssemblerProbe?.().saved;i++)await new Promise(resolve=>setTimeout(resolve,100));
+    if(!window.__worldAssemblerProbe?.().saved)throw Error('WorldDocument commit not acknowledged');
+    const doc=(await (await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1()).readDraft());
     const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');
     const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
       p.trigger?.kind==='object-anchor');
@@ -4571,6 +4701,27 @@ try{
         returned2p5d.dungeon.sculptTerrain.height,returned:true}));
   if(legacyEncounterConsentError)throw Error(legacyEncounterConsentError);
   console.log('Legacy encounter setup: native Chromium confirmations handled without random battles in movement fixture:',legacyEncounterConsentCount);
+  // The prefab check ends inside an authored room in Tester. The next test
+  // deliberately uses a disposable standalone map; first leave through the
+  // real durable save-and-return action, never abandon the authored world.
+  await run("document.querySelector('#world-area-return').click();true");
+  let prefabReturned=null;
+  for(let i=0;i<150;i++){
+    await sleep(100);
+    try{prefabReturned=await run(`(async()=>{
+      const probe=window.__worldAssemblerProbe?.();if(!probe?.saved)return null;
+      const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+      const doc=await access.readDraft();
+      const room=doc?.areas.find(a=>a.id===${JSON.stringify(prefabRoom.areaId)});
+      return {durable:access.durable,saved:probe.saved,roomId:room?.id,
+        width:room?.sculptTerrain?.width,height:room?.sculptTerrain?.height,wallCount:room?.walls.length};
+    })()`);}catch{}
+    if(prefabReturned)break;
+  }
+  if(!prefabReturned?.durable||!prefabReturned.saved||prefabReturned.roomId!==prefabRoom.areaId||
+     prefabReturned.width!==18||prefabReturned.height!==14||prefabReturned.wallCount<2)
+    throw Error('Prefab room not durably saved before standalone water test: '+JSON.stringify(prefabReturned));
+  console.log('IndexedDB prefab gate: saved and returned before disposable water passage test',JSON.stringify(prefabReturned));
   await checkSculptWaterPassage({send,run,sleep,url});
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,

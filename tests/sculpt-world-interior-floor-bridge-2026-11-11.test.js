@@ -12,7 +12,7 @@ test('WorldArea interior surfaces are authored by official Sculpt 2.5D, not a se
  assert.match(js,/saveSculptWorldArea\(\{/);
  assert.match(js,/\.\.\.sculptWorldDraft,encounterConfig:sculptEncounterConfig/,
    'The first WorldArea save validation must receive live encounter edits');
- assert.match(js,/\},sculptWorldAreaId,captureSculptArea\(\)\)/);
+ assert.match(js,/\},sculptWorldAreaId,captureSculptArea\(\),sculptGraphicContext\(\)\)/);
 });
 test('native browser floor smoke uses real pointer and never boots old Builder',()=>{
  const source=read('scripts/smoke-interior-floor-brush.mjs');

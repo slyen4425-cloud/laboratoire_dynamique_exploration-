@@ -79,7 +79,9 @@ test('invalid building never creates a spare interior, and original source stays
 test('World Builder editing uses one canonical document; standalone Sculpt remains isolated',()=>{
  assert.match(source,/linkSculptWorldBuildingInteriorV1\(sculptWorldDraft/);
  assert.match(source,/commitCurrentSculptWorldArea\(\)/);
- assert.match(source,/saveWorldAssemblerDraft\(worldStorage,sculptWorldDraft\)/);
+ assert.match(source,/await openWorldDocumentReleaseAccessV1\(/);
+ assert.match(source,/commit:\(document,expected\)=>access\.saveDraft\(document,expected\)/);
+ assert.match(source,/await save\(persistCurrentWorldSculpt\(\)\)/);
   assert.match(source,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
  assert.match(source,/mountWorldSculptArea\(link\.targetAreaId,scene\)/);
  assert.match(source,/if\(sculptWorldDraft\)\{/);
