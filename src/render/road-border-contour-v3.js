@@ -29,7 +29,8 @@ function segmentsOf(points){
     const a=points[i-1],b=points[i],span=distance(a,b);
     if(span>EPS)out.push({a,b,span,dx:(b.x-a.x)/span,dy:(b.y-a.y)/span});
   }
-  out.forEach((s,i)=>{s.index=i;s.first=i===0;s.last=i===out.length-1;});
+  const closed=out.length>2&&distance(out[0].a,out.at(-1).b)<EPS;
+  out.forEach((s,i)=>{s.index=i;s.first=!closed&&i===0;s.last=!closed&&i===out.length-1;});
   return out;
 }
 function indexSegments(segments,reach){
@@ -56,8 +57,8 @@ function classify(p,hit,segments){
   const {s,t}=hit,x=s.a.x+(s.b.x-s.a.x)*t,y=s.a.y+(s.b.y-s.a.y)*t;
   const rx=p.x-x,ry=p.y-y;
   let dx=s.dx,dy=s.dy;
-  if(t<EPS&&!s.first){const prev=segments[s.index-1],n=norm(dx+prev.dx,dy+prev.dy);if(n){dx=n.x;dy=n.y;}}
-  if(t>1-EPS&&!s.last){const next=segments[s.index+1],n=norm(dx+next.dx,dy+next.dy);if(n){dx=n.x;dy=n.y;}}
+  if(t<EPS&&!s.first){const prev=segments[(s.index+segments.length-1)%segments.length],n=norm(dx+prev.dx,dy+prev.dy);if(n){dx=n.x;dy=n.y;}}
+  if(t>1-EPS&&!s.last){const next=segments[(s.index+1)%segments.length],n=norm(dx+next.dx,dy+next.dy);if(n){dx=n.x;dy=n.y;}}
   const cap=(s.first&&t<EPS&&rx*s.dx+ry*s.dy<-.05)||(s.last&&t>1-EPS&&rx*s.dx+ry*s.dy>.05);
   return {side:dx*ry-dy*rx>=0?1:-1,cap};
 }
@@ -104,6 +105,7 @@ function trace(entry){
   for(const edge of edges){
     if(edge.used)continue;
     let curr=edge.u.edges.length===1?edge.u:edge.v.edges.length===1?edge.v:edge.u;
+    const startNode=curr,startIndex=result.length;
     let next=edge,station=0,previous=null;
     while(next){
       next.used=true;const other=next.u===curr?next.v:next.u,a=curr.p,b=other.p,span=distance(a,b);
@@ -121,6 +123,7 @@ function trace(entry){
       });
       next=choices[0];
     }
+    if(curr===startNode&&station>EPS)for(let i=startIndex;i<result.length;i++)result[i].loopLength=station;
   }
   return result;
 }
@@ -159,7 +162,11 @@ export function roadBorderMappingAt(field,x,y,sourceProfiles){
     const center=style.offset-roadBorderInwardShift(e.radius,thick);
     const v=profile.anchor-(signed-center)/thick;
     if(v<0||v>1)continue;
-    const period=Math.max(1,thick*4),u=((guide.s.start+guide.t*guide.s.span)%period)/period;
+    const nominal=Math.max(1,thick*4),loop=guide.s.loopLength;
+    // A closed contour repeats an integral number of tiles, so its seam is
+    // continuous regardless of which marching-square edge was visited first.
+    const period=loop?loop/Math.max(1,Math.round(loop/nominal)):nominal;
+    const u=((guide.s.start+guide.t*guide.s.span)%period)/period;
     result.push({asset,style,u,v,signed,center,thick,side:guide.s.side,route:e.route,profile});
   }
   return result;
