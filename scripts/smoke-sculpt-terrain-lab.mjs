@@ -28,7 +28,8 @@ if(!chromePath)throw Error('Chromium unavailable');
 await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});
 const profile=await mkdtemp(resolve(tmpdir(),'exploration-sculpt-smoke-'));
 let chrome,socket;
-const sleep=(ms)=>new Promise(ok=>setTimeout(ok,ms));
+let fatalCdpError=null;
+const sleep=(ms)=>new Promise((ok,fail)=>setTimeout(()=>fatalCdpError?fail(fatalCdpError):ok(),ms));
 try{
   const url='http://127.0.0.1:'+server.address().port+
     '/sculpt-lab.html?rev=sculpt-terrain-pilot-r1';
@@ -59,7 +60,8 @@ try{
     const id=++seq;
     const watchdog=setTimeout(()=>{
       pending.delete(id);
-      fail(Error('Chromium Runtime.evaluate did not return within 60s: '+String(expression).slice(0,180)));
+      fatalCdpError=Error('Chromium Runtime.evaluate did not return within 60s: '+String(expression).slice(0,300));
+      console.error(fatalCdpError.message);fail(fatalCdpError);
     },60000);
     pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
     socket.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression,returnByValue:true,awaitPromise:true}}));
@@ -133,7 +135,8 @@ try{
     const id=++seq;
     const watchdog=setTimeout(()=>{
       pending.delete(id);
-      fail(Error('Chromium CDP '+method+' did not return within 60s'));
+      fatalCdpError=Error('Chromium CDP '+method+' did not return within 60s');
+      console.error(fatalCdpError.message);fail(fatalCdpError);
     },60000);
     pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
     socket.send(JSON.stringify({id,method,params}));
@@ -4179,6 +4182,7 @@ try{
     return reached;
   };
   const stagedWorldPortal=await placePortalAtSpawnViaObjects('grotte-du-nord');
+  console.log('IndexedDB portal gate: host marker placed',stagedWorldPortal.portal.id);
   const placedWorldPortal=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe(),
@@ -4188,7 +4192,12 @@ try{
       placedWorldPortal.sculpt.traverseVisible)
     throw Error('Automatic host Portal must not show an Enter action: '+
       JSON.stringify({stagedWorldPortal,placedWorldPortal}));
+  console.log('IndexedDB portal gate: Tester enabled, traversing host');
   const enteredDungeon=await walkThroughPortal('grotte-du-nord','Host to dungeon',stagedWorldPortal.portal.id);
+  const savedHostGate=await run(`(async()=>{const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();return {durable:access.durable,trigger:(await access.readDraft()).portals.find(p=>p.id===${JSON.stringify(stagedWorldPortal.portal.id)})?.trigger};})()`);
+  if(!savedHostGate.durable||JSON.stringify(savedHostGate.trigger)!==JSON.stringify(stagedWorldPortal.portal.trigger))
+    throw Error('Host portal mounted before its canonical IndexedDB commit: '+JSON.stringify(savedHostGate));
+  console.log('IndexedDB portal gate: entered dungeon after confirmed host save');
   if(enteredDungeon.world.siteKind!=='dungeon'||
      enteredDungeon.world.terrainWidth!==18||!enteredDungeon.nav.player)
     throw Error('Canonical automatic Portal did not mount dungeon: '+JSON.stringify(enteredDungeon));
@@ -4200,7 +4209,12 @@ try{
   if(!placedDungeonReturn.nav.enabled||placedDungeonReturn.sculpt.traverseVisible)
     throw Error('Dungeon return auto Portal should not need Enter: '+
       JSON.stringify({stagedDungeonReturn,placedDungeonReturn}));
+  console.log('IndexedDB portal gate: dungeon return marker placed, traversing');
   const backOutside=await walkThroughPortal('area-principale','Dungeon to host',stagedDungeonReturn.portal.id);
+  const savedReturnGate=await run(`(async()=>{const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();return {durable:access.durable,trigger:(await access.readDraft()).portals.find(p=>p.id===${JSON.stringify(stagedDungeonReturn.portal.id)})?.trigger};})()`);
+  if(!savedReturnGate.durable||JSON.stringify(savedReturnGate.trigger)!==JSON.stringify(stagedDungeonReturn.portal.trigger))
+    throw Error('Dungeon portal mounted before its canonical IndexedDB commit: '+JSON.stringify(savedReturnGate));
+  console.log('IndexedDB portal gate: returned after confirmed dungeon save');
   if(backOutside.world.areaId!=='area-principale')
     throw Error('Dungeon -> host auto Portal failed: '+JSON.stringify(backOutside));
   await run("document.querySelector('#world-area-return').click();true");
