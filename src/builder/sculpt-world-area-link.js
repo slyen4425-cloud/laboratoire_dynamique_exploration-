@@ -32,7 +32,7 @@ function gridForArea(area){
       area.width+' × '+area.height+'. Aucune réduction automatique.');
   return {width,height};
 }
-export function sculptWorldAreaScene(area){
+export function sculptWorldAreaScene(area,{catalog,materialRegistry}={}){
   if(!area)throw Error('WorldArea requise');
   const grid=gridForArea(area);
   const terrain=area.sculptTerrain
@@ -40,14 +40,14 @@ export function sculptWorldAreaScene(area){
     :createSculptTerrain(grid);
   if(terrain.width!==grid.width||terrain.height!==grid.height)
     throw Error('Dimensions 2,5D de la WorldArea incohérentes');
-  const objects=normalizeSculptPreviewObjects(area.objects??[]);
+  const objects=normalizeSculptPreviewObjects(area.objects??[],catalog);
   const actors=normalizeSculptPreviewActors(area.actors??[]);
   if(objects.length!==(area.objects??[]).length||
      actors.length!==(area.actors??[]).length)
     throw Error('Objets/acteurs incompatibles avec le laboratoire 2,5D : '+
       'ouverture refusée sans effacer les données du WorldDocument');
   return Object.freeze({
-    terrain,objects,actors,surface:normalizeSculptSurface(area.surface),
+    terrain,objects,actors,surface:normalizeSculptSurface(area.surface,materialRegistry),
     ...(area.decorativeFringe?{decorativeFringe:
       normalizeSculptDecorativeFringeV1(area.decorativeFringe,area)}:{})
   });
@@ -56,13 +56,13 @@ export function sculptWorldAreaScene(area){
 // reference makes final validation fail, the author can download ALL current
 // edits without changing persistent storage or silently deleting links.
 // The sole canonical save still goes through validateWorldBuilderDraft.
-export function snapshotSculptWorldAreaForRecovery(draft,areaId,scene){
+export function snapshotSculptWorldAreaForRecovery(draft,areaId,scene,{catalog,materialRegistry}={}){
   const area=areaById(draft,areaId),grid=gridForArea(area);
   const terrain=importSculptTerrain(scene?.terrain);
   if(terrain.width!==grid.width||terrain.height!==grid.height)
     throw Error('Dimensions : le relief 2,5D ne peut pas redimensionner la WorldArea sans migration explicite');
-  const surface=normalizeSculptSurface(scene.surface);
-  const objects=normalizeSculptPreviewObjects(scene.objects??[]);
+  const surface=normalizeSculptSurface(scene.surface,materialRegistry);
+  const objects=normalizeSculptPreviewObjects(scene.objects??[],catalog);
   const actors=normalizeSculptPreviewActors(scene.actors??[]);
   if(objects.length!==(scene.objects??[]).length||actors.length!==(scene.actors??[]).length)
     throw Error('Objets/acteurs de la WorldArea invalides, sauvegarde bloquée');
@@ -76,9 +76,9 @@ export function snapshotSculptWorldAreaForRecovery(draft,areaId,scene){
   }:a)};
   return next;
 }
-export function saveSculptWorldArea(draft,areaId,scene){
-  const next=snapshotSculptWorldAreaForRecovery(draft,areaId,scene);
-  const checked=validateWorldBuilderDraft(next);
+export function saveSculptWorldArea(draft,areaId,scene,graphics={}){
+  const next=snapshotSculptWorldAreaForRecovery(draft,areaId,scene,graphics);
+  const checked=validateWorldBuilderDraft(next,{objectCatalog:graphics.catalog});
   if(!checked.valid)throw Error('WorldArea invalide : '+checked.errors.join(', '));
   // Return a draft of the SAME WorldDocument, no second persisted scene.
   return createWorldBuilderDraft(checked.document);

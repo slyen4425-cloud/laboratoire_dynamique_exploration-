@@ -1,3 +1,4 @@
+import {normalizeGraphicAnimation} from '../assets/graphic-animation-v1.js';
 export const USER_MATERIAL_SCHEMA_VERSION = 1;
 export const USER_TEXTURE_MAX_BYTES = 8 * 1024 * 1024;
 export const USER_TEXTURE_MIN_DIMENSION = 16;
@@ -85,6 +86,7 @@ export function createUserMaterialRecord({
   bytes,
   sourceName,
   blob,
+  animation=null,
   createdAt
 } = {}) {
   const normalizedKind = normalizeKind(kind);
@@ -120,6 +122,7 @@ export function createUserMaterialRecord({
     throw new Error('User texture Blob is required');
   }
 
+  const descriptor=normalizeGraphicAnimation(animation,Number(width),Number(height));
   return Object.freeze({
     schemaVersion: USER_MATERIAL_SCHEMA_VERSION,
     id: `user.material.${normalizedKind}.${token}`,
@@ -132,6 +135,7 @@ export function createUserMaterialRecord({
     width: Number(width),
     height: Number(height),
     bytes: Number(bytes),
+    ...(descriptor?{animation:descriptor}:{}),
     sourceName: safeSourceName || 'texture',
     provenance: 'user-local',
     createdAt:

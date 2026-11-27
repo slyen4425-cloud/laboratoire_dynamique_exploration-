@@ -848,6 +848,56 @@ try{
   console.log('V18 native visual palette real pixels:',JSON.stringify(visualsV18));
   await run("const pick=document.querySelector('#water-material');pick.value='water.clear_blue';pick.dispatchEvent(new Event('change',{bubbles:true}));");
 
+  // Personal categories use the real IndexedDB metadata owner and the same
+  // selection controls as native placements. Do not alter any scene IDs.
+  const libraryLayout=await run(`(async()=>{
+    document.querySelector('#mode-objects').click();
+    const picker=document.querySelector('#object-library-picker');
+    picker.open=true;
+    const tree=document.querySelector('#object-library-tree');
+    const manager=document.querySelector('#object-library-layout');
+    manager.open=true;
+    const q=id=>manager.querySelector('[data-library-layout="'+id+'"]');
+    const until=async check=>{
+      for(let i=0;i<100;i++){if(check())return;await new Promise(r=>setTimeout(r,30));}
+      throw Error('Library control did not settle: '+q('status').textContent);
+    };
+    await until(()=>!q('add').disabled);
+    const fixture='objectdef.building.house.blue_cottage.01';
+    const native=tree.querySelector('[data-object-definition="'+fixture+'"]');
+    if(!native)throw Error('Native fixture missing from tree');
+    native.click();
+    picker.open=true;
+    q('category').value='';q('category').dispatchEvent(new Event('change'));
+    q('name').value='Smoke village';q('add').click();
+    await until(()=>!q('add').disabled&&q('category').value);
+    const village=q('category').value;
+    q('category').value='';q('category').dispatchEvent(new Event('change'));
+    q('parent').value=village;q('name').value='Neige';q('add').click();
+    await until(()=>!q('add').disabled&&q('category').value&&q('category').value!==village);
+    const snow=q('category').value;
+    q('target').value=snow;q('assign').click();
+    await until(()=>!q('assign').disabled&&tree.querySelector('[data-personal-category="'+snow+'"] [data-object-definition="'+fixture+'"]'));
+    const store=(await import('./src/storage/object-library-layout-store-v1.js')).createObjectLibraryLayoutStore();
+    const saved=await store.load();
+    const assigned=saved.layout.assignments[fixture]===snow;
+    q('name').value='Hiver';q('rename').click();
+    await until(()=>!q('rename').disabled&&tree.querySelector('[data-personal-category="'+snow+'"] summary').textContent.includes('Hiver'));
+    const identity=document.querySelector('#object-definition').value===fixture;
+    const count=tree.querySelectorAll('[data-object-definition="'+fixture+'"]').length;
+    q('target').value='';q('assign').click();
+    await until(()=>!q('assign').disabled&&!tree.querySelector('[data-personal-category="'+snow+'"] [data-object-definition="'+fixture+'"]'));
+    q('remove').click();await until(()=>!q('add').disabled&&!tree.querySelector('[data-personal-category="'+snow+'"]'));
+    q('category').value=village;q('category').dispatchEvent(new Event('change'));q('remove').click();
+    await until(()=>!q('add').disabled&&!tree.querySelector('[data-personal-category="'+village+'"]'));
+    manager.open=false;picker.open=false;
+    if(window.__sculptObjectsProbe().active)document.querySelector('#mode-objects').click();
+    return {assigned,identity,count,cleaned:(await store.load()).layout.categories.length===0};
+  })()`);
+  if(!libraryLayout.assigned||!libraryLayout.identity||libraryLayout.count!==1||!libraryLayout.cleaned)
+    throw Error('Personal library layout regression: '+JSON.stringify(libraryLayout));
+  console.log('Personal object library IndexedDB + native selection:',JSON.stringify(libraryLayout));
+
   // V20: REAL canvas pointer places a native catalog WorldObject, then undo,
   // redo, removal, scene export/import and native asset loading are exercised.
   const objectBegin=await run(`(()=>{

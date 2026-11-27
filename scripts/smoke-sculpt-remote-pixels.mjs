@@ -271,6 +271,32 @@ try{
  console.log('GREEN native Jouer/Continuer: same 2.5D rendered map, collision, checkpoint, no editor');
  console.log('GREEN native 2.5D immutable checked-out source compositor and World Builder entry '+
    JSON.stringify({sha,...pixels,screenshotProof,errorCount:issues.length}));
+
+ // Real native graphical import: file input, preview, storage, paint and reopen.
+ await send('Page.navigate',{url:new URL('/sculpt-lab.html?rev=graphic-import-smoke',url).href});
+ let graphicsReady=false;
+ for(let i=0;i<100;i++){
+   graphicsReady=await read("location.search.includes('graphic-import-smoke')&&typeof window.__sculptLabProbe==='function'&&!!document.querySelector('#graphic-library-import-form [data-graphic-import=mode]')");
+   if(graphicsReady)break;
+   await sleep(150);
+ }
+ if(!graphicsReady)throw Error('Native graphics import panel missing');
+ const graphic=await read("(async()=>{\n const root=document.querySelector('#graphic-library-import-form');\n for(let p=root.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;\n const q=name=>root.querySelector('[data-graphic-import=\"'+name+'\"]');\n const pick=(el,value,event='change')=>{el.value=value;el.dispatchEvent(new Event(event,{bubbles:true}));};\n const until=async(predicate,label)=>{for(let i=0;i<120;i++){if(predicate())return;await new Promise(r=>setTimeout(r,50));}throw Error(label+': '+q('status').textContent);};\n const c=document.createElement('canvas');c.width=64;c.height=32;\n const ctx=c.getContext('2d');ctx.fillStyle='#ff00ff';ctx.fillRect(0,0,32,32);ctx.fillStyle='#00ffff';ctx.fillRect(32,0,32,32);\n const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));\n const fixture=new File([blob],'ci-animated-ground.png',{type:'image/png'});\n pick(root.querySelector('[data-import-type]'),'material');\n pick(root.querySelector('[data-import-kind]'),'surface');\n root.querySelector('[data-import-label]').value='CI animation sol';\n async function upload(){\n  pick(q('mode'),'sheet');pick(q('columns'),'2','input');pick(q('rows'),'1','input');pick(q('fps'),'4','input');\n  const dt=new DataTransfer();dt.items.add(fixture);q('file').files=dt.files;q('file').dispatchEvent(new Event('change',{bubbles:true}));\n  q('preview').click();await until(()=>!q('commit').disabled,'Real atlas preview not ready');\n  const preview=q('canvas');const rgba=Array.from(preview.getContext('2d').getImageData(16,16,1,1).data);\n  if(preview.hidden||preview.width!==32||preview.height!==32||rgba[3]!==255||rgba[2]!==255)throw Error('Atlas preview did not decode real frame: '+JSON.stringify(rgba));\n  q('commit').click();await until(()=>/Ressource (enregistrée|déjà présente)/.test(q('status').textContent),'Native import commit failed');\n  return q('status').textContent;\n }\n const first=await upload(),second=await upload();\n const {createUserMaterialStore}=await import('/src/storage/user-material-store.js');\n const records=(await createUserMaterialStore().list()).filter(r=>r.label==='CI animation sol');\n if(records.length!==1)throw Error('Duplicate or missing native material: '+records.length);\n const r=records[0],select=document.querySelector('#material');\n await until(()=>[...select.options].some(o=>o.value===r.id),'Imported material missing from real palette');\n document.querySelector('#flat').click();pick(select,r.id);\n await until(()=>window.__sculptLabProbe().materialId===r.id,'Native ground selection failed');\n let magenta=0,cyan=0;\n for(let i=0;i<20;i++){\n  await new Promise(ok=>setTimeout(ok,90));\n  const cv=document.querySelector('#sculpt-canvas'),px=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;\n  let m=0,c=0;for(let k=0;k<px.length;k+=32){if(px[k]>100&&px[k+2]>100&&px[k+1]<px[k]*.55)m++;if(px[k+1]>100&&px[k+2]>100&&px[k]<px[k+1]*.55)c++;}\n  magenta=Math.max(magenta,m);cyan=Math.max(cyan,c);if(magenta>20&&cyan>20)break;\n }\n document.querySelector('#scene-export').click();const scene=document.querySelector('#json').value;\n return {id:r.id,first,second,frames:r.animation?.frames,fps:r.animation?.fps,pixels:{magenta,cyan},scene,base:JSON.parse(scene).surface?.baseMaterialId};\n})()");
+ if(!graphic.first.includes('enregistrée')||!graphic.second.includes('déjà présente')||graphic.frames!==2||graphic.fps!==4||
+    graphic.base!==graphic.id||graphic.pixels.magenta<=20||graphic.pixels.cyan<=20)
+   throw Error('Imported animated material not painted/exported by native Sculpt: '+JSON.stringify({...graphic,scene:undefined}));
+ await send('Page.navigate',{url:new URL('/sculpt-lab.html?rev=graphic-import-reopen',url).href});
+ let graphicReload=false;
+ for(let i=0;i<100;i++){
+   graphicReload=await read("location.search.includes('graphic-import-reopen')&&[...document.querySelectorAll('#material option')].some(o=>o.value==="+JSON.stringify(graphic.id)+")");
+   if(graphicReload)break;
+   await sleep(150);
+ }
+ if(!graphicReload)throw Error('Imported graphics missing after reopening Chromium page');
+ const restored=await read("(async(scene)=>{\n document.querySelector('#json').value=scene;document.querySelector('#import').click();\n await new Promise(ok=>setTimeout(ok,200));document.querySelector('#scene-export').click();\n const exported=JSON.parse(document.querySelector('#json').value);\n return {selected:window.__sculptLabProbe().materialId,base:exported.surface?.baseMaterialId};\n})("+JSON.stringify(graphic.scene)+")");
+ if(restored.selected!==graphic.id||restored.base!==graphic.id)
+   throw Error('Native graphic scene roundtrip lost stored material identity: '+JSON.stringify(restored));
+ console.log('GREEN imported animated surface: browser file, atlas preview, IndexedDB deduplication, real pixels and scene reopen',JSON.stringify({id:graphic.id,frames:graphic.frames,pixels:graphic.pixels}));
 }finally{
  try{socket?.close()}catch{}
  if(chrome){

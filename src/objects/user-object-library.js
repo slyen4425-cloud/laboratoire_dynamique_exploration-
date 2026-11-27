@@ -1,3 +1,4 @@
+import {normalizeGraphicAnimation} from '../assets/graphic-animation-v1.js';
 import {
   categoryIdFromFolderId,
   resolveObjectLibraryCategory
@@ -32,6 +33,15 @@ function safeToken(value) {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+// Portable WorldDocuments can retain the exact generated reference even on a
+// device where the image library is not yet installed. This validates only
+// identity syntax, not existence, collision geometry or rendering permission.
+export function isUserWorldObjectDefinitionId(value) {
+  if(typeof value!=='string')return false;
+  const match=/^user\.objectdef\.([a-z]+)\.([a-z0-9-]+)$/.exec(value);
+  return Boolean(match&&ALLOWED_KINDS.includes(match[1])&&safeToken(match[2])===match[2]);
 }
 
 function defaultCollisionRoleForKind(kind) {
@@ -153,6 +163,7 @@ export function createUserWorldObjectRecord({
   bytes,
   sourceName,
   blob,
+  animation=null,
   createdAt
 } = {}) {
   const token = safeToken(idToken);
@@ -191,7 +202,8 @@ export function createUserWorldObjectRecord({
     throw new Error('User object Blob is required');
   }
 
-  const baseSize = logicalBaseSize(width, height);
+  const descriptor=normalizeGraphicAnimation(animation,Number(width),Number(height));
+  const baseSize = logicalBaseSize(descriptor?.frameWidth??width, descriptor?.frameHeight??height);
 
   return Object.freeze({
     schemaVersion: USER_WORLD_OBJECT_SCHEMA_VERSION,
@@ -213,6 +225,7 @@ export function createUserWorldObjectRecord({
     height: Number(height),
     bytes: Number(bytes),
     baseSize,
+    ...(descriptor?{animation:descriptor}:{}),
     sourceName: safe(sourceName) || 'object',
     provenance: 'user-local',
     createdAt: safe(createdAt) || new Date().toISOString(),

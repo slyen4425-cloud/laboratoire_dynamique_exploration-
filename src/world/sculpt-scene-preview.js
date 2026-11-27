@@ -71,44 +71,51 @@ export function createBlankSculptPreviewScene({width=36,height=24}={}){
   return Object.freeze({terrain,objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:true});
 }
 const validKinds=new Set(['building','tree','rock','bridge','stairs','ramp','decor']);
-export function listSculptPlaceableDefinitions(){
+export function listSculptPlaceableDefinitions(catalog=objectDefinitionCatalogV1){
   // New slopes belong to the terrain sculpture tools, NOT Object placement.
-  return Object.freeze(objectDefinitionCatalogV1.list().filter(d=>
+  return Object.freeze(catalog.list().filter(d=>
     validKinds.has(d.kind)&&d.kind!=='ramp'&&!d.id.startsWith('objectdef.relief.')));
 }
 // Read older V77 scenes to migrate ramps without data loss, but never offer
 // their historical pseudo-object definitions for new placements.
-const allowable=new Set([...listSculptPlaceableDefinitions().map(d=>d.id),
-  ...objectDefinitionCatalogV1.list().filter(d=>d.kind==='ramp').map(d=>d.id)]);
+function isAllowedDefinition(definition){
+  return Boolean(definition&&validKinds.has(definition.kind)&&
+    (definition.kind==='ramp'||!definition.id.startsWith('objectdef.relief.')));
+}
+function requireAvailablePersonalDefinition(id,catalog){
+  if(typeof id==='string'&&id.startsWith('user.objectdef.')&&!isAllowedDefinition(catalog.get(id)))
+    throw Error('Ressource graphique personnelle manquante ou non compatible : '+id);
+}
 // One Sculpt authoring policy for BOTH placing and dragging native objects.
 // The heightfield owns the wetness, the canonical ObjectDefinition owns kind.
 // No pixel, image alpha or collision shortcut can declare water passable.
-export function sculptObjectCanOccupyCell(terrain,definitionId,col,row){
+export function sculptObjectCanOccupyCell(terrain,definitionId,col,row,catalog=objectDefinitionCatalogV1){
   if(!terrain||!Number.isInteger(col)||!Number.isInteger(row)||
     col<0||row<0||col>=terrain.width||row>=terrain.height)return false;
-  const definition=objectDefinitionCatalogV1.get(definitionId);
-  if(!definition||!allowable.has(definitionId))return false;
+  const definition=catalog.get(definitionId);
+  if(!isAllowedDefinition(definition))return false;
   return sculptWaterAt(terrain,col,row)<=0||definition.kind==='bridge';
 }
-export function sculptPreviewVariants(definitionId){
-  const def=objectDefinitionCatalogV1.get(definitionId);
+export function sculptPreviewVariants(definitionId,catalog=objectDefinitionCatalogV1){
+  const def=catalog.get(definitionId);
   return Object.freeze([...(def?.visual?.variants??[])]);
 }
-function validVariant(definitionId,variantId){
-  return sculptPreviewVariants(definitionId).some(v=>v.id===variantId)?variantId:null;
+function validVariant(definitionId,variantId,catalog){
+  return sculptPreviewVariants(definitionId,catalog).some(v=>v.id===variantId)?variantId:null;
 }
-export function normalizeSculptPreviewObjects(raw=[]){
+export function normalizeSculptPreviewObjects(raw=[],catalog=objectDefinitionCatalogV1){
   const safe=Array.isArray(raw)?raw:[];
   if(safe.length>SCULPT_OBJECT_LIMIT)
     throw Error('Scène sculptable : limite de '+SCULPT_OBJECT_LIMIT+' objets dépassée');
-  const valid=safe.filter(o=>allowable.has(o?.objectDefinitionId));
-  return normalizeWorldObjectPlacements(valid,objectDefinitionCatalogV1);
+  for(const item of safe)requireAvailablePersonalDefinition(item?.objectDefinitionId,catalog);
+  const valid=safe.filter(o=>isAllowedDefinition(catalog.get(o?.objectDefinitionId)));
+  return normalizeWorldObjectPlacements(valid,catalog);
 }
 export function appendSculptPreviewObject(objects,{
   definitionId,x,y,scale=.38,scaleX=scale,scaleY=scale,rotationDeg=0,variantId=null,flipX=false
-}={}){
-  const list=normalizeSculptPreviewObjects(objects);
-  if(list.length>=SCULPT_OBJECT_LIMIT||!allowable.has(definitionId)||
+}={},catalog=objectDefinitionCatalogV1){
+  const list=normalizeSculptPreviewObjects(objects,catalog);
+  if(list.length>=SCULPT_OBJECT_LIMIT||!isAllowedDefinition(catalog.get(definitionId))||
       !Number.isFinite(x)||!Number.isFinite(y))return list;
   const used=new Set(list.map(o=>o.id));
   let suffix=1;
@@ -116,19 +123,19 @@ export function appendSculptPreviewObject(objects,{
   const placement=normalizeWorldObjectPlacement({
     id:'sculpt-object-'+suffix,objectDefinitionId:definitionId,
     transform:{x,y,scaleX,scaleY,rotationDeg,...(flipX===true?{flipX:true}:{})},
-    overrides:{visualVariantId:validVariant(definitionId,variantId)}
-  },list.length,objectDefinitionCatalogV1);
+    overrides:{visualVariantId:validVariant(definitionId,variantId,catalog)}
+  },list.length,catalog);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX,stairTraversal}={}){
-  const items=normalizeSculptPreviewObjects(objects);
+export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX,stairTraversal}={},catalog=objectDefinitionCatalogV1){
+  const items=normalizeSculptPreviewObjects(objects,catalog);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
     if(item.id!==id)return item;
     const nextTransform={...item.transform};
     if(Number.isFinite(x))nextTransform.x=x;
     if(Number.isFinite(y))nextTransform.y=y;
-    const definition=objectDefinitionCatalogV1.get(item.objectDefinitionId);
+    const definition=catalog.get(item.objectDefinitionId);
     const maxScale=['bridge','stairs','ramp'].includes(definition?.kind)?3:1.2;
     if(Number.isFinite(scale)&&scale>=.25&&scale<=maxScale){
       nextTransform.scaleX=scale;nextTransform.scaleY=scale;
@@ -143,7 +150,7 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
     if(flipX===true)nextTransform.flipX=true;
     else if(flipX===false)delete nextTransform.flipX;
     const nextVariant=variantId===undefined?item.overrides.visualVariantId:
-      validVariant(item.objectDefinitionId,variantId);
+      validVariant(item.objectDefinitionId,variantId,catalog);
     const nextShadow=shadow===undefined?item.overrides.shadow??null:
       normalizeWorldObjectShadowSettingsV1(shadow);
     // The authored path follows this WorldObject when the stair is moved;
@@ -161,16 +168,16 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
     return normalizeWorldObjectPlacement({...item,transform:nextTransform,
       overrides:{...item.overrides,visualVariantId:nextVariant,shadow:nextShadow,
         stairTraversal:nextStairTraversal}},
-      i,objectDefinitionCatalogV1);
+      i,catalog);
   }));
 }
-export function removeSculptPreviewObject(objects,id){
-  return Object.freeze(normalizeSculptPreviewObjects(objects).filter(o=>o.id!==id));
+export function removeSculptPreviewObject(objects,id,catalog=objectDefinitionCatalogV1){
+  return Object.freeze(normalizeSculptPreviewObjects(objects,catalog).filter(o=>o.id!==id));
 }
-export function findSculptPreviewObjectNear(objects,x,y,maxDistance=50){
+export function findSculptPreviewObjectNear(objects,x,y,maxDistance=50,catalog=objectDefinitionCatalogV1){
   let found=null,best=Infinity;
-  for(const item of normalizeSculptPreviewObjects(objects)){
-    const definition=objectDefinitionCatalogV1.get(item.objectDefinitionId);
+  for(const item of normalizeSculptPreviewObjects(objects,catalog)){
+    const definition=catalog.get(item.objectDefinitionId);
     const width=(definition?.baseSize?.width??0)*item.transform.scaleX;
     const height=(definition?.baseSize?.height??0)*item.transform.scaleY;
     // Pick objects using the anchor/collision footprint, independent of pixels.
@@ -249,13 +256,13 @@ export function removeSculptPreviewActorAt(raw,x,y,threshold=24){
   const found=findSculptPreviewActorNear(actors,x,y,threshold);
   return found?Object.freeze(actors.filter(a=>a.id!==found.id)):actors;
 }
-export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null,objectShadowProfiles=[],lighting=null){
-  const paint=normalizeSculptSurface(surface);
+export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null,objectShadowProfiles=[],lighting=null,{catalog=objectDefinitionCatalogV1,materialRegistry=null}={}){
+  const paint=normalizeSculptSurface(surface,materialRegistry);
   const settings=encounterSettings===null?null:sculptEncounterSceneSettings(encounterSettings);
   return JSON.stringify({kind:SCULPT_SCENE_PREVIEW_KIND,
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
-    objects:normalizeSculptPreviewObjects(objects),
+    objects:normalizeSculptPreviewObjects(objects,catalog),
     ...(normalizeWorldLightingV1(lighting)?{lighting:normalizeWorldLightingV1(lighting)}:{}),
     ...(normalizeWorldObjectShadowProfilesV1(objectShadowProfiles).length?
       {objectShadowProfiles:normalizeWorldObjectShadowProfilesV1(objectShadowProfiles)}:{}),
@@ -267,7 +274,7 @@ export function serializeSculptPreviewScene(terrain,objects=[],surface=createScu
     ...(settings?.encounterConfig?{encounterConfig:settings.encounterConfig}:{}),
     ...(settings?{exteriorEncounters:settings.exteriorEncounters}:{})});
 }
-export function importSculptPreviewScene(raw){
+export function importSculptPreviewScene(raw,{catalog=objectDefinitionCatalogV1,materialRegistry=null}={}){
   const source=typeof raw==='string'?JSON.parse(raw):raw;
   if(source?.schemaVersion===1&&Array.isArray(source.levels)){
     // Exact compatibility with earlier "export heights" users.
@@ -278,11 +285,13 @@ export function importSculptPreviewScene(raw){
   if(source?.kind!==SCULPT_SCENE_PREVIEW_KIND||
       source?.sceneVersion!==SCULPT_SCENE_PREVIEW_VERSION||
       !Array.isArray(source?.objects)||
-      source.objects.length>SCULPT_OBJECT_LIMIT||
-      source.objects.some(o=>!allowable.has(o?.objectDefinitionId)))
+      source.objects.length>SCULPT_OBJECT_LIMIT)
     throw new Error('Scène sculptable invalide : format ou objets inconnus');
+  for(const item of source.objects)requireAvailablePersonalDefinition(item?.objectDefinitionId,catalog);
+  if(source.objects.some(o=>!isAllowedDefinition(catalog.get(o?.objectDefinitionId))))
+    throw Error('Scène sculptable invalide : objets inconnus');
   let terrain=importSculptTerrain(source.terrain);
-  const objects=normalizeSculptPreviewObjects(source.objects);
+  const objects=normalizeSculptPreviewObjects(source.objects,catalog);
   if(objects.length!==source.objects.length)
     throw new Error('Scène sculptable invalide : placements incohérents');
   if(objects.some(o=>o.transform.x<0||o.transform.x>=terrain.width*28||
@@ -293,7 +302,7 @@ export function importSculptPreviewScene(raw){
   // instead of silently deleting user data.
   const migrated=[];
   for(const object of objects){
-    const definition=objectDefinitionCatalogV1.get(object.objectDefinitionId);
+    const definition=catalog.get(object.objectDefinitionId);
     if(definition?.kind!=='ramp'){migrated.push(object);continue;}
     const t=object.transform,a=t.rotationDeg*Math.PI/180;
     const length=definition.baseSize.height*t.scaleY;
@@ -306,7 +315,7 @@ export function importSculptPreviewScene(raw){
   const actors=normalizeSculptPreviewActors(source.actors??[]);
   if(actors.some(a=>a.x<0||a.x>=terrain.width*28||a.y<0||a.y>=terrain.height*21))
     throw Error('Scène sculptable : acteur hors terrain');
-  const surface=normalizeSculptSurface(source.surface);
+  const surface=normalizeSculptSurface(source.surface,materialRegistry);
   for(const feature of [...surface.routes,...surface.zones]){
     if(feature.points.some(p=>p.x>=terrain.width*28||p.y>=terrain.height*21))
       throw Error('Peinture sculptable hors de la carte');

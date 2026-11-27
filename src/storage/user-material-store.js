@@ -22,6 +22,7 @@ export function createUserMaterialStore({
       list: unavailable,
       get: unavailable,
       put: unavailable,
+      add: unavailable,
       delete: unavailable
     });
   }
@@ -103,9 +104,12 @@ export function createUserMaterialStore({
         return;
       }
 
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
+      // Resolve only after the entire transaction commits (quota/abort safety).
+      let value;
+      request.onsuccess = () => { value=request.result; };
+      transaction.oncomplete = () => resolve(value);
+      transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+      transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed'));
       request.onerror = () => {
         reject(
           request.error ??
@@ -149,6 +153,11 @@ export function createUserMaterialStore({
         'readwrite',
         (store) => store.put(record)
       );
+    },
+    // Insert only: no overwrite on concurrent import.
+    add(record) {
+      if (!record?.id) return Promise.reject(new Error('User asset id is required'));
+      return requestWithStore('readwrite', (store) => store.add(record));
     },
     delete(id) {
       return requestWithStore(

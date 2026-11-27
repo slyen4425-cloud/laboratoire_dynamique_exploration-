@@ -72,7 +72,7 @@ test('R15: stairs remain dry-ground-only and no terrain or collision owner is ch
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(html,/<option value="stairs">🪜 Escaliers<\/option>/);
-  assert.match(main,/availableObjects=listSculptPlaceableDefinitions\(\)/);
+  assert.match(main,/availableObjects=\[\.\.\.listSculptPlaceableDefinitions\(\)\]/);
   assert.match(main,/sculpt-scene-preview\.js\?rev=[^']*stairs-visible-r15/);
   assert.match(html,/sculpt-lab-main\.js\?rev=[^"]*stairs-visible-r15/);
 });

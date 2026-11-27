@@ -39,11 +39,11 @@ test('invalid destination stays blocked but is rechecked after world edit',()=>{
 test('static gameplay: actual portal entry keeps its independent authoritative revalidation',()=>{
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  assert.match(main,/sculptPortalPreviewReadiness\(target,sculptWorldDraft\)/);
- assert.match(main,/const scene=validatedScene\?\?sculptWorldAreaScene\(area\)/,
+ assert.match(main,/const scene=validatedScene\?\?sculptWorldAreaScene\(area,sculptGraphicContext\(\)\)/,
   'normal Editor mount still invokes the owner validator unless it has an already verified scene');
- assert.match(main,/validatedTargetScene=sculptWorldAreaScene\(target\)/,
+ assert.match(main,/validatedTargetScene=sculptWorldAreaScene\(target,sculptGraphicContext\(\)\)/,
   'a real Portal entry independently validates its destination before changing map');
- assert.match(main,/sculptWorldAreaScene\(document\.areas\.find\(a=>a\.id===transition\.currentAreaId\)\)/,
+ assert.match(main,/sculptWorldAreaScene\(document\.areas\.find\(a=>a\.id===transition\.currentAreaId\),sculptGraphicContext\(\)\)/,
   'portal traversal still validates the destination independently, not from HUD cache');
  assert.match(main,/navRampTerrain!==terrain/,
   'native ramp geometry is refreshed when the terrain identity changes');

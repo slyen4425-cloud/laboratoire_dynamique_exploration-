@@ -10,14 +10,18 @@ const root=process.cwd();
 const mime={'.html':'text/html','.js':'text/javascript','.json':'application/json',
   '.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.mp3':'audio/mpeg',
   '.png':'image/png'};
-const servedMp3=new Set();
+// Observe bytes actually served, not Resource Timing completion (an MP3 may
+// still be streaming when its playback clock begins to advance).
+const servedTracks=new Set();
 const server=createServer(async(req,res)=>{
   try {
     const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
     const path=resolve(root,'.'+pathname);
     if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
     const data=await readFile(path);
-    if(pathname.includes('/exploration-v1/')&&extname(path)==='.mp3'&&data.length>0)servedMp3.add(pathname);
+    if(req.method==='GET'&&data.length>0&&/^\/assets\/runtime\/audio\/exploration-v1\/exploration-0[1-4]\.mp3$/.test(pathname)){
+      res.once('finish',()=>servedTracks.add(pathname));
+    }
     res.writeHead(200,{'Content-Type':mime[extname(path)]??'application/octet-stream',
       'Cache-Control':'no-store'}).end(data);
   } catch{res.writeHead(404).end('not found');}
@@ -106,11 +110,11 @@ try {
   if(state?.state!=='playing'||state.mediaCurrentTime<=0.15)
     throw Error('Music did not actually advance after native Tester click: '+JSON.stringify(state));
   const track=state.track;
-  // Resource Timing can omit media requests when the buffer fills with terrain assets.
-  // The isolated HTTP server records actual successful MP3 reads independently.
-  const playingUrl=[...servedMp3];
-  if(!/^exploration-[1-4]$/.test(track)||!playingUrl.some(x=>x.includes('.mp3')))
-    throw Error('No actual bundled Exploration MP3 loaded: '+JSON.stringify({state,playingUrl}));
+  const expected='/assets/runtime/audio/exploration-v1/exploration-0'+track?.slice(-1)+'.mp3';
+  // The network response may finish just after the decoded clock advances.
+  for(let n=0;n<30&&!servedTracks.has(expected);n++)await sleep(100);
+  if(!/^exploration-[1-4]$/.test(track)||!servedTracks.has(expected))
+    throw Error('No actual bundled Exploration MP3 served: '+JSON.stringify({state,servedTracks:[...servedTracks]}));
   // Tester changes the navigation chrome layout on mobile; never reuse the
   // coordinates captured before entering it, as that can click empty space.
   // The exit is still tested with a real trusted pointer gesture.

@@ -22,6 +22,7 @@ export function createUserWorldObjectStore({
       list: unavailable,
       get: unavailable,
       put: unavailable,
+      add: unavailable,
       delete: unavailable
     });
   }
@@ -83,7 +84,12 @@ export function createUserWorldObjectStore({
         return;
       }
 
-      request.onsuccess = () => resolve(request.result);
+      // Resolve only after the entire transaction commits (quota/abort safety).
+      let value;
+      request.onsuccess = () => { value=request.result; };
+      transaction.oncomplete = () => resolve(value);
+      transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+      transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed'));
       request.onerror = () => reject(
         request.error ?? new Error('IndexedDB request failed')
       );
@@ -121,6 +127,11 @@ export function createUserWorldObjectStore({
         'readwrite',
         (objectStore) => objectStore.put(record)
       );
+    },
+    // Insert only: no overwrite on concurrent import.
+    add(record) {
+      if (!record?.id) return Promise.reject(new Error('User asset id is required'));
+      return requestWithStore('readwrite', (objectStore) => objectStore.add(record));
     },
     delete(id) {
       return requestWithStore(
