@@ -4610,6 +4610,27 @@ try{
         returned2p5d.dungeon.sculptTerrain.height,returned:true}));
   if(legacyEncounterConsentError)throw Error(legacyEncounterConsentError);
   console.log('Legacy encounter setup: native Chromium confirmations handled without random battles in movement fixture:',legacyEncounterConsentCount);
+  // The prefab check ends inside an authored room in Tester. The next test
+  // deliberately uses a disposable standalone map; first leave through the
+  // real durable save-and-return action, never abandon the authored world.
+  await run("document.querySelector('#world-area-return').click();true");
+  let prefabReturned=null;
+  for(let i=0;i<150;i++){
+    await sleep(100);
+    try{prefabReturned=await run(`(async()=>{
+      const probe=window.__worldAssemblerProbe?.();if(!probe?.saved)return null;
+      const access=await (await import('./src/storage/world-document-release-access-v1.js')).openWorldDocumentReleaseAccessV1();
+      const doc=await access.readDraft();
+      const room=doc?.areas.find(a=>a.id===${JSON.stringify(prefabRoom.areaId)});
+      return {durable:access.durable,saved:probe.saved,roomId:room?.id,
+        width:room?.sculptTerrain?.width,height:room?.sculptTerrain?.height,wallCount:room?.walls.length};
+    })()`);}catch{}
+    if(prefabReturned)break;
+  }
+  if(!prefabReturned?.durable||!prefabReturned.saved||prefabReturned.roomId!==prefabRoom.areaId||
+     prefabReturned.width!==18||prefabReturned.height!==14||prefabReturned.wallCount<2)
+    throw Error('Prefab room not durably saved before standalone water test: '+JSON.stringify(prefabReturned));
+  console.log('IndexedDB prefab gate: saved and returned before disposable water passage test',JSON.stringify(prefabReturned));
   await checkSculptWaterPassage({send,run,sleep,url});
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
