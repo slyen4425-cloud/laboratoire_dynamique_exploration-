@@ -1,0 +1,28 @@
+name: Hero sprite visual audit (no deployment)
+on:
+  push:
+    branches: [work/exploration-hero-sprite-repair-20261126]
+    paths:
+      - scripts/audit-official-hero-sprites.py
+      - .github/workflows/audit-official-hero-sprites.yml
+permissions:
+  contents: read
+jobs:
+  visual-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install Pillow==11.3.0
+      - run: python scripts/audit-official-hero-sprites.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hero-sprite-review
+          path: artifacts/hero-sprite-review/
+          if-no-files-found: error
+          retention-days: 14
