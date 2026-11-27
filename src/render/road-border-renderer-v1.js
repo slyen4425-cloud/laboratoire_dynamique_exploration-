@@ -122,6 +122,30 @@ export function roadBorderSamples(routes){
 // Apply the entire repeating texture in the local strip coordinate system.
 // Only the continuous strip outline clips it. The small longitudinal overlap
 // closes subpixel raster seams without extending the outside silhouette.
+// The author ZIP is immutable. Remove the pale baked ground fringe at draw
+// time, once per decoded band, with a soft alpha fade. Wood stays untouched.
+const bandFadeRows=Object.freeze({naturelle:[72,91],cailloux:[69,87],pierre_taillee:[68,83],beton:[68,83],neige:[75,91]});
+const cleanedBands=new WeakMap();
+export function roadBorderFadeProfile(assetId){
+  const rows=bandFadeRows[assetId?.replace('road-border.bordure_','')];
+  return rows?{start:rows[0]/128,end:rows[1]/128}:null;
+}
+function preparedBand(asset,image){
+  const fade=roadBorderFadeProfile(asset.id);if(!fade)return image;
+  if(cleanedBands.has(image))return cleanedBands.get(image);
+  const w=image.naturalWidth,h=image.naturalHeight;
+  const canvas=typeof OffscreenCanvas!=='undefined'?new OffscreenCanvas(w,h):
+    typeof document!=='undefined'?document.createElement('canvas'):null;
+  if(!canvas)return image;
+  canvas.width=w;canvas.height=h;
+  const c=canvas.getContext('2d');if(!c)return image;
+  c.drawImage(image,0,0);c.globalCompositeOperation='destination-in';
+  const gradient=c.createLinearGradient(0,0,0,h);
+  gradient.addColorStop(0,'rgba(0,0,0,1)');gradient.addColorStop(fade.start,'rgba(0,0,0,1)');
+  gradient.addColorStop(fade.end,'rgba(0,0,0,0)');gradient.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=gradient;c.fillRect(0,0,w,h);
+  cleanedBands.set(image,canvas);return canvas;
+}
 function drawBand(ctx,image,s){
   const v=sub(s.b,s.a),d=unit(v);if(!d)return;
   const q=s.q.map((p,i)=>add(p,mul(d,i===0||i===3?-.35:.35)));
@@ -157,7 +181,7 @@ export function roadBorderCellPainter(ctx,terrain,tile,routes,images){
       ctx.save();ctx.translate(0,-level*tile.rise);ctx.globalAlpha=s.style.opacity;
       if(s.asset.kind==='sprites'){
         ctx.translate(s.x,s.y);ctx.rotate(s.angle);ctx.drawImage(image,-s.thick/2,-s.thick/2,s.thick,s.thick);
-      }else drawBand(ctx,image,s);
+      }else drawBand(ctx,preparedBand(s.asset,image),s);
       ctx.restore();
     }
   };
