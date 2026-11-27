@@ -7856,6 +7856,7 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
   });
   // Durable editing never relies on an asynchronous pagehide transaction.
   // Observe completed authoring interactions; canonical capture excludes play.
+  let scheduleInitialWorldSave=()=>{};
   if(access.durable){
     const output=$('world-storage-status');output.hidden=false;
     const autosave=installSculptWorldAutosaveV1({persistence:sculptWorldPersistence,root:window,
@@ -7864,6 +7865,7 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
       onState:(state,error)=>{output.textContent=state==='saved'?'✓ Carte sauvegardée':state==='error'?
         '⚠ Enregistrement non confirmé : '+error.message:'Modifications à enregistrer…';}});
     const edited=()=>{if(sculptWorldAreaMounted&&!sculptPlayRequested&&!navigationTesting&&!sculptWorldPersistence.transitioning)autosave.schedule();};
+    scheduleInitialWorldSave=edited;
     for(const event of ['pointerup','change','input','click','keyup'])document.addEventListener(event,edited);
     window.addEventListener('beforeunload',event=>{
       // A confirmed explicit departure has saved the exact snapshot and
@@ -7907,6 +7909,10 @@ export async function installSculptWorldAreaEditing(access=sculptWorldAccess){
       sculptWorldStatus('Arrivée liée à une porte : modifie sa position sur le bâtiment.',true);
     }else sculptWorldStatus('WorldArea '+sculptWorldArea().label+
       ' chargée : place ses passages, teste-les, puis enregistre le monde.');
+    // Mount may materialize a newly created area's canonical terrain. Commit
+    // that initial projection through the same autosave even without a click.
+    // Unchanged documents are skipped by the existing autosave coordinator.
+    scheduleInitialWorldSave();
   }catch(error){
     // A legacy/oversized Area must not display the separate demo terrain as if
     // it were the user's editable map; navigation remains possible.
