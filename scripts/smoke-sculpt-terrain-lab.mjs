@@ -1604,19 +1604,21 @@ try{
     return !document.querySelector('#road-style-controls').hidden;
   })()`);
   if(!roadConfig)throw Error('Road border controls not available');
+  const undoVisible=await run(`(()=>{const b=document.querySelector('#surface-undo'),r=b.getBoundingClientRect(),p=document.querySelector('#surface-palette').getBoundingClientRect();return !b.closest('details')&&r.top>=p.top&&r.bottom<=p.bottom;})()`);
+  if(!undoVisible)throw Error('Undo hidden from the surface panel');
   await paintSurface(v27Ready.start,v27Ready.start);
   const beforeBorder=await run(`(()=>{const c=document.querySelector('#sculpt-canvas');const ctx=c.getContext('2d');return Array.from(ctx.getImageData(0,0,c.width,c.height).data.filter((_,i)=>i%64===0));})()`);
   await run(`(()=>{
-    const enabled=document.querySelector('#road-border-enabled');
-    enabled.checked=true;enabled.dispatchEvent(new Event('change',{bubbles:true}));
-    document.querySelector('#road-border-left').value='road-border.bordure_naturelle';
-    document.querySelector('#road-border-right').value='road-border.bordure_beton';
+    const sides=document.querySelector('#road-border-sides');
+    sides.value='both';sides.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-asset').value='road-border.bordure_bois';
+    document.querySelector('#road-border-width').value='12';
     const apply=document.querySelector('#road-border-apply');if(apply.disabled)throw Error('No selected road');
     apply.click();
   })()`);
-  for(let i=0;i<40;i++){if(await run("window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_beton')&&window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_naturelle')"))break;await sleep(100);}
+  for(let i=0;i<40;i++){if(await run("window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_bois')"))break;await sleep(100);}
   const styled=await run('window.__sculptSurfaceProbe()');
-  if(!styled.features[0].border?.enabled||!styled.texturesLoaded.includes('road-border.bordure_beton')||!styled.texturesLoaded.includes('road-border.bordure_naturelle'))throw Error('Road border assets/model missing: '+JSON.stringify(styled));
+  if(!styled.features[0].border?.enabled||!styled.texturesLoaded.includes('road-border.bordure_bois')||styled.features[0].border.left.width!==12||styled.features[0].border.right.width!==12||styled.features[0].border.left.assetId!==styled.features[0].border.right.assetId)throw Error('Road border assets/model missing: '+JSON.stringify(styled));
   await sleep(200);
   const afterBorder=await run(`(()=>{const c=document.querySelector('#sculpt-canvas');return Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data.filter((_,i)=>i%64===0));})()`);
   if(!afterBorder.some((v,i)=>v!==beforeBorder[i]))throw Error('Road border did not alter actual canvas pixels');

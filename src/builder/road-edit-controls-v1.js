@@ -12,36 +12,36 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
   const $=id=>root.getElementById(id);
   const action=$('surface-action'),material=$('surface-material'),panel=$('road-style-controls');
   if(!panel)return null; // V80 markup is intentionally unchanged.
-  const enabled=$('road-border-enabled'),side=$('road-border-side');
-  const select={left:$('road-border-left'),right:$('road-border-right')};
+  const sides=$('road-border-sides'),assetSelect=$('road-border-asset'),settings=$('road-border-settings');
   const fields=Object.fromEntries(['width','scale','offset','spacing','opacity'].map(k=>[k,$('road-border-'+k)]));
-  for(const node of Object.values(select))for(const asset of ROAD_BORDER_ASSETS){
-    const opt=root.createElement('option');opt.value=asset.id;opt.textContent=asset.label;node.append(opt);
+  // Wood is the author's preferred visual. Existing asset IDs remain available.
+  const preferred=[...ROAD_BORDER_ASSETS].sort((a,b)=>Number(b.id.endsWith('_bois'))-Number(a.id.endsWith('_bois')));
+  for(const asset of preferred){
+    const opt=root.createElement('option');opt.value=asset.id;opt.textContent=asset.label;assetSelect.append(opt);
   }
-  let id=null,drag=null,style={left:{...defaults},right:{...defaults}},activeSide='left',pending=[];
+  let id=null,drag=null,pending=[],legacyMixed=false;
   const route=()=>getSurface().routes.find(r=>r.id===id);
-  function readSide(){
-    const next={...style[activeSide]};
+  function readStyle(){
+    const next={assetId:assetSelect.value,...defaults};
     for(const [key,node] of Object.entries(fields))if(Number.isFinite(node.valueAsNumber))next[key]=node.valueAsNumber/(key==='opacity'?100:1);
-    style[activeSide]=next;
+    return next;
   }
-  function writeSide(){
-    for(const [key,node] of Object.entries(fields))node.value=String(style[activeSide][key]*(key==='opacity'?100:1));
+  function writeStyle(style={}){
+    assetSelect.value=style.assetId??preferred[0].id;
+    if(!assetSelect.value)assetSelect.value=preferred[0].id;
+    for(const [key,node] of Object.entries(fields))node.value=String((style[key]??defaults[key])*(key==='opacity'?100:1));
   }
   function border(){
-    readSide();const out={enabled:enabled.checked};
-    for(const k of ['left','right'])if(select[k].value)out[k]={assetId:select[k].value,...style[k]};
-    return out;
+    const style=readStyle(),mode=sides.value;
+    // Keep selected model while off; the canonical model stays backward compatible.
+    return {enabled:mode!=='none',...(mode!=='right'?{left:style}:{}),...(mode!=='left'?{right:{...style}}:{})};
   }
   function selectRoute(next){
     id=next?.id??null;drag=null;
     const b=next?.border;
-    enabled.checked=b?.enabled??false;
-    for(const k of ['left','right']){
-      const {assetId,...settings}=b?.[k]??{};
-      select[k].value=assetId??'';style[k]={...defaults,...settings};
-    }
-    writeSide();
+    legacyMixed=!!(b?.left&&b?.right&&JSON.stringify(b.left)!==JSON.stringify(b.right));
+    sides.value=!b?.enabled?'none':b.left&&b.right?'both':b.left?'left':'right';
+    writeStyle(b?.left??b?.right);
     if(next){
       $('surface-width').value=String(Math.max(1,Math.min(12,next.width/28)));
       $('surface-width-value').textContent=$('surface-width').value+' cases';
@@ -53,19 +53,18 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
     if(id&&!route()){id=null;drag=null;}
     const selected=route(),editing=action.value==='edit',curve=action.value==='curve';
     panel.hidden=!(resolveSculptSurfaceMaterial(material.value,getRegistry())?.kind==='route'||editing||curve);
-    $('road-selected').textContent=selected?'Route sélectionnée · '+selected.id:'Aucune route sélectionnée';
+    $('road-selected').textContent=selected?'Route sélectionnée':'Nouvelle route';
+    settings.hidden=sides.value==='none';
+    $('road-border-legacy-note').hidden=!(selected&&legacyMixed);
     $('road-border-apply').disabled=!selected||!editing;
     $('road-curve-convert').disabled=!selected||!!selected.knots||!editing;
     $('road-curve-finish').hidden=!curve;$('road-curve-finish').disabled=pending.length<2;
     $('road-curve-cancel').hidden=!curve;$('road-curve-cancel').disabled=!pending.length;
   }
-  side.addEventListener('change',()=>{readSide();activeSide=side.value;writeSide();});
-  enabled.addEventListener('change',()=>{
-    if(enabled.checked&&!select.left.value&&!select.right.value)select.left.value=select.right.value=ROAD_BORDER_ASSETS[0].id;
-  });
+  sides.addEventListener('change',()=>{refresh();redraw();});
   $('road-border-apply').addEventListener('click',()=>{
     if(!route())return;
-    commit(editSculptRoute(getSurface(),id,{border:border(),width:Number($('surface-width').value)*28,brushShape:$('surface-brush-shape').value},getRegistry()));refresh();redraw();
+    commit(editSculptRoute(getSurface(),id,{border:border(),width:Number($('surface-width').value)*28,brushShape:$('surface-brush-shape').value},getRegistry()));legacyMixed=false;refresh();redraw();
   });
   $('road-curve-convert').addEventListener('click',()=>{
     if(!route())return;
@@ -134,6 +133,6 @@ export function createRoadEditControls({getSurface,commit,redraw,status,getBound
   }
   return {border,refresh,begin,move,finish,draw,setCurveFinish,
     addAnchor(point){if(pending.length>=32){status('32 points maximum : valide le tracé.');return;}pending.push(point);refresh();redraw();},
-    clear(){drag=null;id=null;pending=[];refresh();},
+    clear(){drag=null;id=null;pending=[];legacyMixed=false;refresh();},
     selectRoute};
 }
