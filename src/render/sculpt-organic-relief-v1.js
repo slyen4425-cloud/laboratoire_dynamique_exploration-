@@ -218,3 +218,73 @@ export function organicReliefPreviewBlockReason(terrain,{paintSurface,overlays,t
       return 'Relief au bord de la carte : rendu natif conservé';
   return '';
 }
+
+// Mixed-map trial: independent raised components above the dominant plane.
+// Protect projected feature pixels conservatively; never erase authored paint
+// or animate water through an organic overlay. No second height authority.
+export function organicReliefSafePatches(terrain,{paintSurface,overlays,shadowWidth=18,rearWidth=4,frontWidth=2}={}){
+  const {width:w,height:h,levels}=terrain;
+  const counts=new Map();for(const z of levels)counts.set(z,(counts.get(z)||0)+1);
+  const base=[...counts].sort((a,b)=>b[1]-a[1]||a[0]-b[0])[0]?.[0];
+  if(!Number.isFinite(base))return [];
+  const tw=28,th=21,rise=18,margin=Math.ceil(Math.max(shadowWidth/2,rearWidth,frontWidth,4)+5);
+  const intersects=(a,b)=>a.x<b.r&&b.x<a.r&&a.y<b.b&&b.y<a.b;
+  const components=[],seen=new Set();
+  for(let i=0;i<levels.length;i++){
+    if(levels[i]<=base||seen.has(i))continue;
+    const cells=[],queue=[i];seen.add(i);
+    for(let q=0;q<queue.length;q++){
+      const n=queue[q],x=n%w,y=Math.floor(n/w);cells.push(n);
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy,j=yy*w+xx;
+        if(xx>=0&&xx<w&&yy>=0&&yy<h&&levels[j]>base&&!seen.has(j)){seen.add(j);queue.push(j);}
+      }
+    }
+    const xs=cells.map(i=>i%w),ys=cells.map(i=>Math.floor(i/w));
+    const box={x:Math.min(...xs)*tw-margin,r:(Math.max(...xs)+1)*tw+margin,
+      y:Math.min(...cells.map(i=>Math.floor(i/w)*th-levels[i]*rise))-margin,
+      b:(Math.max(...ys)+1)*th-base*rise+margin};
+    if(Math.min(...xs)===0||Math.max(...xs)===w-1||Math.min(...ys)===0||Math.max(...ys)===h-1)continue;
+    if(box.x<0||box.r>w*tw||box.y< -base*rise||box.b>h*th-base*rise)continue;
+    components.push({cells,box});
+  }
+  const blocked=[];
+  const protect=(x,y,r,b)=>blocked.push({x,y,r,b});
+  // Painted zones and route borders retain exact native raster ownership.
+  for(const f of [...(paintSurface?.zones??[]),...(paintSurface?.routes??[]),...(paintSurface?.rivers??[])]){
+    const pts=f.points??[];if(!pts.length)return [];
+    const reach=(Number(f.width)||0)/2+32;
+    const x=Math.min(...pts.map(p=>p.x))-reach,r=Math.max(...pts.map(p=>p.x))+reach;
+    const y=Math.min(...pts.map(p=>p.y))-reach,b=Math.max(...pts.map(p=>p.y))+reach;
+    for(let row=Math.max(0,Math.floor(y/th));row<=Math.min(h-1,Math.floor(b/th));row++)
+      for(let col=Math.max(0,Math.floor(x/tw));col<=Math.min(w-1,Math.floor(r/tw));col++){
+        const z=levels[row*w+col]*rise;
+        protect(col*tw-4,row*th-z-4,(col+1)*tw+4,(row+1)*th-z+4);
+      }
+  }
+  if(overlays?.road?.visible)return [];
+  // Wet land and its volume, including the native animated shore mask.
+  for(let i=0;i<levels.length;i++){
+    const z=levels[i],water=terrain.waterLevels?.[i]??-1;
+    if(water<=z&&z>=base)continue;
+    const x=i%w*tw,y=Math.floor(i/w)*th;
+    protect(x-tw,y-Math.max(base,z,water)*rise-th,x+2*tw,y+2*th-Math.min(base,z)*rise);
+  }
+  // Spheres/ramps remain native. Until their complete projected silhouette
+  // is exposed to this filter, protect their horizontal reach at ALL heights.
+  for(const f of [...(terrain.spheres??[]),...(terrain.ramps??[])]){
+    if(!Number.isFinite(f.x)||!Number.isFinite(f.y))return [];
+    const reach=Math.max(64,Math.abs(Number(f.radius)||0)*2,Math.abs(Number(f.width)||0),Math.abs(Number(f.length)||0),Math.abs(Number(f.radiusX)||0)*2,Math.abs(Number(f.radiusY)||0)*2)+32;
+    protect(f.x-reach,f.y-reach-16*rise,f.x+reach,f.y+reach);
+  }
+  return components.filter(c=>{
+    if(blocked.some(b=>intersects(c.box,b)))return false;
+    const own=new Set(c.cells);
+    // Don't repaint another projected plateau, including border components.
+    for(let i=0;i<levels.length;i++)if(levels[i]>base&&!own.has(i)){
+      const x=i%w*tw,y=Math.floor(i/w)*th;
+      if(intersects(c.box,{x:x-3,r:x+tw+3,y:y-levels[i]*rise-3,b:y+th-base*rise+3}))return false;
+    }
+    return true;
+  }).map(c=>{const own=new Set(c.cells);return {box:c.box,terrain:{...terrain,levels:levels.map((z,i)=>own.has(i)?z:base)}};});
+}

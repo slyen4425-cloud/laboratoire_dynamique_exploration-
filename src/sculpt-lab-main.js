@@ -5,8 +5,8 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-author-atlas-v1';
-import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1-seamless-20261128-organic-preview-r5';
-import {RELIEF_PRESETS,normalizeReliefSettings} from './render/sculpt-organic-relief-v1.js?rev=editor-r5-20261128';
+import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1-seamless-20261128-organic-preview-r5-mixed';
+import {RELIEF_PRESETS,normalizeReliefSettings} from './render/sculpt-organic-relief-v1.js?rev=editor-r5-mixed-20261128';
 import {loadAnimatedSurfaceAtlas,SURFACE_RENDER_FPS} from './render/animated-surface-sprites-v1.js';
 import {SCULPT_WATER_MATERIAL_IDS,DEFAULT_SCULPT_WATER_MATERIAL} from './world/sculpt-water-materials-v1.js';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
@@ -999,6 +999,7 @@ function refreshOrganicReliefStatus(result){
   const el=$('organic-relief-status');if(!el)return;
   const message=!$('organic-relief-enabled').checked?'Filtre désactivé — rendu d’origine':
     !currentOrganicReliefPreview()?'Filtre disponible uniquement dans l’éditeur et Tester extérieur':
+    result?.organicReliefPatchCount?'Filtre local actif : '+result.organicReliefPatchCount+' relief(s) — zones complexes protégées':
     result?.organicReliefActive?'Filtre actif — aperçu non enregistré':
     result?.organicReliefBlocked||'Préparation de l’aperçu';
   if(el.textContent!==message)el.textContent=message;
@@ -6720,7 +6721,7 @@ function rampPreviewValidForProbe(){
 window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
-  organicReliefActive:lastRenderStats?.organicReliefActive===true,organicReliefBlocked:lastRenderStats?.organicReliefBlocked??'',
+  organicReliefActive:lastRenderStats?.organicReliefActive===true,organicReliefPatchCount:lastRenderStats?.organicReliefPatchCount??0,organicReliefBlocked:lastRenderStats?.organicReliefBlocked??'',
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
   terrainRampCount:terrain.ramps?.length??0,ramps:(terrain.ramps??[]).map(f=>({...f})),
   activeAreaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,

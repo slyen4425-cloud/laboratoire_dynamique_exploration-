@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint,normalizeReliefSettings,RELIEF_PRESETS,organicReliefPreviewBlockReason} from '../prototypes/organic-relief-pilot.mjs';
+import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint,normalizeReliefSettings,RELIEF_PRESETS,organicReliefPreviewBlockReason,organicReliefSafePatches} from '../prototypes/organic-relief-pilot.mjs';
 const t=(rows)=>({width:rows[0].length,height:rows.length,levels:rows.flat()});
 test('single continuous contour for connected staircase; no input mutation',()=>{
  const m=t([[0,1,1],[1,1,0],[1,0,0]]),before=JSON.stringify(m);
@@ -80,4 +80,24 @@ test('editor preview falls back rather than erasing unsupported native features'
  assert.match(organicReliefPreviewBlockReason(t([[4,0],[0,0]]),ok),/bord/);
  assert.match(organicReliefPreviewBlockReason(m,{...ok,overlays:{road:{visible:true}}}),/Route/);
  assert.match(organicReliefPreviewBlockReason(m,{...ok,cliffMoss:true}),/Mousse/);
+});
+
+test('mixed map keeps an isolated hill eligible despite a distant lake and route',()=>{
+ const w=36,h=24,levels=Array(w*h).fill(2),waterLevels=Array(w*h).fill(-1);
+ for(let y=8;y<=11;y++)for(let x=5;x<=9;x++)levels[y*w+x]=5;
+ for(let y=16;y<=18;y++)for(let x=24;x<=27;x++)waterLevels[y*w+x]=4;
+ const terrain={width:w,height:h,levels,waterLevels},before=JSON.stringify(terrain);
+ const options={paintSurface:{routes:[{points:[{x:700,y:120},{x:860,y:130}],width:20}]}};
+ const patches=organicReliefSafePatches(terrain,options);
+ assert.equal(patches.length,1);assert.equal(JSON.stringify(terrain),before);
+ assert.equal(patches[0].terrain.levels[8*w+5],5);
+ assert.equal(patches[0].terrain.levels[0],2);
+});
+test('mixed map skips hills whose projected pixels meet painted features or water',()=>{
+ const w=36,h=24,levels=Array(w*h).fill(2),waterLevels=Array(w*h).fill(-1);
+ for(let y=8;y<=11;y++)for(let x=5;x<=9;x++)levels[y*w+x]=5;
+ const terrain={width:w,height:h,levels,waterLevels};
+ assert.equal(organicReliefSafePatches(terrain,{paintSurface:{zones:[{points:[{x:150,y:180},{x:230,y:210}],width:30}]}}).length,0);
+ waterLevels[12*w+7]=4;
+ assert.equal(organicReliefSafePatches(terrain).length,0);
 });
