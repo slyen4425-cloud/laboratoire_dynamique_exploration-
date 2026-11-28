@@ -7,6 +7,7 @@ import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applyS
 import {drawSquareSurfaceStrokePath} from '../world/surface-brush-geometry.js';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas,cliffAtlasTheme} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
+import {drawOrganicPilot,organicReliefPreviewBlockReason} from './sculpt-organic-relief-v1.js?rev=editor-r5-20261128';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
 import {sculptRoundedHillRegions,sculptHillRegionOutline,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
@@ -870,7 +871,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE,
-  drawOuterSouthRim=true,ambientOcclusionPct=null,waterMask=null}={}){
+  drawOuterSouthRim=true,ambientOcclusionPct=null,waterMask=null,organicReliefPreview=null}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -880,6 +881,19 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
     pattern.setTransform(new DOMMatrix().scale(.55));
   const totalWidth=terrain.width*w,totalHeight=terrain.height*h;
+  let organicReliefBlocked='';
+  if(organicReliefPreview){
+    const rock=sculptCliffHDLayers(cliffHD)?.[cliffAtlasTheme(rockPalette)];
+    organicReliefBlocked=organicReliefPreviewBlockReason(terrain,{paintSurface,overlays,texture,rock,cliffMoss,drawOuterSouthRim,tile});
+    if(!organicReliefBlocked&&waterMask)organicReliefBlocked='Masque d’eau actif : rendu natif conservé';
+    if(!organicReliefBlocked){
+      // Same canonical terrain raster owner, no live actor overlay, no saved data.
+      drawOrganicPilot(ctx,terrain,{...organicReliefPreview,surface:texture,rock});
+      return {faceCount:sculptFaces(terrain).length,faceRuns:0,outerCliffRuns:0,
+        waterCells:0,roadCells:0,paintedCells:0,sphereCount:0,terrainRampCount:0,
+        worldWidth:totalWidth,worldHeight:totalHeight,organicReliefActive:true,organicReliefBlocked:''};
+    }
+  }
   // The outer cliff is deliberately disabled in the canonical 2.5D editor
   // and its Tester, including the decorative south fringe. Raised last-row
   // tops end BEFORE the bottom of this backing rectangle; a solid baseColor
@@ -1004,7 +1018,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     if(drawSculptRamp(ctx,ramp,terrain,{
       tileWidth:w,tileHeight:h,rise,texture,baseColor}))terrainRampCount++;
   }
-  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight};
+  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight,organicReliefActive:false,organicReliefBlocked};
 }
 
 // Only the animated surface and real shore contacts; clipping is performed by

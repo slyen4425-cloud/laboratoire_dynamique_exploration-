@@ -5,7 +5,8 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-author-atlas-v1';
-import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1-seamless-20261128';
+import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1-seamless-20261128-organic-preview-r5';
+import {RELIEF_PRESETS,normalizeReliefSettings} from './render/sculpt-organic-relief-v1.js?rev=editor-r5-20261128';
 import {loadAnimatedSurfaceAtlas,SURFACE_RENDER_FPS} from './render/animated-surface-sprites-v1.js';
 import {SCULPT_WATER_MATERIAL_IDS,DEFAULT_SCULPT_WATER_MATERIAL} from './world/sculpt-water-materials-v1.js';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
@@ -988,9 +989,35 @@ function navigationSkyBackdrop(width,height){
 function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigation-camera-zoom').value)/100||1.75));}
 /* Only the static sculpt raster is cached. Actor, objects, collision, input,
    camera and height data retain their existing owners and update separately. */
+const organicReliefKeys=['amount','organic','ambient','shadowWidth','contrast','rearWidth','rearOpacity','frontWidth','frontOpacity','lip'];
+const organicReliefPercent=new Set(['amount','organic','ambient','contrast','rearOpacity','frontOpacity']);
+function currentOrganicReliefPreview(){
+  if(!$('organic-relief-enabled')?.checked||sculptPlayActive||activeInteriorId||sculptWorldCurrentInterior())return null;
+  return normalizeReliefSettings(Object.fromEntries(organicReliefKeys.map(k=>[k,Number($('organic-relief-'+k).value)/(organicReliefPercent.has(k)?100:1)])));
+}
+function refreshOrganicReliefStatus(result){
+  const el=$('organic-relief-status');if(!el)return;
+  const message=!$('organic-relief-enabled').checked?'Filtre désactivé — rendu d’origine':
+    !currentOrganicReliefPreview()?'Filtre disponible uniquement dans l’éditeur et Tester extérieur':
+    result?.organicReliefActive?'Filtre actif — aperçu non enregistré':
+    result?.organicReliefBlocked||'Préparation de l’aperçu';
+  if(el.textContent!==message)el.textContent=message;
+}
+function mountOrganicReliefControls(){
+  if(!$('organic-relief-enabled'))return;
+  const update=()=>{for(const k of organicReliefKeys){const el=$('organic-relief-'+k);
+    $('organic-relief-'+k+'-value').textContent=el.value+(organicReliefPercent.has(k)?' %':' px');
+    el.disabled=!$('organic-relief-enabled').checked;}
+    navTerrainCache=null;scheduleDraw();};
+  for(const k of organicReliefKeys)$('organic-relief-'+k).addEventListener('input',()=>{$('organic-relief-preset').value='custom';update();});
+  $('organic-relief-enabled').addEventListener('change',update);
+  $('organic-relief-preset').addEventListener('change',()=>{const p=RELIEF_PRESETS[$('organic-relief-preset').value];if(p)for(const k of organicReliefKeys)$('organic-relief-'+k).value=String(p[k]*(organicReliefPercent.has(k)?100:1));update();});
+  update();
+}
 function navigationBackground(){
   const rockPalette=$('rock').value,materialId=displayedBaseMaterialId();
-  const signature=[rockPalette,materialId,currentSculptLighting()?.ambientOcclusionPct??'legacy',
+  const organicReliefPreview=currentOrganicReliefPreview();
+  const signature=[JSON.stringify(organicReliefPreview),rockPalette,materialId,currentSculptLighting()?.ambientOcclusionPct??'legacy',
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
      sphereTexturesLoaded,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
@@ -1022,7 +1049,7 @@ function navigationBackground(){
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
     ambientOcclusionPct:currentSculptLighting()?.ambientOcclusionPct??null,
-    waterMask:waterMaskContext,drawOuterSouthRim:false});
+    waterMask:waterMaskContext,drawOuterSouthRim:false,organicReliefPreview});
   // Pre-#468 paint order: cache one native terrain raster, then draw
   // objects/actors normally. Never build an extra cliff alpha overlay.
   terrainRasterBuilds++;
@@ -1510,9 +1537,10 @@ function draw(){
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
       ambientOcclusionPct:currentSculptLighting()?.ambientOcclusionPct??null,
-      drawOuterSouthRim:false});
+      drawOuterSouthRim:false,organicReliefPreview:currentOrganicReliefPreview()});
   }
   lastRenderStats=result;
+  refreshOrganicReliefStatus(result);
   // North decoration belongs behind the playable scene. South trees have
   // a foot below every playable hero and must be composited in front.
   drawDecorativeFringeObjects('back');
@@ -5844,6 +5872,7 @@ if(livingWaterControls){
  }
  syncLivingWaterControls();
 }
+mountOrganicReliefControls();
 $('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('show-water').addEventListener('change',()=>toggleRibbon('water'));
@@ -6691,6 +6720,7 @@ function rampPreviewValidForProbe(){
 window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
+  organicReliefActive:lastRenderStats?.organicReliefActive===true,organicReliefBlocked:lastRenderStats?.organicReliefBlocked??'',
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
   terrainRampCount:terrain.ramps?.length??0,ramps:(terrain.ramps??[]).map(f=>({...f})),
   activeAreaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,

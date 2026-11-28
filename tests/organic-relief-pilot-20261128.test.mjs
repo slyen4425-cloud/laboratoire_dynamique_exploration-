@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint,normalizeReliefSettings,RELIEF_PRESETS} from '../prototypes/organic-relief-pilot.mjs';
+import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint,normalizeReliefSettings,RELIEF_PRESETS,organicReliefPreviewBlockReason} from '../prototypes/organic-relief-pilot.mjs';
 const t=(rows)=>({width:rows[0].length,height:rows.length,levels:rows.flat()});
 test('single continuous contour for connected staircase; no input mutation',()=>{
  const m=t([[0,1,1],[1,1,0],[1,0,0]]),before=JSON.stringify(m);
@@ -68,4 +68,16 @@ test('R5 front crest settings are independent from rear crest and lip',()=>{
  assert.equal(normalizeReliefSettings({frontOpacity:0}).frontOpacity,0);
  assert.equal(normalizeReliefSettings({frontWidth:0}).frontWidth,0);
  assert.ok(RELIEF_PRESETS.marked.frontWidth>RELIEF_PRESETS.natural.frontWidth);
+});
+
+test('editor preview falls back rather than erasing unsupported native features',()=>{
+ const m=t([[0,0,0],[0,4,0],[0,0,0]]),ok={texture:{width:128},rock:{}};
+ assert.equal(organicReliefPreviewBlockReason(m,ok),'');
+ assert.match(organicReliefPreviewBlockReason({...m,waterLevels:[1]},ok),/Eau/);
+ assert.match(organicReliefPreviewBlockReason(m,{...ok,paintSurface:{routes:[{}]}}),/routes/);
+ assert.match(organicReliefPreviewBlockReason(m,{...ok,paintSurface:{zones:[{}]}}),/Textures/);
+ assert.match(organicReliefPreviewBlockReason({...m,ramps:[{}]},ok),/Pentes/);
+ assert.match(organicReliefPreviewBlockReason(t([[4,0],[0,0]]),ok),/bord/);
+ assert.match(organicReliefPreviewBlockReason(m,{...ok,overlays:{road:{visible:true}}}),/Route/);
+ assert.match(organicReliefPreviewBlockReason(m,{...ok,cliffMoss:true}),/Mousse/);
 });
