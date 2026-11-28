@@ -49,22 +49,23 @@ function decodeGif(b){
  if(!/^GIF8[79]a$/.test(b.toString('ascii',0,6)))throw Error('Invalid GIF');
  const w=b.readUInt16LE(6),h=b.readUInt16LE(8);if(w>512||h>512||w<64||h<64)throw Error('GIF dimensions');
  let p=13;const palette=flag=>{const n=3*(2<<(flag&7)),a=b.subarray(p,p+n);p+=n;return a;};
- const global=b[10]&128?palette(b[10]):null,frames=[];
+ const global=b[10]&128?palette(b[10]):null,frames=[],transparentCounts=[];let transparentIndex=null;
  const blocks=()=>{const a=[];while(p<b.length){const n=b[p++];if(!n)return Buffer.concat(a);a.push(b.subarray(p,p+n));p+=n;}throw Error('GIF block truncated');};
- while(p<b.length){const tag=b[p++];if(tag===0x3b)break;if(tag===0x21){p++;blocks();continue;}if(tag!==0x2c)throw Error('GIF block '+tag);
+ while(p<b.length){const tag=b[p++];if(tag===0x3b)break;if(tag===0x21){const label=b[p++],extension=blocks();if(label===0xf9&&extension.length===4)transparentIndex=extension[0]&1?extension[3]:null;continue;}if(tag!==0x2c)throw Error('GIF block '+tag);
   const x=b.readUInt16LE(p),y=b.readUInt16LE(p+2),fw=b.readUInt16LE(p+4),fh=b.readUInt16LE(p+6),flag=b[p+8];p+=9;
   if(x||y||fw!==w||fh!==h||(flag&64))throw Error('Only complete non-interlaced approved frames accepted');
   const colors=flag&128?palette(flag):global;if(!colors)throw Error('GIF palette absent');
   const min=b[p++],indices=lzw(blocks(),min,w*h),rgb=Buffer.alloc(w*h*3);
   for(let i=0;i<indices.length;i++){const c=indices[i]*3;rgb[i*3]=colors[c];rgb[i*3+1]=colors[c+1];rgb[i*3+2]=colors[c+2];}
+  transparentCounts.push(transparentIndex===null?0:indices.reduce((n,v)=>n+(v===transparentIndex?1:0),0));transparentIndex=null;
   frames.push(rgb);
  }
- if(frames.length!==SOURCE_FRAME_COUNT)throw Error('Expected nine author frames');return {w,h,frames};
+ if(frames.length!==SOURCE_FRAME_COUNT)throw Error('Expected nine author frames');return {w,h,frames,transparentCounts};
 }
 function tile(rgb,sw,sh){
  const w=FRAME_WIDTH,h=FRAME_HEIGHT,out=Buffer.alloc(w*h*3);
- // Downsample the approved art, then blend opposing border strips with
- // a smooth symmetric taper; no hard edge, no artificial moving lines.
+ // Downsample the approved art, then correct opposing edge offsets
+ // continuously over the entire frame; no mirrored border strip.
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   const sx=(x+.5)*sw/w-.5,sy=(y+.5)*sh/h-.5,x0=Math.floor(sx),y0=Math.floor(sy),a=sx-x0,b=sy-y0;
   for(let c=0;c<3;c++){const at=(u,v)=>rgb[(Math.min(sh-1,v)*sw+Math.min(sw-1,u))*3+c];
@@ -72,13 +73,27 @@ function tile(rgb,sw,sh){
  }
  return sealTile(out,w,h);
 }
-function sealTile(out,w,h){
- const blend=(horizontal)=>{const n=horizontal?w:h,other=horizontal?h:w,strip=12;
-  for(let j=0;j<other;j++)for(let d=0;d<strip;d++){const t=.5*(.5+.5*Math.cos(Math.PI*d/strip));
-   const a=(horizontal?j*w+d:d*w+j)*3,b=(horizontal?j*w+n-1-d:(n-1-d)*w+j)*3;
-   for(let c=0;c<3;c++){const v=out[a+c],u=out[b+c];out[a+c]=Math.round(v*(1-t)+u*t);out[b+c]=Math.round(u*(1-t)+v*t);}
-  }
- };blend(true);blend(false);return out;
+// Make opposing edges continuous by distributing the colour offset over
+// the entire frame, not by mirroring a narrow rectangular border strip.
+// Retain local texture detail and avoid a repeated strip with zero motion.
+export function sealTile(out,w,h){
+ if(w<2||h<2)return out;
+ const values=Float64Array.from(out);
+ for(let y=0;y<h;y++)for(let c=0;c<3;c++){
+  const a=(y*w)*3+c,b=(y*w+w-1)*3+c;
+  const delta=values[b]-values[a];
+  for(let x=0;x<w;x++)values[(y*w+x)*3+c]-=delta*(x/(w-1)-.5);
+ }
+ for(let x=0;x<w;x++)for(let c=0;c<3;c++){
+  const a=x*3+c,b=((h-1)*w+x)*3+c;
+  const delta=values[b]-values[a];
+  for(let y=0;y<h;y++)values[(y*w+x)*3+c]-=delta*(y/(h-1)-.5);
+ }
+ for(let i=0;i<out.length;i++)out[i]=Math.max(0,Math.min(255,Math.round(values[i])));
+ // Exact equality despite floating point rounding at a half-integer.
+ for(let y=0;y<h;y++)out.copy(out,(y*w+w-1)*3,y*w*3,y*w*3+3);
+ out.copy(out,(h-1)*w*3,0,w*3);
+ return out;
 }
 // Deterministic, local block flow with bilinear sampling. Preserve all nine
 // approved keyframes; only the three between each pair are synthesized.
@@ -132,9 +147,32 @@ export function interpolateSurfaceLoop(keyframes,w=FRAME_WIDTH,h=FRAME_HEIGHT){
  return result;
 }
 function pngChunk(name,data){const type=Buffer.from(name),header=Buffer.alloc(4),tail=Buffer.alloc(4);header.writeUInt32BE(data.length);tail.writeUInt32BE(crc(Buffer.concat([type,data])));return Buffer.concat([header,type,data,tail]);}
-function atlas(gif){
- const {w:sw,h:sh,frames}=decodeGif(gif),w=FRAME_WIDTH*ATLAS_COLUMNS,h=FRAME_HEIGHT*ATLAS_ROWS,stride=w*3+1,raw=Buffer.alloc(stride*h);
+// Diagnostic only: detect fixed straight-line contrast across all frames,
+// and report transparency that the existing RGB decoder currently ignores.
+// No threshold used as proof of aesthetic quality, no pixels changed.
+function auditGrid(frames,w,h){
+ const axis=horizontal=>{
+  const n=horizontal?w:h,m=horizontal?h:w,energy=Array(n).fill(0),signed=Array(n).fill(0);
+  for(const buf of frames)for(let p=0;p<n;p++)for(let q=0;q<m;q++){
+   const idx=(horizontal?q*w+p:p*w+q)*3,prev=(horizontal?q*w+(p+n-1)%n:((p+n-1)%n)*w+q)*3;
+   let d=0;for(let c=0;c<3;c++)d+=buf[idx+c]-buf[prev+c];
+   energy[p]+=Math.abs(d/3);signed[p]+=d/3;
+  }
+  const denom=frames.length*m;const avg=energy.map(v=>v/denom),mean=avg.reduce((a,b)=>a+b,0)/n;
+  const top=avg.map((v,i)=>({at:i,contrast:+v.toFixed(2),signed:+(signed[i]/denom).toFixed(2)})).sort((a,b)=>b.contrast-a.contrast).slice(0,12);
+  const periodic=[];
+  for(let step=4;step<=Math.floor(n/3);step++)if(n%step===0){
+   let max=0,phase=0;for(let offset=0;offset<step;offset++){let sum=0;for(let i=offset;i<n;i+=step)sum+=avg[i];const score=sum/(n/step);if(score>max){max=score;phase=offset;}}
+   periodic.push({step,phase,ratio:+(max/Math.max(mean,.001)).toFixed(2)});
+  }
+  return {mean:+mean.toFixed(2),edge:avg[0],top,periodic:periodic.sort((a,b)=>b.ratio-a.ratio).slice(0,6)};
+ };
+ return {x:axis(true),y:axis(false)};
+}
+function atlas(gif,name){
+ const {w:sw,h:sh,frames,transparentCounts}=decodeGif(gif),w=FRAME_WIDTH*ATLAS_COLUMNS,h=FRAME_HEIGHT*ATLAS_ROWS,stride=w*3+1,raw=Buffer.alloc(stride*h);
  const loop=interpolateSurfaceLoop(frames.map(frame=>tile(frame,sw,sh)));
+ console.log('WATER GRID SOURCE AUDIT '+JSON.stringify({name,source:[sw,sh],transparentCounts,raw:auditGrid(frames,sw,sh),atlas:auditGrid(loop,FRAME_WIDTH,FRAME_HEIGHT)}));
  for(let i=0;i<loop.length;i++){const img=loop[i],x=(i%ATLAS_COLUMNS)*FRAME_WIDTH,y=Math.floor(i/ATLAS_COLUMNS)*FRAME_HEIGHT;
   for(let j=0;j<FRAME_HEIGHT;j++)img.copy(raw,(y+j)*stride+1+x*3,j*FRAME_WIDTH*3,(j+1)*FRAME_WIDTH*3);}
  // PNG Sub filter, deterministic lossless RGB.
@@ -152,7 +190,7 @@ export function buildLivingWaterAtlases(root=process.cwd()){
  const zip=readFileSync(source),sha=createHash('sha1').update('blob '+zip.length+'\0').update(zip).digest('hex');
  if(sha!==EXPECTED)throw Error('Water author ZIP revision mismatch '+sha);
  const entries=unzip(zip);mkdirSync(dir,{recursive:true});const sizes={};
- for(const name of names){const data=atlas(entries.get(name+'.gif'));writeFileSync(join(dir,name+'.png'),data);sizes[name]=data.length;}
+ for(const name of names){const data=atlas(entries.get(name+'.gif'),name);writeFileSync(join(dir,name+'.png'),data);sizes[name]=data.length;}
  const total=Object.values(sizes).reduce((a,b)=>a+b,0);
  if(total>6*1024*1024)throw Error('Water atlas budget exceeded '+total);
  console.log('LIVING WATER ATLAS BUILD '+JSON.stringify({sourceSha:sha,sourceFrames:SOURCE_FRAME_COUNT*names.length,frames:FRAME_COUNT*names.length,dimensions:[FRAME_WIDTH*ATLAS_COLUMNS,FRAME_HEIGHT*ATLAS_ROWS],bytes:total,sizes}));return {total,sizes};

@@ -114,6 +114,9 @@ try{
  if(!/^npc\.user\.[a-f0-9-]{36}$/.test(created?.id)||created.colored<200)
   throw Error('Création ou affichage PNJ invalide : '+JSON.stringify(created));
  const reloaded=await evaluate(`(async()=>{
+   // Mark the outgoing document so CDP cannot mistake its still-populated
+   // form for the freshly restored editor while navigation is in flight.
+   window.__npcSmokeOutgoingDocument=true;
    location.search='?edit='+encodeURIComponent(${JSON.stringify(created.id)});
    return true;
  })()`);
@@ -122,16 +125,17 @@ try{
  for(let i=0;i<90;i++){
   try{
    persisted=await evaluate(`({
+    fresh:window.__npcSmokeOutgoingDocument!==true && document.readyState==='complete',
     loaded:document.querySelector('#npc-saved')?.value,
     name:document.querySelector('#npc-name')?.value,
     dialogue:document.querySelector('#npc-dialogue')?.value,
     preview:document.querySelector('#npc-status')?.textContent
    })`);
   }catch{}
-  if(persisted?.loaded===created.id&&persisted.name==='PNJ navigateur CI')break;
+  if(persisted?.fresh&&persisted.loaded===created.id&&persisted.name==='PNJ navigateur CI'&&persisted.preview?.startsWith('Aperçu réel de '))break;
   await sleep(180);
  }
- if(persisted?.loaded!==created.id||persisted.dialogue!=='Bonjour depuis Chromium')
+ if(!persisted?.fresh||persisted.loaded!==created.id||persisted.dialogue!=='Bonjour depuis Chromium'||!persisted.preview?.startsWith('Aperçu réel de '))
   throw Error('La fiche PNJ ne survit pas au rechargement : '+JSON.stringify(persisted));
  // Real visual gallery: saved PNG reused by a new PNJ, original unmodified.
  const reuse=await evaluate("(async()=>{\n  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));\n  const details=document.querySelector('#npc-visual-library');\n  if(!details)throw Error('Galerie de visuels introuvable');\n  details.open=true;\n  document.querySelector('[data-npc-visual-tab=\"npc\"]').click();\n  let choose=null;\n  for(let i=0;i<90;i++){\n   choose=[...document.querySelectorAll('#npc-visual-cards .npc-visual-card')]\n    .find(card=>card.querySelector('strong')?.textContent==='PNJ navigateur CI')\n    ?.querySelector('button');\n   if(choose)break;\n   await delay(120);\n  }\n  if(!choose)throw Error('Modèle PNJ absent de la bibliothèque : '+\n   document.querySelector('#npc-visual-library-status').textContent);\n  document.querySelector('#npc-new').click();\n  for(let i=0;i<50;i++){\n   if(!document.querySelector('#npc-name').value)break;\n   await delay(100);\n  }\n  choose.click();\n  let selected=false;\n  for(let i=0;i<50;i++){\n   if(document.querySelector('#npc-visual-library-status').textContent.includes('Visuel chargé')){\n    selected=true;break;\n   }\n   await delay(140);\n  }\n  if(!selected)throw Error('Sélection du visuel PNJ échouée : '+\n   document.querySelector('#npc-visual-library-status').textContent);\n  document.querySelector('#npc-name').value='Gardien personnalisé';\n  document.querySelector('#npc-save').click();\n  for(let i=0;i<90;i++){\n   const options=[...document.querySelector('#npc-saved').options];\n   if(options.some(o=>o.textContent.includes('Gardien personnalisé'))&&\n      document.querySelector('#npc-status').textContent.includes('enregistré'))\n     break;\n   await delay(120);\n  }\n  const options=[...document.querySelector('#npc-saved').options];\n  const original=options.find(o=>o.textContent.includes('PNJ navigateur CI'));\n  const copy=options.find(o=>o.textContent.includes('Gardien personnalisé'));\n  if(!original||!copy||original.value===copy.value)\n   throw Error('Le visuel réutilisé a modifié ou remplacé la fiche source');\n  return {original:original.value,copy:copy.value,count:options.length};\n})()");
