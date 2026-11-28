@@ -1794,6 +1794,37 @@ try{
   if(curveV3.leak!==0||curveV3.visible<1000||curveV3.core<80||curveV3.corePainted/curveV3.core<.72||curveV3.nearLeft<20||curveV3.nearRight<20)
     throw Error('V3 real thick curved border pixels: '+JSON.stringify(curveV3));
   console.log('V3 real curved wood: '+JSON.stringify(curveV3));
+  // Actual horizontal stone asset: verify both sides' screen-space relief
+  // orientation via the production rasterizer and retain a visual preview.
+  const facing=await run(`(async()=>{
+    const {roadBorderCellPainter,ROAD_BORDER_ASSETS}=await import('./src/render/road-border-renderer-v1.js');
+    const asset=ROAD_BORDER_ASSETS.find(a=>a.id==='road-border.bordure_pierre_taillee');
+    const image=new Image();image.src=asset.path;await image.decode();
+    const style={assetId:asset.id,width:16,scale:1,offset:0,spacing:2,opacity:1};
+    const route={width:48,points:[{x:20,y:84},{x:260,y:84}],border:{enabled:true,left:style,right:style}};
+    const tile={width:28,height:21,rise:18},terrain={width:10,height:8};
+    const layer=document.createElement('canvas');layer.width=560;layer.height=336;
+    const ctx=layer.getContext('2d',{willReadFrequently:true});ctx.scale(2,2);
+    const paint=roadBorderCellPainter(ctx,terrain,tile,Object.freeze([route]),new Map([[asset.id,[image]]]));
+    for(let y=0;y<8;y++)for(let x=0;x<10;x++)if(paint.hasCell(x,y))paint(x,y,0);
+    // Both strips now have the same screen-space alpha profile, measured
+    // about their inward-shifted anchors, away from ends and tile edges.
+    const shift=16*.12,north=60+shift,south=108-shift;
+    const mass=(anchor,dy)=>{
+      const p=ctx.getImageData(100,Math.round((anchor+dy)*2),360,1).data;
+      let a=0;for(let i=3;i<p.length;i+=4)a+=p[i];return a;
+    };
+    let error=0,total=0;
+    for(let d=-7;d<=7;d++){const a=mass(north,d),b=mass(south,d);error+=Math.abs(a-b);total+=a+b;}
+    const preview=document.createElement('canvas');preview.width=560;preview.height=336;
+    const pc=preview.getContext('2d');pc.scale(2,2);pc.fillStyle='#718e49';pc.fillRect(0,0,280,168);
+    pc.strokeStyle='#96704a';pc.lineWidth=48;pc.lineCap='round';pc.beginPath();pc.moveTo(20,84);pc.lineTo(260,84);pc.stroke();
+    pc.setTransform(1,0,0,1,0,0);pc.drawImage(layer,0,0);
+    return {error,total,png:preview.toDataURL('image/png').split(',')[1]};
+  })()`);
+  await writeFile('artifacts/road-border-facing-real-preview.png',Buffer.from(facing.png,'base64'));delete facing.png;
+  if(facing.total<100000||facing.error/facing.total>.18)throw Error('Horizontal road facing mismatch: '+JSON.stringify(facing));
+  console.log('Horizontal stone facing: '+JSON.stringify(facing));
   // Restore the precise original fixture for downstream historical tests.
   await run(`(()=>{document.querySelector('#json').value=window.__v27Scene;document.querySelector('#import').click();
     const action=document.querySelector('#surface-action');action.value='paint';action.dispatchEvent(new Event('change',{bubbles:true}));})()`);

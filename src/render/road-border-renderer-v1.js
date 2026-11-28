@@ -49,6 +49,7 @@ function readImage(image){
   ctx.drawImage(image,0,0);const pixels={w,h,data:ctx.getImageData(0,0,w,h).data};decoded.set(image,pixels);return pixels;
 }
 function sampleTexture(tex,u,v,profile){
+  if(v<0||v>1)return {r:0,g:0,b:0,a:0};
   const x=u*tex.w-.5,y=Math.max(0,Math.min(tex.h-1,v*tex.h-.5));
   const x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0;
   let a=0,r=0,g=0,b=0;
@@ -93,7 +94,12 @@ function tileRaster(field,cache,col,row){
     let a=0,r=0,g=0,b=0;
     for(const s of roadBorderTextureAt(field,wx,wy)){
       const texture=cache.textures.get(s.asset.id);if(!texture)continue;
-      const q=sampleTexture(texture,s.u,s.v,s.profile),opacity=s.style.opacity;
+      let q=sampleTexture(texture,s.u,s.v,s.profile);
+      if(s.alternateV!==null){
+        const other=sampleTexture(texture,s.u,s.alternateV,s.profile),w=s.flip;
+        q={r:q.r*(1-w)+other.r*w,g:q.g*(1-w)+other.g*w,b:q.b*(1-w)+other.b*w,a:q.a*(1-w)+other.a*w};
+      }
+      const opacity=s.style.opacity;
       const alpha=q.a*opacity;if(alpha<=0)continue;
       r=q.r*opacity+r*(1-alpha);g=q.g*opacity+g*(1-alpha);b=q.b*opacity+b*(1-alpha);a=alpha+a*(1-alpha);
     }

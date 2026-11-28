@@ -87,7 +87,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gensrpg-road-curve-v3-${{ github.run_id }}
-          path: artifacts/road-border-v3-real-preview.png
+          path: |
+            artifacts/road-border-v3-real-preview.png
+            artifacts/road-border-facing-real-preview.png
           if-no-files-found: ignore
           retention-days: 14
       - name: Real Chromium WorldArea fringe painting outside gameplay bounds

@@ -160,14 +160,24 @@ export function roadBorderMappingAt(field,x,y,sourceProfiles){
     const {style,asset,thick}=selected,profile=sourceProfiles(asset.id);
     const signed=(hit.d<e.radius?-1:1)*guide.d;
     const center=style.offset-roadBorderInwardShift(e.radius,thick);
-    const v=profile.anchor-(signed-center)/thick;
-    if(v<0||v>1)continue;
+    // The source relief faces the camera (+world Y). The front/south
+    // horizontal edge must not be upside down. Use physical orientation,
+    // independent of drawing direction or left/right style selection.
+    const south=guide.s.side*hit.s.dx;
+    const t=clamp((south-.5)/.4,0,1),flip=t*t*(3-2*t);
+    const delta=(signed-center)/thick;
+    const originalV=profile.anchor-delta,mirroredV=profile.anchor+delta;
+    // Preserve the anchor and the exact V3 contour. Fade two actual
+    // samples on diagonals, never interpolate UVs through a collapsed strip.
+    const v=flip===1?mirroredV:originalV;
+    const alternateV=flip>0&&flip<1?mirroredV:null;
+    if((v<0||v>1)&&(alternateV===null||alternateV<0||alternateV>1))continue;
     const nominal=Math.max(1,thick*4),loop=guide.s.loopLength;
     // A closed contour repeats an integral number of tiles, so its seam is
     // continuous regardless of which marching-square edge was visited first.
     const period=loop?loop/Math.max(1,Math.round(loop/nominal)):nominal;
     const u=((guide.s.start+guide.t*guide.s.span)%period)/period;
-    result.push({asset,style,u,v,signed,center,thick,side:guide.s.side,route:e.route,profile});
+    result.push({asset,style,u,v,alternateV,flip,signed,center,thick,side:guide.s.side,route:e.route,profile});
   }
   return result;
 }
