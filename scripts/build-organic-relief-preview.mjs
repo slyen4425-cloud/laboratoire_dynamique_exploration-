@@ -38,7 +38,7 @@ try{
   await page.uncheck('#enabled');await waitPaint();
   if(!await page.evaluate(()=>document.querySelector('#old').toDataURL()===document.querySelector('#new').toDataURL()))throw Error('Filter disabled must reproduce native output pixel for pixel');
   await page.check('#enabled');await waitPaint();
-  for(const [id,value] of [['rearWidth','0'],['rearOpacity','0'],['ambient','0'],['shadowWidth','0'],['contrast','0']]){
+  for(const [id,value] of [['frontWidth','0'],['frontOpacity','0'],['rearWidth','0'],['rearOpacity','0'],['ambient','0'],['shadowWidth','0'],['contrast','0']]){
     await page.selectOption('#preset','marked');await waitPaint();const before=await pixels();
     await page.locator('#'+id).evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));},value);
     await waitPaint();if(before===await pixels())throw Error('Inactive visual slider: '+id);

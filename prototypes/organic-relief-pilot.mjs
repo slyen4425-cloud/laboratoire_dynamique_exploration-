@@ -110,19 +110,20 @@ function quad(ctx,a,b,top,bottom){ctx.moveTo(a[0],a[1]-top);ctx.lineTo(b[0],b[1]
   ctx.lineTo(b[0],b[1]-bottom);ctx.lineTo(a[0],a[1]-bottom);ctx.closePath();}
 // Presentation-only settings: no terrain mutation or saved schema changes.
 export const RELIEF_PRESETS=Object.freeze({
-  light:Object.freeze({amount:.35,organic:.35,ambient:.45,shadowWidth:10,contrast:.45,rearWidth:2,rearOpacity:.35,lip:1}),
-  natural:Object.freeze({amount:.5,organic:.7,ambient:.78,shadowWidth:18,contrast:.75,rearWidth:4,rearOpacity:.65,lip:1}),
-  marked:Object.freeze({amount:.5,organic:.9,ambient:1,shadowWidth:26,contrast:1,rearWidth:7,rearOpacity:.9,lip:2})
+  light:Object.freeze({amount:.35,organic:.35,ambient:.45,shadowWidth:10,contrast:.45,rearWidth:2,rearOpacity:.35,frontWidth:1,frontOpacity:.25,lip:1}),
+  natural:Object.freeze({amount:.5,organic:.7,ambient:.78,shadowWidth:18,contrast:.75,rearWidth:4,rearOpacity:.65,frontWidth:2,frontOpacity:.45,lip:1}),
+  marked:Object.freeze({amount:.5,organic:.9,ambient:1,shadowWidth:26,contrast:1,rearWidth:7,rearOpacity:.9,frontWidth:5,frontOpacity:.8,lip:2})
 });
 export function normalizeReliefSettings(input={}){
   const clamp=(key,max)=>{const n=Number(input[key]??RELIEF_PRESETS.natural[key]);return Number.isFinite(n)?Math.max(0,Math.min(max,n)):RELIEF_PRESETS.natural[key];};
   return Object.freeze({amount:clamp('amount',.5),organic:clamp('organic',1),
     ambient:clamp('ambient',1),shadowWidth:clamp('shadowWidth',32),
     contrast:clamp('contrast',1),rearWidth:clamp('rearWidth',10),
-    rearOpacity:clamp('rearOpacity',1),lip:clamp('lip',4)});
+    rearOpacity:clamp('rearOpacity',1),frontWidth:clamp('frontWidth',10),
+    frontOpacity:clamp('frontOpacity',1),lip:clamp('lip',4)});
 }
 export function drawOrganicPilot(ctx,terrain,{surface,rock,...options}={}){
-  const {amount,ambient,lip,organic,shadowWidth,contrast,rearWidth,rearOpacity}=normalizeReliefSettings(options);
+  const {amount,ambient,lip,organic,shadowWidth,contrast,rearWidth,rearOpacity,frontWidth,frontOpacity}=normalizeReliefSettings(options);
   const p=reliefWallPlan(terrain,{amount});const {width:w,height:h,rise}=p;
   const ground=ctx.createPattern(surface,'repeat'),wall=ctx.createPattern(rock,'repeat');
   if(!ground||!wall)throw Error('Canonical textures unavailable');
@@ -185,9 +186,17 @@ export function drawOrganicPilot(ctx,terrain,{surface,rock,...options}={}){
       ctx.strokeStyle='rgba(20,28,34,'+rearOpacity+')';ctx.stroke();
     }
     ctx.restore();
-    // Front crest is the terrain material itself, with no dark outline.
+    // Optional native-material lip, separate from the front crest shading.
     if(lip>0){ctx.save();ctx.strokeStyle=ground;ctx.lineWidth=Math.min(4,lip);
       ctx.lineCap='round';ctx.beginPath();for(const e of front){ctx.moveTo(e.a[0],e.a[1]-top);ctx.lineTo(e.b[0],e.b[1]-top);}ctx.stroke();ctx.restore();}
+    // Optional neutral front crest, clipped to the top surface, independent
+    // of rear outline and material lip. Never paint a brown band on the rock.
+    if(frontWidth>0&&frontOpacity>0){
+      ctx.save();ctx.beginPath();for(const loop of t.loops)pathLoop(ctx,loop,top,strength);
+      ctx.clip('evenodd');ctx.beginPath();for(const e of front){ctx.moveTo(e.a[0],e.a[1]-top);ctx.lineTo(e.b[0],e.b[1]-top);}
+      ctx.lineWidth=frontWidth*2;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(20,28,34,'+frontOpacity+')';ctx.stroke();ctx.restore();
+    }
   }
   ctx.restore();return p;
 }

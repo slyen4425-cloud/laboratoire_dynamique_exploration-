@@ -59,3 +59,13 @@ test('R4 visual controls are independent and clamped, never change terrain',()=>
  assert.ok(RELIEF_PRESETS.marked.rearWidth>RELIEF_PRESETS.natural.rearWidth);
  assert.ok(RELIEF_PRESETS.marked.ambient>RELIEF_PRESETS.light.ambient);
 });
+
+test('R5 front crest settings are independent from rear crest and lip',()=>{
+ const base=normalizeReliefSettings(),front=normalizeReliefSettings({frontWidth:8,frontOpacity:.8});
+ assert.equal(front.frontWidth,8);assert.equal(front.frontOpacity,.8);
+ for(const k of ['rearWidth','rearOpacity','lip','ambient','contrast'])assert.equal(front[k],base[k]);
+ assert.equal(normalizeReliefSettings({frontWidth:99}).frontWidth,10);
+ assert.equal(normalizeReliefSettings({frontOpacity:0}).frontOpacity,0);
+ assert.equal(normalizeReliefSettings({frontWidth:0}).frontWidth,0);
+ assert.ok(RELIEF_PRESETS.marked.frontWidth>RELIEF_PRESETS.natural.frontWidth);
+});
