@@ -1045,6 +1045,26 @@ function visibleWaterCells(terrain,tile){
  }
  wetCellCache.set(terrain,groups);return groups;
 }
+// Coalesce a rectangular region into one native fillRect, matching Canvas
+// rectangle rasterization exactly; irregular regions retain the union path.
+function fillWetRegion(ctx,cells,w,h){
+ if(!cells.length)return;
+ let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+ const seen=new Set();
+ for(const {x,y} of cells){
+  minX=Math.min(minX,x);minY=Math.min(minY,y);
+  maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);
+  seen.add(x+':'+y);
+ }
+ const nx=(maxX-minX)/w+1,ny=(maxY-minY)/h+1;
+ if(Number.isInteger(nx)&&Number.isInteger(ny)&&seen.size===nx*ny&&
+    cells.every(({x,y})=>Number.isInteger((x-minX)/w)&&Number.isInteger((y-minY)/h))){
+  ctx.fillRect(minX,minY,nx*w,ny*h);return;
+ }
+ ctx.beginPath();
+ for(const {x,y} of cells)ctx.rect(x,y,w,h);
+ ctx.fill();
+}
 export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSeconds=0,fps=8,viewport,foamPct=60}){
  const groups=visibleWaterCells(terrain,tile),{width:w,height:h}=tile;
  let visible=0;
@@ -1057,10 +1077,11 @@ export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSec
    // controls coverage; the old translucent backing showed its tile seams.
    // A compound path paints the union once, rather than alpha stacking.
    const depths=new Map(),shores=new Map(),lava=id==='water.lava';
-   ctx.save();ctx.fillStyle=pattern;ctx.beginPath();ctx.globalAlpha=1;
+   const regionCells=[];
+   ctx.save();ctx.fillStyle=pattern;ctx.globalAlpha=1;
    for(const cell of cells)if(inView(cell)){
     const {x,y,depth}=cell;
-    ctx.rect(x,y,w,h);visible++;
+    regionCells.push(cell);visible++;
     if(!depths.has(depth))depths.set(depth,[]);
     depths.get(depth).push(cell);
     if(cell.shore)for(const edge of sculptWetShoreEdges(terrain,cell.col,cell.row)){
@@ -1071,13 +1092,12 @@ export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSec
      shores.get(key).cells.push(cell);
     }
    }
-   ctx.fill();
+   fillWetRegion(ctx,regionCells,w,h);
    // Each equal-depth region receives one tint, including at shared edges.
    ctx.fillStyle=lava?'#40110a':'#102a51';
    for(const [depth,region] of depths){
-    ctx.globalAlpha=Math.min(.26,.035*depth);ctx.beginPath();
-    for(const {x,y} of region)ctx.rect(x,y,w,h);
-    ctx.fill();
+    ctx.globalAlpha=Math.min(.26,.035*depth);
+    fillWetRegion(ctx,region,w,h);
    }
    // A continuous gradient per aligned real shore, never per tile seam.
    // Orthogonal gradients can still meet naturally at an outer corner.
@@ -1088,9 +1108,7 @@ export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSec
     const gradient=ctx.createLinearGradient(gx,gy,gx+(horizontal?0:sign*w*.40),gy+(horizontal?sign*h*.45:0));
     gradient.addColorStop(0,lava?'rgba(255,139,36,.78)':'rgba(79,209,197,.70)');
     gradient.addColorStop(1,lava?'rgba(255,139,36,0)':'rgba(79,209,197,0)');
-    ctx.fillStyle=gradient;ctx.beginPath();
-    for(const {x,y} of region)ctx.rect(x,y,w,h);
-    ctx.fill();
+    ctx.fillStyle=gradient;fillWetRegion(ctx,region,w,h);
    }
    ctx.restore();
   }
