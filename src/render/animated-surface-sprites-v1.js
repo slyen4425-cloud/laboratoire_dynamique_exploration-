@@ -20,7 +20,7 @@ export function surfaceMaterialFrame(id,time,fps=8){
  return ((phase%SURFACE_FRAME_COUNT)+SURFACE_FRAME_COUNT)%SURFACE_FRAME_COUNT;
 }
 export function animatedSurfaceAtlasUrl(id){
- return names[id]?new URL('../../assets/exploration/materials/forest/water/animated/'+names[id]+'.png?rev=surface-fluidity-36-v1',import.meta.url).href:null;
+ return names[id]?new URL('../../assets/exploration/materials/forest/water/animated/'+names[id]+'.png?rev=surface-fluidity-36-v2-seamless',import.meta.url).href:null;
 }
 const atlases=new Map(),frames=new Map();
 export function loadAnimatedSurfaceAtlas(id,makeImage=()=>new Image()){

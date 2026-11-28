@@ -59,7 +59,7 @@ test('36 actual image frames share one reusable canvas and a material clock',asy
  let requests=0;const fakeImage=()=>{requests++;return {naturalWidth:1008,naturalHeight:756,set src(v){this.onload();}};};
  const loaded=await loadAnimatedSurfaceAtlas('water.turquoise',fakeImage);
  assert.equal(await loadAnimatedSurfaceAtlas('water.turquoise',fakeImage),loaded);assert.equal(requests,1);
- assert.match(animatedSurfaceAtlasUrl('water.lava'),/lave\.png\?rev=surface-fluidity-36-v1$/);
+ assert.match(animatedSurfaceAtlasUrl('water.lava'),/lave\.png\?rev=surface-fluidity-36-v2-seamless$/);
  let allocations=0;const canvas=()=>{allocations++;const calls=[];
   const ctx={clearRect(){},drawImage(...v){calls.push(v)}};
   return {calls,getContext(){return ctx}};
@@ -108,5 +108,20 @@ test('offline interpolation preserves all authored keyframes and creates distinc
    for(let y=0;y<h;y++)assert.deepEqual(frame.subarray(y*w*3,y*w*3+3),frame.subarray((y*w+w-1)*3,(y*w+w)*3));
    assert.deepEqual(frame.subarray(0,w*3),frame.subarray((h-1)*w*3,h*w*3));
   }
+ }
+});
+
+test('periodic correction removes a ramp mismatch without a mirrored border strip',async()=>{
+ const {sealTile}=await import('../scripts/build-living-water-atlases.mjs');
+ const w=36,h=36,source=Buffer.alloc(w*h*3);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)for(let c=0;c<3;c++)
+  source[(y*w+x)*3+c]=Math.round(80+x*1.4+y*.8+16*Math.sin(2*Math.PI*x/(w-1))+12*Math.cos(2*Math.PI*y/(h-1)));
+ const result=sealTile(Buffer.from(source),w,h);
+ for(let y=0;y<h;y++)assert.deepEqual(result.subarray(y*w*3,y*w*3+3),result.subarray((y*w+w-1)*3,(y*w+w)*3));
+ assert.deepEqual(result.subarray(0,w*3),result.subarray((h-1)*w*3));
+ // The analytic periodic detail survives even near the former border strip.
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const expected=80+35*1.4/2+35*.8/2+16*Math.sin(2*Math.PI*x/(w-1))+12*Math.cos(2*Math.PI*y/(h-1));
+  assert.ok(Math.abs(result[(y*w+x)*3]-expected)<=2);
  }
 });

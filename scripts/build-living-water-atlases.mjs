@@ -64,8 +64,8 @@ function decodeGif(b){
 }
 function tile(rgb,sw,sh){
  const w=FRAME_WIDTH,h=FRAME_HEIGHT,out=Buffer.alloc(w*h*3);
- // Downsample the approved art, then blend opposing border strips with
- // a smooth symmetric taper; no hard edge, no artificial moving lines.
+ // Downsample the approved art, then correct opposing edge offsets
+ // continuously over the entire frame; no mirrored border strip.
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   const sx=(x+.5)*sw/w-.5,sy=(y+.5)*sh/h-.5,x0=Math.floor(sx),y0=Math.floor(sy),a=sx-x0,b=sy-y0;
   for(let c=0;c<3;c++){const at=(u,v)=>rgb[(Math.min(sh-1,v)*sw+Math.min(sw-1,u))*3+c];
@@ -73,13 +73,27 @@ function tile(rgb,sw,sh){
  }
  return sealTile(out,w,h);
 }
-function sealTile(out,w,h){
- const blend=(horizontal)=>{const n=horizontal?w:h,other=horizontal?h:w,strip=12;
-  for(let j=0;j<other;j++)for(let d=0;d<strip;d++){const t=.5*(.5+.5*Math.cos(Math.PI*d/strip));
-   const a=(horizontal?j*w+d:d*w+j)*3,b=(horizontal?j*w+n-1-d:(n-1-d)*w+j)*3;
-   for(let c=0;c<3;c++){const v=out[a+c],u=out[b+c];out[a+c]=Math.round(v*(1-t)+u*t);out[b+c]=Math.round(u*(1-t)+v*t);}
-  }
- };blend(true);blend(false);return out;
+// Make opposing edges continuous by distributing the colour offset over
+// the entire frame, not by mirroring a narrow rectangular border strip.
+// Retain local texture detail and avoid a repeated strip with zero motion.
+export function sealTile(out,w,h){
+ if(w<2||h<2)return out;
+ const values=Float64Array.from(out);
+ for(let y=0;y<h;y++)for(let c=0;c<3;c++){
+  const a=(y*w)*3+c,b=(y*w+w-1)*3+c;
+  const delta=values[b]-values[a];
+  for(let x=0;x<w;x++)values[(y*w+x)*3+c]-=delta*(x/(w-1)-.5);
+ }
+ for(let x=0;x<w;x++)for(let c=0;c<3;c++){
+  const a=x*3+c,b=((h-1)*w+x)*3+c;
+  const delta=values[b]-values[a];
+  for(let y=0;y<h;y++)values[(y*w+x)*3+c]-=delta*(y/(h-1)-.5);
+ }
+ for(let i=0;i<out.length;i++)out[i]=Math.max(0,Math.min(255,Math.round(values[i])));
+ // Exact equality despite floating point rounding at a half-integer.
+ for(let y=0;y<h;y++)out.copy(out,(y*w+w-1)*3,y*w*3,y*w*3+3);
+ out.copy(out,(h-1)*w*3,0,w*3);
+ return out;
 }
 // Deterministic, local block flow with bilinear sampling. Preserve all nine
 // approved keyframes; only the three between each pair are synthesized.
