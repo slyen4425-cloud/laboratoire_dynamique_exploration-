@@ -59,3 +59,16 @@ test('skewed camera retains unmodified logical clipping bounds',()=>{
  sculptPaintCellClipV1(ctx,0,0,SCULPT_TILE.width,SCULPT_TILE.height);
  assert.deepEqual(rects,[[0,0,SCULPT_TILE.width,SCULPT_TILE.height]]);
 });
+
+
+test('painted texture uses a single alpha pass at seams and shares base pixel ownership',()=>{
+ const source=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+ const from=source.indexOf('function sculptPaintByCell');
+ const until=source.indexOf('export function sculptHillTopProfile',from);
+ const painter=source.slice(from,until);
+ assert.doesNotMatch(painter,/const seam=|ctx\.globalAlpha=1[;\n]/,'opaque seam-only strips reintroduce the brown grid');
+ assert.match(painter,/ctx\.globalAlpha=\.95/);
+ const terrain=source.slice(source.indexOf('export function drawSculptTerrain'));
+ assert.match(terrain,/const topBounds=sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
+ assert.match(terrain,/ctx\.fillRect\(topBounds\.x,topBounds\.y,topBounds\.width,topBounds\.height\)/);
+});

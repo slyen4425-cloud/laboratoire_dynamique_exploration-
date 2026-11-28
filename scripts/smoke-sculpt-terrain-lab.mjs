@@ -374,6 +374,51 @@ try{
   if(seamlessWater.length!==6||seamlessWater.some(x=>x.maskMin!==255||x.dryAlpha!==0||x.bad!==0||x.count<1000))
     throw Error('Water/lava internal grid regression: '+JSON.stringify(seamlessWater));
   console.log('Seamless native water/lava pixels at integer and fractional zoom:',JSON.stringify(seamlessWater));
+  // Painted ground: the exact same brush over the same native terrain must
+  // match a continuous reference, including internal grid boundaries.
+  // Real grass/dirt assets, opaque synthetic high-contrast control, fractional
+  // and integer device scaling. The reference is not a second live painter.
+  const paintedGrid=await run(`(async()=>{
+    const r=await import('./src/render/sculpt-height-renderer.js');
+    const model=await import('./src/world/sculpt-height-model.js');
+    const brush=await import('./src/world/surface-brush-geometry.js');
+    const load=async path=>{const img=new Image();img.src=path;await img.decode();return img;};
+    const grass=await load('./assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp');
+    const dirt=await load('./assets/exploration/materials/forest/paths/road_dirt_base_01.webp');
+    const solid=document.createElement('canvas');solid.width=128;solid.height=128;
+    const sc=solid.getContext('2d');sc.fillStyle='#9e4024';sc.fillRect(0,0,128,128);
+    const w=28,h=21,cols=12,rows=12,results=[];
+    const terrain=model.createSculptTerrain({width:cols,height:rows,levels:Array(cols*rows).fill(0),waterLevels:Array(cols*rows).fill(-1)});
+    const make=(zoom)=>{const c=document.createElement('canvas');c.width=Math.ceil(cols*w*zoom)+2;c.height=Math.ceil(rows*h*zoom)+2;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.setTransform(zoom,0,0,zoom,.27,.41);return {c,ctx};};
+    for(const zoom of [1,1.5,2.06])for(const shape of ['round','square'])for(const [id,img] of [['road.dirt',dirt],['ground.sand',solid]]){
+      const feature={id:'grid-test',materialId:id,width:100,points:[{x:36,y:126},{x:300,y:126}],brushShape:shape};
+      const paintSurface={zones:id==='ground.sand'?[feature]:[],routes:id==='road.dirt'?[feature]:[]};
+      const actual=make(zoom),reference=make(zoom),paintImages=new Map([[id,img]]);
+      const options={terrain,texture:grass,drawOuterSouthRim:false};
+      r.drawSculptTerrain(actual.ctx,{...options,paintSurface,paintImages});
+      r.drawSculptTerrain(reference.ctx,options);
+      const ref=reference.ctx,pattern=ref.createPattern(img,'repeat');pattern.setTransform(new DOMMatrix().scale(.55));
+      ref.save();ref.fillStyle=pattern;ref.strokeStyle=pattern;
+      for(const [width,alpha] of [[feature.width+6,.20],[feature.width,.95]]){
+        ref.globalAlpha=alpha;
+        if(shape==='square'){brush.drawSquareSurfaceStrokePath(ref,feature.points,width);ref.fill();}
+        else{ref.beginPath();ref.moveTo(36,126);ref.lineTo(300,126);ref.lineWidth=width;ref.lineCap='round';ref.lineJoin='round';ref.stroke();}
+      }
+      ref.restore();
+      const a=actual.ctx.getImageData(0,0,actual.c.width,actual.c.height).data,b=ref.getImageData(0,0,reference.c.width,reference.c.height).data;
+      let maxDelta=0,bad=0,count=0;
+      // Stay inside the stroke, but include all projected cell boundaries.
+      for(let y=Math.ceil(86*zoom);y<Math.floor(166*zoom);y++)for(let x=Math.ceil(50*zoom);x<Math.floor(286*zoom);x++){
+        const i=(y*actual.c.width+x)*4,d=Math.max(...[0,1,2,3].map(ch=>Math.abs(a[i+ch]-b[i+ch])));
+        maxDelta=Math.max(maxDelta,d);if(d>2)bad++;count++;
+      }
+      results.push({zoom,shape,id,maxDelta,bad,count});
+    }
+    return results;
+  })()`);
+  if(paintedGrid.length!==12||paintedGrid.some(v=>v.bad!==0||v.count<1000))
+    throw Error('Painted texture internal brown grid: '+JSON.stringify(paintedGrid));
+  console.log('Painted ground seam-free real Chromium:',JSON.stringify(paintedGrid));
   // Living water: a real mouse stroke changes only the painted material.
   // Pixel motion is measured at a stationary camera and no pointer movement.
   const livingBefore=await run(`(async()=>{
