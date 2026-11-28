@@ -601,40 +601,10 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   return (col,row,level,x,y)=>{
     const items=buckets[row*terrain.width+col]??[];
     if(!items.length&&!drawBorders?.hasCell(col,row))return 0;
-    // On fractional mobile DPR/zoom, the independently anti-aliased clips
-    // can expose one physical pixel of the green base below a snow/road zone.
-    // Underpaint ONLY with the same canonical opaque Material Registry pattern;
-    // the existing semi-transparent edge/feather is still clipped EXACTLY once.
-    // This is not the former overlapping translucent +.65px clip regression.
-    ctx.save();
-    // Restrict opaque paint to subpixel JOIN STRIPS, never the full authored
-    // road/zone interior (which must retain its exact original transparency).
-    const seam=.75;
-    ctx.beginPath();
-    ctx.rect(x-seam,y-seam,w+2*seam,2*seam);
-    ctx.rect(x-seam,y+h-seam,w+2*seam,2*seam);
-    ctx.rect(x-seam,y+seam,2*seam,h-2*seam);
-    ctx.rect(x+w-seam,y+seam,2*seam,h-2*seam);
-    ctx.clip();
-    for(const feature of items){
-      const pattern=patterns.get(feature.materialId);
-      if(!pattern||feature.points.length<2)continue;
-      if(feature.brushShape==='square'){
-        // Join strips and the visible material use the same authored shape.
-        if(drawSquareSurfaceStrokePath(ctx,feature.points,feature.width,0,-level*rise)){
-          ctx.globalAlpha=1;ctx.fillStyle=pattern;ctx.fill();
-        }
-        continue;
-      }
-      ctx.beginPath();
-      ctx.moveTo(feature.points[0].x,feature.points[0].y-level*rise);
-      for(let i=1;i<feature.points.length;i++)
-        ctx.lineTo(feature.points[i].x,feature.points[i].y-level*rise);
-      ctx.lineCap='round';ctx.lineJoin='round';
-      ctx.globalAlpha=1;ctx.strokeStyle=pattern;
-      ctx.lineWidth=feature.width;ctx.stroke();
-    }
-    ctx.restore();
+    // Base and paint share exactly the same device-pixel ownership. The
+    // former opaque underpaint on join strips caused a brown grid: 100%
+    // material at every seam versus 95% in the authored stroke interior.
+    // Draw each translucent feather/core once; no seam-specific opacity.
     ctx.save();sculptPaintCellClipV1(ctx,x,y,w,h);
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);
@@ -948,12 +918,16 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     for(let col=0;col<terrain.width;col++){
       const idx=row*terrain.width+col,level=terrain.levels[idx];
       const x=col*w,y=row*h-level*rise;
-      // Fully opaque grass over every corner; no clipped brown underpainting.
-      ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
+      // Exactly the same device-pixel boundary as the authored paint. A
+      // fractional unsnapped or overscanned grass rectangle can otherwise
+      // repaint a pixel already owned by the adjacent painted top.
+      const topBounds=sculptPaintCellBoundsV1(ctx,x,y,w,h);
+      ctx.fillStyle=pattern??baseColor;
+      ctx.fillRect(topBounds.x,topBounds.y,topBounds.width,topBounds.height);
       waterMask?.clearRect(x,y,w+.6,h+.6);
       ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
         'rgba(0,0,0,.01)'],col,row,2);
-      ctx.fillRect(x,y,w,h);
+      ctx.fillRect(topBounds.x,topBounds.y,topBounds.width,topBounds.height);
       if(level>0){
         const variation=hash(col,row,91)%5;
         ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
