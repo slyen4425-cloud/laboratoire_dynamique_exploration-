@@ -108,7 +108,21 @@ function pathLoop(ctx,loop,z,strength){
 }
 function quad(ctx,a,b,top,bottom){ctx.moveTo(a[0],a[1]-top);ctx.lineTo(b[0],b[1]-top);
   ctx.lineTo(b[0],b[1]-bottom);ctx.lineTo(a[0],a[1]-bottom);ctx.closePath();}
-export function drawOrganicPilot(ctx,terrain,{surface,rock,amount=.5,ambient=.55,lip=1,organic=.7}={}){
+// Presentation-only settings: no terrain mutation or saved schema changes.
+export const RELIEF_PRESETS=Object.freeze({
+  light:Object.freeze({amount:.35,organic:.35,ambient:.45,shadowWidth:10,contrast:.45,rearWidth:2,rearOpacity:.35,lip:1}),
+  natural:Object.freeze({amount:.5,organic:.7,ambient:.78,shadowWidth:18,contrast:.75,rearWidth:4,rearOpacity:.65,lip:1}),
+  marked:Object.freeze({amount:.5,organic:.9,ambient:1,shadowWidth:26,contrast:1,rearWidth:7,rearOpacity:.9,lip:2})
+});
+export function normalizeReliefSettings(input={}){
+  const clamp=(key,max)=>{const n=Number(input[key]??RELIEF_PRESETS.natural[key]);return Number.isFinite(n)?Math.max(0,Math.min(max,n)):RELIEF_PRESETS.natural[key];};
+  return Object.freeze({amount:clamp('amount',.5),organic:clamp('organic',1),
+    ambient:clamp('ambient',1),shadowWidth:clamp('shadowWidth',32),
+    contrast:clamp('contrast',1),rearWidth:clamp('rearWidth',10),
+    rearOpacity:clamp('rearOpacity',1),lip:clamp('lip',4)});
+}
+export function drawOrganicPilot(ctx,terrain,{surface,rock,...options}={}){
+  const {amount,ambient,lip,organic,shadowWidth,contrast,rearWidth,rearOpacity}=normalizeReliefSettings(options);
   const p=reliefWallPlan(terrain,{amount});const {width:w,height:h,rise}=p;
   const ground=ctx.createPattern(surface,'repeat'),wall=ctx.createPattern(rock,'repeat');
   if(!ground||!wall)throw Error('Canonical textures unavailable');
@@ -124,9 +138,11 @@ export function drawOrganicPilot(ctx,terrain,{surface,rock,amount=.5,ambient=.55
     const front=active.filter(e=>e.front);
     // Contact shadow follows the ACTUAL local wall foot. No intermediate
     // border or shadow when one wall spans several elevation thresholds.
-    for(const width of [14,9,4]){
-      ctx.save();ctx.globalAlpha=shade*(width===14?.05:width===9?.08:.12);
-      ctx.strokeStyle='#192125';ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();
+    for(const [factor,opacity] of [[1,.16],[.68,.24],[.34,.37]]){
+      if(shadowWidth<=0||shade<=0)continue;
+      const width=shadowWidth*factor;
+      ctx.save();ctx.globalAlpha=shade*opacity;
+      ctx.strokeStyle='#192125';ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
       for(const e of front){const z=e.lower*rise;ctx.moveTo(e.a[0],e.a[1]-z+2);ctx.lineTo(e.b[0],e.b[1]-z+2);}
       ctx.stroke();ctx.restore();
     }
@@ -144,10 +160,10 @@ export function drawOrganicPilot(ctx,terrain,{surface,rock,amount=.5,ambient=.55
       const slope=dy/dx,den=1+slope*slope;
       const ax=(a[0]+b[0])/2,ay=(a[1]+b[1])/2-top;
       const g=ctx.createLinearGradient(ax,ay,ax-slope*d/den,ay+d/den);
-      g.addColorStop(0,'rgba(226,232,226,.20)');
-      g.addColorStop(.25,'rgba(226,232,226,.06)');
-      g.addColorStop(.60,'rgba(26,32,35,.09)');
-      g.addColorStop(1,'rgba(20,26,30,.38)');
+      g.addColorStop(0,'rgba(226,232,226,'+(.32*contrast)+')');
+      g.addColorStop(.25,'rgba(226,232,226,'+(.10*contrast)+')');
+      g.addColorStop(.60,'rgba(26,32,35,'+(.17*contrast)+')');
+      g.addColorStop(1,'rgba(20,26,30,'+(.62*contrast)+')');
       ctx.beginPath();quad(ctx,a,b,top,e.lower*rise);ctx.fillStyle=g;ctx.fill();
     }
     // Same silhouette and same unwarped surface pattern as the wall.
@@ -162,7 +178,12 @@ export function drawOrganicPilot(ctx,terrain,{surface,rock,amount=.5,ambient=.55
     ctx.beginPath();for(const e of active.filter(e=>!e.front)){
       ctx.moveTo(e.a[0],e.a[1]-top);ctx.lineTo(e.b[0],e.b[1]-top);
     }
-    ctx.lineWidth=2.1;ctx.lineCap='round';ctx.strokeStyle='rgba(20,28,34,'+(.20+shade*.25)+')';ctx.stroke();
+    if(rearWidth>0&&rearOpacity>0){
+      // The path is clipped to the plateau, so a 2x stroke exposes exactly
+      // the requested width inward and never paints a stripe on the wall.
+      ctx.lineWidth=rearWidth*2;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(20,28,34,'+rearOpacity+')';ctx.stroke();
+    }
     ctx.restore();
     // Front crest is the terrain material itself, with no dark outline.
     if(lip>0){ctx.save();ctx.strokeStyle=ground;ctx.lineWidth=Math.min(4,lip);

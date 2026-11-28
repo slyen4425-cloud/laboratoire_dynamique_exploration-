@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint} from '../prototypes/organic-relief-pilot.mjs';
+import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint,normalizeReliefSettings,RELIEF_PRESETS} from '../prototypes/organic-relief-pilot.mjs';
 const t=(rows)=>({width:rows[0].length,height:rows.length,levels:rows.flat()});
 test('single continuous contour for connected staircase; no input mutation',()=>{
  const m=t([[0,1,1],[1,1,0],[1,0,0]]),before=JSON.stringify(m);
@@ -45,4 +45,17 @@ test('natural perturbation is deterministic, bounded and disabled at zero',()=>{
  const a=[40,90],q=organicPoint(a);
  assert.deepEqual(q,organicPoint(a));assert.deepEqual(organicPoint(a,0),a);
  assert.ok(Math.abs(q[0]-a[0])<3&&Math.abs(q[1]-a[1])<3);
+});
+
+test('R4 visual controls are independent and clamped, never change terrain',()=>{
+ const m=t([[0,4],[0,4]]),before=JSON.stringify(m);
+ const base=normalizeReliefSettings(),rear=normalizeReliefSettings({rearWidth:9,rearOpacity:.95});
+ assert.equal(rear.rearWidth,9);assert.equal(rear.rearOpacity,.95);
+ assert.equal(base.ambient,rear.ambient);assert.equal(base.contrast,rear.contrast);
+ assert.equal(normalizeReliefSettings({ambient:5,rearWidth:-4,contrast:NaN}).ambient,1);
+ assert.equal(normalizeReliefSettings({rearWidth:-4}).rearWidth,0);
+ assert.equal(normalizeReliefSettings({contrast:NaN}).contrast,base.contrast);
+ reliefWallPlan(m,rear);assert.equal(JSON.stringify(m),before);
+ assert.ok(RELIEF_PRESETS.marked.rearWidth>RELIEF_PRESETS.natural.rearWidth);
+ assert.ok(RELIEF_PRESETS.marked.ambient>RELIEF_PRESETS.light.ambient);
 });
