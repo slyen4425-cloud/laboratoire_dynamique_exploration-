@@ -69,7 +69,9 @@ test('R14 square grass tops never expose brown underpainting, HD belongs to rock
   const s=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
   const runtime=s.slice(s.indexOf('export function drawSculptTerrain'));
   assert.doesNotMatch(runtime,/sculptClipRoundedHill|sculptHillTopProfile|roundedHill/);
-  assert.match(runtime,/ctx\.fillStyle=pattern\?\?baseColor;ctx\.fillRect\(x,y,w\+\.6,h\+\.6\)/);
+  assert.match(runtime,/const topBounds=sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
+  assert.match(runtime,/ctx\.fillStyle=pattern\?\?baseColor;\s*ctx\.fillRect\(topBounds\.x,topBounds\.y,topBounds\.width,topBounds\.height\)/);
+  assert.doesNotMatch(runtime,/ctx\.fillStyle=pattern\?\?baseColor;\s*ctx\.fillRect\(x,y,w\+\.6,h\+\.6\)/);
   assert.match(runtime,/rockFace\(ctx,\{x,y,width,height,colors,seed:idx,sun:1,smoothness:0/);
   assert.ok(s.includes('drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,'));
   const t=at(5);
