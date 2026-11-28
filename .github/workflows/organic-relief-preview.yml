@@ -1,0 +1,36 @@
+name: Organic relief prototype visual proof
+on:
+  push:
+    branches: ['work/exploration-organic-relief-pilot-20261128']
+  pull_request:
+    paths:
+      - 'prototypes/organic-relief-pilot.*'
+      - 'tests/organic-relief-pilot-20261128.test.mjs'
+      - 'scripts/build-organic-relief-preview.mjs'
+      - '.github/workflows/organic-relief-preview.yml'
+permissions:
+  contents: read
+concurrency:
+  group: organic-relief-preview-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  visual-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/organic-relief-pilot-20261128.test.mjs
+      - run: npm install --no-save --no-package-lock esbuild@0.25.12 playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/build-organic-relief-preview.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: organic-relief-comparison
+          path: artifacts/organic-relief/
+          if-no-files-found: error
+          retention-days: 14

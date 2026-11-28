@@ -1,0 +1,53 @@
+<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Genesis RPG — prototype reliefs organiques C1</title>
+<style>body{background:#17232b;color:#e9eee9;font:16px system-ui;margin:20px}main{max-width:1500px;margin:auto}.controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:16px 0}label{display:flex;align-items:center;gap:8px}button,select{font:inherit;padding:7px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,450px),1fr));gap:18px}article{min-width:0;background:#24323b;padding:12px;border-radius:8px}canvas{max-width:100%;width:100%;height:auto;display:block}h2{font-size:18px}small{color:#cad7da}.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:10px;margin:12px 0}fieldset{min-width:0;border:1px solid #546772;border-radius:8px;padding:10px}fieldset label{display:grid;grid-template-columns:minmax(95px,1fr) minmax(70px,1fr) 56px;gap:6px;margin:10px 0;font-size:14px}fieldset input{min-width:0;width:100%}output{text-align:right;font-variant-numeric:tabular-nums}legend{font-weight:bold;padding:0 4px}</style>
+<main><h1>Reliefs organiques — prototype C1 R5</h1><p>Même terrain logique, mêmes textures. Premier panneau : rendu natif. Second panneau : contours irréguliers, parois continues sans faux rebords et ombres de profondeur. Filtre visuel non destructif : le relief logique ne change jamais. Essai isolé, non raccordé au jeu.</p>
+<div class="controls"><label>Terrain <select id="biome"><option value="grass_forest_base_01.webp">Herbe</option><option value="snow_ground_stylized_01.webp">Neige</option><option value="volcanic_ash_lava_stylized_01.webp">Volcanique</option></select></label><label>Style <select id="preset"><option value="light">Léger</option><option value="natural" selected>Naturel</option><option value="marked">Marqué</option><option value="custom">Personnalisé</option></select></label><label class="switch"><input id="enabled" type="checkbox" checked> Activer le filtre</label></div>
+<div class="settings" id="settings">
+<fieldset><legend>Forme</legend>
+<label>Diagonales <input id="amount" type="range" min="0" max="50" value="50"><output id="val" for="amount">50 %</output></label>
+<label>Irrégularité <input id="organic" type="range" min="0" max="100" value="70"><output for="organic">70 %</output></label>
+<label>Rebord avant <input id="lip" type="range" min="0" max="4" step="0.5" value="1"><output for="lip">1 px</output></label>
+</fieldset><fieldset><legend>Profondeur</legend>
+<label>Ombre au pied <input id="ambient" type="range" min="0" max="100" value="78"><output for="ambient">78 %</output></label>
+<label>Largeur de l'ombre <input id="shadowWidth" type="range" min="0" max="32" value="18"><output for="shadowWidth">18 px</output></label>
+<label>Contraste paroi <input id="contrast" type="range" min="0" max="100" value="75"><output for="contrast">75 %</output></label>
+</fieldset><fieldset><legend>Crête arrière</legend>
+<label>Épaisseur <input id="rearWidth" type="range" min="0" max="10" step="0.5" value="4"><output for="rearWidth">4 px</output></label>
+<label>Opacité <input id="rearOpacity" type="range" min="0" max="100" value="65"><output for="rearOpacity">65 %</output></label>
+</fieldset><fieldset><legend>Crête avant</legend>
+<label>Épaisseur <input id="frontWidth" type="range" min="0" max="10" step="0.5" value="2"><output for="frontWidth">2 px</output></label>
+<label>Opacité <input id="frontOpacity" type="range" min="0" max="100" value="45"><output for="frontOpacity">45 %</output></label>
+</fieldset></div>
+<p id="status" role="status">Chargement des textures officielles…</p><section><article><h2>Rendu actuel</h2><canvas id="old" width="672" height="420"></canvas></article><article><h2>Prototype organique</h2><canvas id="new" width="672" height="420"></canvas></article></section><p><small>Limites C1 : plateaux secs de démonstration, sans personnage, eau, routes, rampes, ni modification de carte. Ne constitue pas un rendu validé.</small></p></main>
+<script type="module">
+import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
+import {drawSculptTerrain} from '../src/render/sculpt-height-renderer.js';
+import {drawOrganicPilot,RELIEF_PRESETS} from './organic-relief-pilot.mjs';
+const $=id=>document.getElementById(id),w=24,h=20;
+const levels=Array.from({length:w*h},(_,i)=>{const x=i%w,y=Math.floor(i/w);
+  const outer=(x>=3&&x<=18&&y>=5&&y<=12&&x+y>=10&&x+y<=28&&!(x<=7&&y>=10));
+  const inner=x>=9&&x<=15&&y>=6&&y<=9&&x+y>=16;
+  const island=x>=18&&x<=21&&y>=14&&y<=17&&x+y>=33;
+  return inner?7:outer?4:island?3:0;});
+const terrain=createSculptTerrain({width:w,height:h,levels});
+const root='../assets/exploration/materials/forest/surfaces/';
+function load(path){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error(path));img.src=path;});}
+const cliffPromise=load('../assets/sculpt/cliff-base-hd-v49.webp');let serial=0;
+const percent=new Set(['amount','organic','ambient','contrast','rearOpacity','frontOpacity']);
+const keys=['amount','organic','ambient','shadowWidth','contrast','rearWidth','rearOpacity','frontWidth','frontOpacity','lip'];
+const readSettings=()=>Object.fromEntries(keys.map(k=>[k,Number($(k).value)/(percent.has(k)?100:1)]));
+function updateLabels(){for(const k of keys){document.querySelector('output[for="'+k+'"]').textContent=$(k).value+(percent.has(k)?' %':' px');$(k).disabled=!$('enabled').checked;}}
+function applyPreset(){const preset=RELIEF_PRESETS[$('preset').value];if(!preset)return;for(const k of keys)$(k).value=String(preset[k]*(percent.has(k)?100:1));paint();}
+async function paint(){const n=++serial;$('status').dataset.biome='';$('status').textContent='Chargement des textures…';updateLabels();
+  try{const [surface,cliff]=await Promise.all([load(root+$('biome').value),cliffPromise]);if(n!==serial)return;
+    const rock=document.createElement('canvas');rock.width=rock.height=256;rock.getContext('2d').drawImage(cliff,0,0,256,256,0,0,256,256);
+    const old=$('old').getContext('2d'),fresh=$('new').getContext('2d');
+    for(const ctx of [old,fresh])ctx.clearRect(0,0,672,420);
+    drawSculptTerrain(old,{terrain,texture:surface,cliffHD:cliff,rockPalette:'granite',drawOuterSouthRim:false,ambientOcclusionPct:35});
+    if($('enabled').checked)drawOrganicPilot(fresh,terrain,{surface,rock,...readSettings()});
+    else fresh.drawImage($('old'),0,0);
+    $('status').dataset.biome=$('biome').value;$('status').textContent='Textures chargées — prototype C1 R5, validation visuelle requise.';
+  }catch(e){if(n===serial)$('status').textContent='Échec du rendu : '+e.message;}}
+for(const k of keys)$(k).addEventListener('input',()=>{$('preset').value='custom';paint();});
+$('preset').addEventListener('change',applyPreset);$('enabled').addEventListener('change',paint);$('biome').addEventListener('change',paint);paint();
+</script></html>

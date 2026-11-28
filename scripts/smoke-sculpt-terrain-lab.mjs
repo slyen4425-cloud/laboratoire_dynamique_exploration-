@@ -194,6 +194,24 @@ try{
   if(imported.faceCount!==raised.faceCount)
     throw Error('Imported experimental heightmap did not preserve cliff geometry');
 
+  // Real editor: enable the optional filter on the dry imported test map.
+  // Same saved data and same native output after disabling.
+  const organicGate=await run(`(async()=>{
+    const tick=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const enabled=document.querySelector('#organic-relief-enabled'),canvas=document.querySelector('#sculpt-canvas');
+    const road=document.querySelector('#show-road');road.checked=false;road.dispatchEvent(new Event('change',{bubbles:true}));
+    await tick();document.querySelector('#export').click();const before=document.querySelector('#json').value;
+    const original=canvas.toDataURL();enabled.checked=true;enabled.dispatchEvent(new Event('change',{bubbles:true}));await tick();
+    const p=window.__sculptLabProbe(),different=original!==canvas.toDataURL();
+    document.querySelector('#export').click();const during=document.querySelector('#json').value;
+    enabled.checked=false;enabled.dispatchEvent(new Event('change',{bubbles:true}));await tick();
+    document.querySelector('#export').click();return {active:p.organicReliefActive,blocked:p.organicReliefBlocked,
+      different,unchanged:before===during&&during===document.querySelector('#json').value,disabled:!window.__sculptLabProbe().organicReliefActive};
+  })()`);
+  if(!organicGate.active||!organicGate.different||!organicGate.unchanged||!organicGate.disabled)
+    throw Error('Organic relief editor preview: '+JSON.stringify(organicGate));
+  console.log('Organic relief editor preview GREEN:',JSON.stringify(organicGate));
+
   // Real V11 UI: exactly level 3 with a single hard-edged tap, then repeated
   // touches MUST NOT stack another elevation. Test real DOM/control + mouse.
   await run("document.querySelector('#flat').click();document.querySelector('[data-mode=plateau]').click();document.querySelector('#target').value='3';document.querySelector('#target').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#edge').value='0';document.querySelector('#edge').dispatchEvent(new Event('input',{bubbles:true}));");

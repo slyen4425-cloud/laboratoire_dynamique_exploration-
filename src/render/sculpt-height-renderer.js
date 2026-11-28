@@ -7,6 +7,7 @@ import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applyS
 import {drawSquareSurfaceStrokePath} from '../world/surface-brush-geometry.js';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas,cliffAtlasTheme} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
+import {drawOrganicPilot,organicReliefPreviewBlockReason,organicReliefSafePatches} from './sculpt-organic-relief-v1.js?rev=editor-r5-mixed-20261128';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
 import {sculptRoundedHillRegions,sculptHillRegionOutline,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
@@ -870,7 +871,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE,
-  drawOuterSouthRim=true,ambientOcclusionPct=null,waterMask=null}={}){
+  drawOuterSouthRim=true,ambientOcclusionPct=null,waterMask=null,organicReliefPreview=null}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -880,6 +881,22 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
     pattern.setTransform(new DOMMatrix().scale(.55));
   const totalWidth=terrain.width*w,totalHeight=terrain.height*h;
+  let organicReliefBlocked='',organicReliefPatches=[],organicRock=null;
+  if(organicReliefPreview){
+    const rock=sculptCliffHDLayers(cliffHD)?.[cliffAtlasTheme(rockPalette)];organicRock=rock;
+    organicReliefBlocked=organicReliefPreviewBlockReason(terrain,{paintSurface,overlays,texture,rock,cliffMoss,drawOuterSouthRim,tile});
+    if(!organicReliefBlocked&&waterMask)organicReliefBlocked='Masque d’eau actif : rendu natif conservé';
+    if(!organicReliefBlocked){
+      // Same canonical terrain raster owner, no live actor overlay, no saved data.
+      drawOrganicPilot(ctx,terrain,{...organicReliefPreview,surface:texture,rock});
+      return {faceCount:sculptFaces(terrain).length,faceRuns:0,outerCliffRuns:0,
+        waterCells:0,roadCells:0,paintedCells:0,sphereCount:0,terrainRampCount:0,
+        worldWidth:totalWidth,worldHeight:totalHeight,organicReliefActive:true,organicReliefBlocked:''};
+    }
+    if(!drawOuterSouthRim&&w===28&&h===21&&rise===18&&texture&&(texture.naturalWidth??texture.width)&&rock&&!cliffMoss){
+      organicReliefPatches=organicReliefSafePatches(terrain,{...organicReliefPreview,paintSurface,overlays});
+    }
+  }
   // The outer cliff is deliberately disabled in the canonical 2.5D editor
   // and its Tester, including the decorative south fringe. Raised last-row
   // tops end BEFORE the bottom of this backing rectangle; a solid baseColor
@@ -978,6 +995,12 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       colors,seed:terrain.width*terrain.height+run.start,
       sun:1,smoothness:run.smoothness,rockPalette,cliffAtlas,cliffHD,cliffMoss});
   }
+  // Optional local visual finish on safe, unpainted dry raised islands.
+  // All native routes/water/paint outside these projected boxes remain exact.
+  for(const patch of organicReliefPatches){
+    const {x,y,r,b}=patch.box;ctx.save();ctx.beginPath();ctx.rect(x,y,r-x,b-y);ctx.clip();
+    drawOrganicPilot(ctx,patch.terrain,{...organicReliefPreview,surface:texture,rock:organicRock});ctx.restore();
+  }
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
   if(waterMask){
@@ -1004,7 +1027,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     if(drawSculptRamp(ctx,ramp,terrain,{
       tileWidth:w,tileHeight:h,rise,texture,baseColor}))terrainRampCount++;
   }
-  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight};
+  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight,organicReliefActive:organicReliefPatches.length>0,organicReliefPatchCount:organicReliefPatches.length,organicReliefBlocked:organicReliefPatches.length?'':organicReliefBlocked};
 }
 
 // Only the animated surface and real shore contacts; clipping is performed by
