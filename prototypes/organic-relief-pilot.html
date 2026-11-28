@@ -22,7 +22,7 @@ async function paint(){const n=++serial;$('status').dataset.biome='';$('status')
     const rock=document.createElement('canvas');rock.width=rock.height=256;rock.getContext('2d').drawImage(cliff,0,0,256,256,0,0,256,256);
     const old=$('old').getContext('2d'),fresh=$('new').getContext('2d');
     for(const ctx of [old,fresh])ctx.clearRect(0,0,672,420);
-    drawSculptTerrain(old,{terrain,texture:surface,cliffHD:cliff,rockPalette:'gray',drawOuterSouthRim:false,ambientOcclusionPct:35});
+    drawSculptTerrain(old,{terrain,texture:surface,cliffHD:cliff,rockPalette:'granite',drawOuterSouthRim:false,ambientOcclusionPct:35});
     drawOrganicPilot(fresh,terrain,{surface,rock,amount:Number($('amount').value)/100,ambient:Number($('ambient').value)/100,lip:Number($('lip').value)});
     $('status').dataset.biome=$('biome').value;$('status').textContent='Textures chargées — prototype C1, validation visuelle requise.';
   }catch(e){if(n===serial)$('status').textContent='Échec du rendu : '+e.message;}}

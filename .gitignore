@@ -1,3 +1,6 @@
 .DS_Store
 Thumbs.db
 node_modules/
+
+# Road border WebP runtime is materialized from the verified author ZIP.
+assets/exploration/materials/road-borders/

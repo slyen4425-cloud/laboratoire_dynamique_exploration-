@@ -26,19 +26,26 @@ test('one native Portal cover emits only scoped HUD-visibility events',()=>{
  assert.doesNotMatch(code.slice(code.indexOf('function reportScopedPlayZoneLoadingV1'),code.indexOf('async function traverseSculptWorldPortal')),/CombatResult|localStorage|setInterval/);
 });
 
-test('mobile fractional-DPR seams get opaque underpaint in the same native painter',()=>{
+test('mobile fractional-DPR seams share exact native pixel ownership without opaque underpaint',()=>{
  const code=read('src/render/sculpt-height-renderer.js');
  const from=code.indexOf('function sculptPaintByCell');
  const until=code.indexOf('export function sculptHillTopProfile',from);
  const painter=code.slice(from,until);
  assert.ok(from>0&&until>from);
- const underlay=painter.indexOf('ctx.rect(x-seam,y-seam,w+2*seam,2*seam)');
  const exactClip=painter.indexOf('sculptPaintCellClipV1(ctx,x,y,w,h)');
- assert.ok(underlay>0&&exactClip>underlay);
- assert.match(painter.slice(underlay,exactClip),/ctx\.rect\(x\+w-seam,y\+seam,2\*seam,h-2\*seam\)/);
- assert.match(painter.slice(underlay,exactClip),/ctx.globalAlpha=1;ctx.strokeStyle=pattern/);
- assert.doesNotMatch(painter.slice(underlay,exactClip),/\.95|\.20/);
- assert.match(painter.slice(exactClip),/ctx.globalAlpha=\.20;ctx.stroke\(\)/);
+ assert.ok(exactClip>0);
+ assert.doesNotMatch(painter,/const seam=|ctx\.globalAlpha=1[;\n]|ctx\.rect\(/);
+ assert.match(painter.slice(exactClip),/ctx\.globalAlpha=\.20;ctx\.stroke\(\)/);
+ assert.match(painter.slice(exactClip),/ctx\.globalAlpha=\.95;ctx\.stroke\(\)/);
+ assert.match(painter.slice(exactClip),/ctx\.globalAlpha=\.20;ctx\.fill\(\)/);
+ assert.match(painter.slice(exactClip),/ctx\.globalAlpha=\.95;ctx\.fill\(\)/);
+ const clip=code.slice(code.indexOf('export function sculptPaintCellClipV1'),from);
+ assert.match(clip,/sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
+ const terrain=code.slice(code.indexOf('export function drawSculptTerrain'));
+ assert.match(terrain,/const topBounds=sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
+ assert.match(terrain,/ctx\.fillStyle=pattern\?\?baseColor;\s*ctx\.fillRect\(topBounds\.x,topBounds\.y,topBounds\.width,topBounds\.height\)/);
+ const browser=read('scripts/smoke-sculpt-terrain-lab.mjs');
+ assert.match(browser,/paintedGrid\.length!==12\|\|paintedGrid\.some\(v=>v\.bad!==0\|\|v\.count<1000\)/);
 });
 
 test('CI browser gates observe canonical actual image state, never synthetic time or Resource Timing',()=>{

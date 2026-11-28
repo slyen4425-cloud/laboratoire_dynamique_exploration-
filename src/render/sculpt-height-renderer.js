@@ -1,3 +1,4 @@
+import {roadBorderCellPainter} from './road-border-renderer-v1.js';
 import {sculptWaterMaterialCells} from '../world/sculpt-water-materials-v1.js';
 import {surfaceMaterialFrame,animatedSurfaceSprite} from './animated-surface-sprites-v1.js';
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
@@ -453,9 +454,14 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     ctx.restore();
     if(!waterMask&&!lava)drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,foamPct:overlay.living?(terrain.waterFoamPct??60):60});
     if(waterMask){
-      waterMask.save();waterMask.clearRect(x,y,w+.65,h+.65);
-      if(shore.edges.length){sculptWetShorePath(waterMask,x,y,w,h,shore);waterMask.clip();}
-      waterMask.fillStyle='#fff';waterMask.fillRect(x,y,w+.65,h+.65);waterMask.restore();
+      waterMask.save();
+      // Only clear the current footprint when the real shoreline cuts it.
+      // Never partially erase an adjacent coplanar wet tile at its seam.
+      if(shore.edges.length){
+        waterMask.clearRect(x,y,w,h);
+        sculptWetShorePath(waterMask,x,y,w,h,shore);waterMask.clip();
+      }
+      waterMask.fillStyle='#fff';waterMask.fillRect(x,y,w,h);waterMask.restore();
     }
     if(visibleWall>0){
       const grad=ctx.createLinearGradient(x,y+h,x,y+h+visibleWall);
@@ -569,6 +575,7 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   const {width:w,height:h,rise}=tile;
   const buckets=new Array(terrain.width*terrain.height);
   const patterns=new Map();
+  const drawBorders=roadBorderCellPainter(ctx,terrain,tile,surface.routes??[],paintImages);
   for(const feature of features){
     const img=paintImages.get(feature.materialId);
     if(!(img?.naturalWidth??img?.width))continue;
@@ -592,42 +599,12 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
     }
   }
   return (col,row,level,x,y)=>{
-    const items=buckets[row*terrain.width+col];
-    if(!items?.length)return 0;
-    // On fractional mobile DPR/zoom, the independently anti-aliased clips
-    // can expose one physical pixel of the green base below a snow/road zone.
-    // Underpaint ONLY with the same canonical opaque Material Registry pattern;
-    // the existing semi-transparent edge/feather is still clipped EXACTLY once.
-    // This is not the former overlapping translucent +.65px clip regression.
-    ctx.save();
-    // Restrict opaque paint to subpixel JOIN STRIPS, never the full authored
-    // road/zone interior (which must retain its exact original transparency).
-    const seam=.75;
-    ctx.beginPath();
-    ctx.rect(x-seam,y-seam,w+2*seam,2*seam);
-    ctx.rect(x-seam,y+h-seam,w+2*seam,2*seam);
-    ctx.rect(x-seam,y+seam,2*seam,h-2*seam);
-    ctx.rect(x+w-seam,y+seam,2*seam,h-2*seam);
-    ctx.clip();
-    for(const feature of items){
-      const pattern=patterns.get(feature.materialId);
-      if(!pattern||feature.points.length<2)continue;
-      if(feature.brushShape==='square'){
-        // Join strips and the visible material use the same authored shape.
-        if(drawSquareSurfaceStrokePath(ctx,feature.points,feature.width,0,-level*rise)){
-          ctx.globalAlpha=1;ctx.fillStyle=pattern;ctx.fill();
-        }
-        continue;
-      }
-      ctx.beginPath();
-      ctx.moveTo(feature.points[0].x,feature.points[0].y-level*rise);
-      for(let i=1;i<feature.points.length;i++)
-        ctx.lineTo(feature.points[i].x,feature.points[i].y-level*rise);
-      ctx.lineCap='round';ctx.lineJoin='round';
-      ctx.globalAlpha=1;ctx.strokeStyle=pattern;
-      ctx.lineWidth=feature.width;ctx.stroke();
-    }
-    ctx.restore();
+    const items=buckets[row*terrain.width+col]??[];
+    if(!items.length&&!drawBorders?.hasCell(col,row))return 0;
+    // Base and paint share exactly the same device-pixel ownership. The
+    // former opaque underpaint on join strips caused a brown grid: 100%
+    // material at every seam versus 95% in the authored stroke interior.
+    // Draw each translucent feather/core once; no seam-specific opacity.
     ctx.save();sculptPaintCellClipV1(ctx,x,y,w,h);
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);
@@ -650,6 +627,7 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
       ctx.lineWidth=feature.width+6;ctx.globalAlpha=.20;ctx.stroke();
       ctx.lineWidth=feature.width;ctx.globalAlpha=.95;ctx.stroke();
     }
+    drawBorders?.(col,row,level);
     ctx.restore();return items.length;
   };
 }
@@ -940,12 +918,16 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     for(let col=0;col<terrain.width;col++){
       const idx=row*terrain.width+col,level=terrain.levels[idx];
       const x=col*w,y=row*h-level*rise;
-      // Fully opaque grass over every corner; no clipped brown underpainting.
-      ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
+      // Exactly the same device-pixel boundary as the authored paint. A
+      // fractional unsnapped or overscanned grass rectangle can otherwise
+      // repaint a pixel already owned by the adjacent painted top.
+      const topBounds=sculptPaintCellBoundsV1(ctx,x,y,w,h);
+      ctx.fillStyle=pattern??baseColor;
+      ctx.fillRect(topBounds.x,topBounds.y,topBounds.width,topBounds.height);
       waterMask?.clearRect(x,y,w+.6,h+.6);
       ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
         'rgba(0,0,0,.01)'],col,row,2);
-      ctx.fillRect(x,y,w,h);
+      ctx.fillRect(topBounds.x,topBounds.y,topBounds.width,topBounds.height);
       if(level>0){
         const variation=hash(col,row,91)%5;
         ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
@@ -1040,6 +1022,26 @@ function visibleWaterCells(terrain,tile){
  }
  wetCellCache.set(terrain,groups);return groups;
 }
+// Coalesce a rectangular region into one native fillRect, matching Canvas
+// rectangle rasterization exactly; irregular regions retain the union path.
+function fillWetRegion(ctx,cells,w,h){
+ if(!cells.length)return;
+ let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+ const seen=new Set();
+ for(const {x,y} of cells){
+  minX=Math.min(minX,x);minY=Math.min(minY,y);
+  maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);
+  seen.add(x+':'+y);
+ }
+ const nx=(maxX-minX)/w+1,ny=(maxY-minY)/h+1;
+ if(Number.isInteger(nx)&&Number.isInteger(ny)&&seen.size===nx*ny&&
+    cells.every(({x,y})=>Number.isInteger((x-minX)/w)&&Number.isInteger((y-minY)/h))){
+  ctx.fillRect(minX,minY,nx*w,ny*h);return;
+ }
+ ctx.beginPath();
+ for(const {x,y} of cells)ctx.rect(x,y,w,h);
+ ctx.fill();
+}
 export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSeconds=0,fps=8,viewport,foamPct=60}){
  const groups=visibleWaterCells(terrain,tile),{width:w,height:h}=tile;
  let visible=0;
@@ -1048,25 +1050,42 @@ export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSec
   const pattern=sprite?ctx.createPattern(sprite,'repeat'):null;
   const inView=c=>!viewport||(c.x+w>=viewport.minX&&c.x<=viewport.maxX&&c.y+h>=viewport.minY&&c.y<=viewport.maxY);
   if(pattern){
-   ctx.save();ctx.fillStyle=pattern;ctx.beginPath();ctx.globalAlpha=.84;
-   for(const cell of cells)if(inView(cell)){ctx.rect(cell.x,cell.y,w+.65,h+.65);visible++;}
-   ctx.fill();ctx.restore();
-   // Preserve depth/rivage on top of authored full-colour sprites; the
-   // existing visibility mask still excludes all dry ground and cliffs.
-   ctx.save();const lava=id==='water.lava';
+   // Authored RGB frames are opaque. The native visibility mask alone
+   // controls coverage; the old translucent backing showed its tile seams.
+   // A compound path paints the union once, rather than alpha stacking.
+   const depths=new Map(),shores=new Map(),lava=id==='water.lava';
+   const regionCells=[];
+   ctx.save();ctx.fillStyle=pattern;ctx.globalAlpha=1;
    for(const cell of cells)if(inView(cell)){
     const {x,y,depth}=cell;
-    ctx.globalAlpha=Math.min(.26,.035*depth);ctx.fillStyle=lava?'#40110a':'#102a51';ctx.fillRect(x,y,w+.65,h+.65);
-    if(cell.shore){ctx.globalAlpha=.68;
-     for(const edge of sculptWetShoreEdges(terrain,cell.col,cell.row)){
-      const horizontal=edge==='north'||edge==='south',sign=edge==='north'||edge==='west'?1:-1;
-      const gx=edge==='east'?x+w:x,gy=edge==='south'?y+h:y;
-      const gradient=ctx.createLinearGradient(gx,gy,gx+(horizontal?0:sign*w*.40),gy+(horizontal?sign*h*.45:0));
-      gradient.addColorStop(0,lava?'rgba(255,139,36,.78)':'rgba(79,209,197,.70)');
-      gradient.addColorStop(1,lava?'rgba(255,139,36,0)':'rgba(79,209,197,0)');
-      ctx.fillStyle=gradient;ctx.fillRect(x,y,w+.65,h+.65);
-     }
+    regionCells.push(cell);visible++;
+    if(!depths.has(depth))depths.set(depth,[]);
+    depths.get(depth).push(cell);
+    if(cell.shore)for(const edge of sculptWetShoreEdges(terrain,cell.col,cell.row)){
+     const horizontal=edge==='north'||edge==='south';
+     const line=horizontal?y+(edge==='south'?h:0):x+(edge==='east'?w:0);
+     const key=edge+':'+line;
+     if(!shores.has(key))shores.set(key,{edge,line,cells:[]});
+     shores.get(key).cells.push(cell);
     }
+   }
+   fillWetRegion(ctx,regionCells,w,h);
+   // Each equal-depth region receives one tint, including at shared edges.
+   ctx.fillStyle=lava?'#40110a':'#102a51';
+   for(const [depth,region] of depths){
+    ctx.globalAlpha=Math.min(.26,.035*depth);
+    fillWetRegion(ctx,region,w,h);
+   }
+   // A continuous gradient per aligned real shore, never per tile seam.
+   // Orthogonal gradients can still meet naturally at an outer corner.
+   ctx.globalAlpha=.68;
+   for(const {edge,line,cells:region} of shores.values()){
+    const horizontal=edge==='north'||edge==='south',sign=edge==='north'||edge==='west'?1:-1;
+    const gx=horizontal?0:line,gy=horizontal?line:0;
+    const gradient=ctx.createLinearGradient(gx,gy,gx+(horizontal?0:sign*w*.40),gy+(horizontal?sign*h*.45:0));
+    gradient.addColorStop(0,lava?'rgba(255,139,36,.78)':'rgba(79,209,197,.70)');
+    gradient.addColorStop(1,lava?'rgba(255,139,36,0)':'rgba(79,209,197,0)');
+    ctx.fillStyle=gradient;fillWetRegion(ctx,region,w,h);
    }
    ctx.restore();
   }

@@ -973,6 +973,10 @@ body.sculpt-play-unavailable #play-start-error{
 .surface-settings-body button{min-height:39px}
 #surface-palette{width:min(300px,calc(100vw - 20px));max-height:min(76dvh,90%);gap:8px;overscroll-behavior:contain}
 #surface-palette button{min-height:40px}
+#surface-palette .surface-history-bar{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#16333e;padding:3px 0}
+#road-border-settings{display:grid;gap:6px;min-width:0}
+#road-style-controls{min-width:0;display:grid;gap:7px}
+#road-style-controls input,#road-style-controls select{min-width:0;width:100%;box-sizing:border-box}
 #surface-palette [hidden]{display:none!important}
 #sculpt-encounter-editor{width:min(345px,calc(100vw - 20px))}
 #sculpt-family-create-details{min-width:0}
@@ -1462,6 +1466,7 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Textures du terrain</strong>
+ <div class="object-actions surface-history-bar"><button id="surface-undo" type="button" disabled aria-label="Annuler la dernière peinture">↶ Annuler</button><button id="surface-redo" type="button" disabled aria-label="Rétablir la dernière peinture">↷ Rétablir</button></div>
  <small>Choisis un visuel et peins sur la carte. La famille contrôle les rencontres, pas l’image.</small>
  <details class="surface-settings-group" open>
   <summary>🖌 Peindre le terrain</summary>
@@ -1501,7 +1506,10 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
    <small>Exemple : utilise l’herbe classique ou la variante 2 et choisis « Haute herbe » pour augmenter les rencontres sans changer le visuel.</small>
    <label>Action <select id="surface-action">
     <option value="paint">Peindre une route / une zone</option>
-    <option value="erase">Effacer au toucher</option>
+    <option value="erase">Gomme locale (glisser)</option>
+    <option value="curve">Tracer une route courbe</option>
+    <option value="edit">Sélectionner / modifier une route</option>
+    <option value="delete">Supprimer un tracé entier</option>
    </select></label>
    <label>Forme du pinceau de texture
     <select id="surface-brush-shape" aria-label="Forme du pinceau des textures">
@@ -1512,6 +1520,25 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
    <label>Largeur <output id="surface-width-value">3 cases</output>
     <input type="range" id="surface-width" min="1" max="12" step="0.5" value="3">
    </label>
+   <fieldset id="road-style-controls" hidden>
+    <legend>Routes · bordures et tracé</legend>
+    <output id="road-selected">Aucune route sélectionnée</output>
+    <label>Bordure <select id="road-border-sides"><option value="none">Sans bordure</option><option value="both">Deux côtés</option><option value="left">Gauche seulement</option><option value="right">Droite seulement</option></select></label>
+    <div id="road-border-settings" hidden>
+    <label>Modèle <select id="road-border-asset"></select></label>
+    <label>Largeur bordure <input id="road-border-width" type="number" min="1" max="128" value="8"></label>
+    <label>Échelle <input id="road-border-scale" type="number" min=".1" max="4" step=".1" value="1"></label>
+    <label>Décalage <input id="road-border-offset" type="number" min="-64" max="64" value="0"></label>
+    <label>Espacement cailloux <input id="road-border-spacing" type="number" min="0" max="128" value="2"></label>
+    <label>Opacité (%) <input id="road-border-opacity" type="number" min="0" max="100" value="100"></label>
+    </div>
+    <small id="road-border-legacy-note" hidden>Cette route possède deux anciens styles différents. Appliquer uniformisera les deux côtés.</small>
+    <button type="button" id="road-border-apply" disabled>Appliquer à la route</button>
+    <button type="button" id="road-curve-convert" disabled>Convertir en courbe éditable</button>
+    <button type="button" id="road-curve-finish" hidden disabled>Valider le tracé par points</button>
+    <button type="button" id="road-curve-cancel" hidden disabled>Annuler le tracé</button>
+    <small>En mode Modifier, touche une route, puis déplace les points ou poignées directement sur la carte.</small>
+   </fieldset>
   </div>
  </details>
  <details class="surface-settings-group">
@@ -1540,15 +1567,7 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
   </div>
  </details>
  <button id="surface-configure-encounters" type="button">🐾 Créer une famille / régler les rencontres</button>
- <details class="surface-settings-group">
-  <summary>↶ Historique et entretien</summary>
-  <div class="surface-settings-body">
-   <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
-    <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
-   <button id="surface-align-families" type="button">Aligner les rencontres sur les anciennes textures</button>
-   <small>Action facultative et annulable, réservée aux cartes anciennes. Elle peut modifier les familles associées aux zones déjà peintes.</small>
-  </div>
- </details>
+ <button id="surface-align-families" type="button" title="Action facultative et annulable pour les anciennes cartes : modifie les familles associées aux zones peintes.">Aligner les anciennes familles de rencontres</button>
  <output id="surface-count">Aucune zone peinte</output>
 </section>
 <section id="waypoints-palette" aria-label="Passages, départs, entrées et sorties" hidden>
@@ -2138,6 +2157,6 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126-object-library-tree-v1-personal-layout-v1-graphic-import-storage-v1-local-object-runtime-v1-local-texture-runtime-v1-surface-fluidity-36-v1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125-interior-inspector-20261126-living-water-author-atlas-20261126-object-library-tree-v1-personal-layout-v1-graphic-import-storage-v1-local-object-runtime-v1-local-texture-runtime-v1-surface-fluidity-36-v1-seamless-20261128"></script>
 </body>
 </html>

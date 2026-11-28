@@ -1,5 +1,7 @@
 name: Organic relief prototype visual proof
 on:
+  push:
+    branches: ['work/exploration-organic-relief-pilot-20261128']
   pull_request:
     paths:
       - 'prototypes/organic-relief-pilot.*'
@@ -9,7 +11,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: organic-relief-preview-${{ github.event.pull_request.number }}
+  group: organic-relief-preview-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
   visual-proof:
@@ -18,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

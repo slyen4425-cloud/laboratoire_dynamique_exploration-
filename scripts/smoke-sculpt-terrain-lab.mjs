@@ -1,6 +1,6 @@
 // Real Chromium gate for the isolated sculptable heightfield lab, without a separate engine.
 import { createServer } from 'node:http';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
@@ -10,6 +10,9 @@ import {checkSculptWaterPassage} from './check-sculpt-water-passage.mjs';
 import {buildLivingWaterAtlases} from './build-living-water-atlases.mjs';
 const root = process.cwd();
 buildLivingWaterAtlases(root);
+const roadAssets=spawnSync('python3',['scripts/import-road-borders-v1.py','--install'],{cwd:root,encoding:'utf8'});
+if(roadAssets.status!==0)throw Error('Road border build: '+roadAssets.stderr);
+console.log(roadAssets.stdout.trim());
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json',
   '.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
@@ -320,6 +323,102 @@ try{
   if(authorAtlases.length!==5||authorAtlases.some(a=>a.w!==1008||a.h!==756||a.frames!==36||a.motion<100||a.seam>1||a.minAdjacent<100||a.blendChanges<100))
     throw Error('Authored water/lava sprite decode, motion or tile edge regression: '+JSON.stringify(authorAtlases));
   console.log('Real Chromium five approved water/lava atlases:',JSON.stringify(authorAtlases));
+  // Reproduce the transparent checkerboard in the real water compositor.
+  // Use the actual atlas, actual terrain mask and actual animated renderer.
+  // In a homogeneous wet interior the result must match a single continuous
+  // RGB pattern and one depth tint at both integer and fractional zoom.
+  const seamlessWater=await run(`(async()=>{
+    const m=await import('./src/render/animated-surface-sprites-v1.js');
+    const r=await import('./src/render/sculpt-height-renderer.js');
+    const model=await import('./src/world/sculpt-height-model.js');
+    const w=28,h=21,rise=18,size=12,depth=2,timeSeconds=.5;
+    const waterLevels=Array.from({length:size*size},(_,i)=>{
+      const x=i%size,y=Math.floor(i/size);return x>=2&&x<10&&y>=2&&y<10?depth:-1;
+    });
+    const canvas=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+    const results=[];
+    for(const id of ['water.turquoise','water.lava']){
+      const runs=Array.from({length:8},(_,i)=>[(i+2)*size+2,8,id]);
+      const terrain=model.createSculptTerrain({width:size,height:size,levels:Array(size*size).fill(0),waterLevels,waterMaterialRuns:runs});
+      const mask=canvas(size*w,size*h),background=canvas(size*w,size*h);
+      const maskCtx=mask.getContext('2d');
+      r.drawSculptTerrain(background.getContext('2d'),{terrain,overlays:{water:{visible:true,living:true}},waterMask:maskCtx,drawOuterSouthRim:false});
+      const maskPixels=maskCtx.getImageData(0,0,mask.width,mask.height).data;
+      const alphaAt=(x,y)=>maskPixels[(y*mask.width+x)*4+3];
+      let maskMin=255;
+      for(let y=3*h-depth*rise+1;y<9*h-depth*rise-1;y++)for(let x=3*w+1;x<9*w-1;x++)maskMin=Math.min(maskMin,alphaAt(x,y));
+      const dryAlpha=alphaAt(w+4,6*h-depth*rise+4);
+      await m.loadAnimatedSurfaceAtlas(id);
+      for(const zoom of [1,1.75,2.35]){
+        const cw=Math.ceil(size*w*zoom),ch=Math.ceil(size*h*zoom);
+        const actual=canvas(cw,ch),reference=canvas(cw,ch);
+        const g=actual.getContext('2d'),ref=reference.getContext('2d');
+        for(const c of [g,ref])c.setTransform(zoom,0,0,zoom,.25,.4);
+        r.drawSculptLivingWaterLayer(g,{terrain,timeSeconds,fps:8,foamPct:0});
+        g.globalCompositeOperation='destination-in';g.drawImage(mask,0,0);g.globalCompositeOperation='source-over';
+        const sprite=m.animatedSurfaceSprite(id,m.surfaceMaterialFrame(id,timeSeconds,8));
+        ref.fillStyle=ref.createPattern(sprite,'repeat');ref.fillRect(2*w,2*h-depth*rise,8*w,8*h);
+        ref.globalAlpha=.035*depth;ref.fillStyle=id==='water.lava'?'#40110a':'#102a51';ref.fillRect(2*w,2*h-depth*rise,8*w,8*h);ref.globalAlpha=1;
+        const a=g.getImageData(0,0,cw,ch).data,b=ref.getImageData(0,0,cw,ch).data;
+        let maxDelta=0,bad=0,count=0;
+        for(let y=Math.ceil((3*h-depth*rise+2)*zoom);y<Math.floor((9*h-depth*rise-2)*zoom);y++)
+          for(let x=Math.ceil((3*w+2)*zoom);x<Math.floor((9*w-2)*zoom);x++){
+            const i=(y*cw+x)*4,d=Math.max(...[0,1,2,3].map(c=>Math.abs(a[i+c]-b[i+c])));
+            maxDelta=Math.max(maxDelta,d);if(d>2)bad++;count++;
+          }
+        results.push({id,zoom,maskMin,dryAlpha,maxDelta,bad,count});
+      }
+    }
+    return results;
+  })()`);
+  if(seamlessWater.length!==6||seamlessWater.some(x=>x.maskMin!==255||x.dryAlpha!==0||x.bad!==0||x.count<1000))
+    throw Error('Water/lava internal grid regression: '+JSON.stringify(seamlessWater));
+  console.log('Seamless native water/lava pixels at integer and fractional zoom:',JSON.stringify(seamlessWater));
+  // Painted ground: the exact same brush over the same native terrain must
+  // match a continuous reference, including internal grid boundaries.
+  // Real grass/dirt assets, opaque synthetic high-contrast control, fractional
+  // and integer device scaling. The reference is not a second live painter.
+  const paintedGrid=await run(`(async()=>{
+    const r=await import('./src/render/sculpt-height-renderer.js');
+    const model=await import('./src/world/sculpt-height-model.js');
+    const brush=await import('./src/world/surface-brush-geometry.js');
+    const load=async path=>{const img=new Image();img.src=path;await img.decode();return img;};
+    const grass=await load('./assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp');
+    const dirt=await load('./assets/exploration/materials/forest/paths/road_dirt_base_01.webp');
+    const solid=document.createElement('canvas');solid.width=128;solid.height=128;
+    const sc=solid.getContext('2d');sc.fillStyle='#9e4024';sc.fillRect(0,0,128,128);
+    const w=28,h=21,cols=12,rows=12,results=[];
+    const terrain=model.createSculptTerrain({width:cols,height:rows,levels:Array(cols*rows).fill(0),waterLevels:Array(cols*rows).fill(-1)});
+    const make=(zoom)=>{const c=document.createElement('canvas');c.width=Math.ceil(cols*w*zoom)+2;c.height=Math.ceil(rows*h*zoom)+2;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.setTransform(zoom,0,0,zoom,.27,.41);return {c,ctx};};
+    for(const zoom of [1,1.5,2.06])for(const shape of ['round','square'])for(const [id,img] of [['road.dirt',dirt],['ground.sand',solid]]){
+      const feature={id:'grid-test',materialId:id,width:100,points:[{x:36,y:126},{x:300,y:126}],brushShape:shape};
+      const paintSurface={zones:id==='ground.sand'?[feature]:[],routes:id==='road.dirt'?[feature]:[]};
+      const actual=make(zoom),reference=make(zoom),paintImages=new Map([[id,img]]);
+      const options={terrain,texture:grass,drawOuterSouthRim:false};
+      r.drawSculptTerrain(actual.ctx,{...options,paintSurface,paintImages});
+      r.drawSculptTerrain(reference.ctx,options);
+      const ref=reference.ctx,pattern=ref.createPattern(img,'repeat');pattern.setTransform(new DOMMatrix().scale(.55));
+      ref.save();ref.fillStyle=pattern;ref.strokeStyle=pattern;
+      for(const [width,alpha] of [[feature.width+6,.20],[feature.width,.95]]){
+        ref.globalAlpha=alpha;
+        if(shape==='square'){brush.drawSquareSurfaceStrokePath(ref,feature.points,width);ref.fill();}
+        else{ref.beginPath();ref.moveTo(36,126);ref.lineTo(300,126);ref.lineWidth=width;ref.lineCap='round';ref.lineJoin='round';ref.stroke();}
+      }
+      ref.restore();
+      const a=actual.ctx.getImageData(0,0,actual.c.width,actual.c.height).data,b=ref.getImageData(0,0,reference.c.width,reference.c.height).data;
+      let maxDelta=0,bad=0,count=0;
+      // Stay inside the stroke, but include all projected cell boundaries.
+      for(let y=Math.ceil(86*zoom);y<Math.floor(166*zoom);y++)for(let x=Math.ceil(50*zoom);x<Math.floor(286*zoom);x++){
+        const i=(y*actual.c.width+x)*4,d=Math.max(...[0,1,2,3].map(ch=>Math.abs(a[i+ch]-b[i+ch])));
+        maxDelta=Math.max(maxDelta,d);if(d>2)bad++;count++;
+      }
+      results.push({zoom,shape,id,maxDelta,bad,count});
+    }
+    return results;
+  })()`);
+  if(paintedGrid.length!==12||paintedGrid.some(v=>v.bad!==0||v.count<1000))
+    throw Error('Painted texture internal brown grid: '+JSON.stringify(paintedGrid));
+  console.log('Painted ground seam-free real Chromium:',JSON.stringify(paintedGrid));
   // Living water: a real mouse stroke changes only the painted material.
   // Pixel motion is measured at a stationary camera and no pointer movement.
   const livingBefore=await run(`(async()=>{
@@ -1601,6 +1700,135 @@ try{
      v27Reload.baseTerrainFamilyId!=='mountain'||
      v27Reload.features[1].terrainFamilyId!=='snow')
     throw Error('V27 imported WorldSurface routes/zones lost: '+JSON.stringify(v27Reload));
+  // Author route border: existing route, optional sides, real pixels, reload and eraser.
+  const roadConfig=await run(`(()=>{
+    const material=document.querySelector('#surface-material');
+    material.value='road.dirt';material.dispatchEvent(new Event('change',{bubbles:true}));
+    const action=document.querySelector('#surface-action');action.value='edit';action.dispatchEvent(new Event('change',{bubbles:true}));
+    return !document.querySelector('#road-style-controls').hidden;
+  })()`);
+  if(!roadConfig)throw Error('Road border controls not available');
+  const undoVisible=await run(`(()=>{const b=document.querySelector('#surface-undo'),r=b.getBoundingClientRect(),p=document.querySelector('#surface-palette').getBoundingClientRect();return !b.closest('details')&&r.top>=p.top&&r.bottom<=p.bottom;})()`);
+  if(!undoVisible)throw Error('Undo hidden from the surface panel');
+  await paintSurface(v27Ready.start,v27Ready.start);
+  const beforeBorder=await run(`(()=>{const c=document.querySelector('#sculpt-canvas');const ctx=c.getContext('2d');return Array.from(ctx.getImageData(0,0,c.width,c.height).data.filter((_,i)=>i%64===0));})()`);
+  await run(`(()=>{
+    const sides=document.querySelector('#road-border-sides');
+    sides.value='both';sides.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-asset').value='road-border.bordure_bois';
+    document.querySelector('#road-border-width').value='12';
+    const apply=document.querySelector('#road-border-apply');if(apply.disabled)throw Error('No selected road');
+    apply.click();
+  })()`);
+  for(let i=0;i<40;i++){if(await run("window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_bois')"))break;await sleep(100);}
+  const styled=await run('window.__sculptSurfaceProbe()');
+  if(!styled.features[0].border?.enabled||!styled.texturesLoaded.includes('road-border.bordure_bois')||styled.features[0].border.left.width!==12||styled.features[0].border.right.width!==12||styled.features[0].border.left.assetId!==styled.features[0].border.right.assetId)throw Error('Road border assets/model missing: '+JSON.stringify(styled));
+  await sleep(200);
+  const afterBorder=await run(`(()=>{const c=document.querySelector('#sculpt-canvas');return Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data.filter((_,i)=>i%64===0));})()`);
+  if(!afterBorder.some((v,i)=>v!==beforeBorder[i]))throw Error('Road border did not alter actual canvas pixels');
+  await run("document.querySelector('#road-curve-convert').click()");
+  const curved=await run('window.__sculptSurfaceProbe().features[0]');
+  if(!curved.knots||curved.knots<2)throw Error('Road curve knots missing');
+  await run(`(()=>{document.querySelector('#scene-export').click();const j=JSON.parse(document.querySelector('#json').value);
+    if(!j.surface.routes[0].knots||!j.surface.routes[0].border)throw Error('Road curve/style absent on export');
+    window.__roadBorderScene=document.querySelector('#json').value;
+    document.querySelector('#import').click();
+  })()`);
+  const reloadedRoad=await run('window.__sculptSurfaceProbe().features[0]');
+  if(!reloadedRoad.border?.enabled||!reloadedRoad.knots)throw Error('Road style/curve round trip failed');
+  // Actual side toggles and cleaned concrete image, not just model options.
+  await paintSurface(v27Ready.start,v27Ready.start);
+  await run(`(()=>{const sides=document.querySelector('#road-border-sides');sides.value='left';sides.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-asset').value='road-border.bordure_beton';document.querySelector('#road-border-width').value='10';
+    const apply=document.querySelector('#road-border-apply');if(apply.disabled)throw Error('Road selection missing after reload');apply.click();})()`);
+  for(let i=0;i<40;i++){if(await run("window.__sculptSurfaceProbe().texturesLoaded.includes('road-border.bordure_beton')"))break;await sleep(100);}
+  const oneSide=await run('window.__sculptSurfaceProbe()');
+  if(!oneSide.features[0].border?.enabled||oneSide.features[0].border.right||oneSide.features[0].border.left.width!==10||
+    !oneSide.texturesLoaded.includes('road-border.bordure_beton'))throw Error('One-side road border or cleaned asset unavailable');
+  await run(`(()=>{const sides=document.querySelector('#road-border-sides');sides.value='none';sides.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#road-border-apply').click();})()`);
+  if((await run('window.__sculptSurfaceProbe().features[0].border.enabled'))!==false)throw Error('Disable road borders failed');
+  await run("document.querySelector('#surface-undo').click()");
+  const restoredSide=await run('window.__sculptSurfaceProbe().features[0].border');
+  if(!restoredSide?.enabled||restoredSide.right||restoredSide.left.width!==10)throw Error('Visible undo did not restore previous border style');
+  // V3 reproduces the author's 206% view, wide wood and short irregular bends.
+  // Read actual decoded WebP pixels through the same renderer, not a mock.
+  const curveV3=await run(`(async()=>{
+    const {roadBorderCellPainter,roadBorderField,roadBorderTextureAt,ROAD_BORDER_ASSETS}=await import('./src/render/road-border-renderer-v1.js');
+    const asset=ROAD_BORDER_ASSETS.find(a=>a.id==='road-border.bordure_bois');
+    const image=new Image();image.src=asset.path;await image.decode();
+    const style={assetId:asset.id,width:28,scale:1.5,offset:-5,spacing:10,opacity:1};
+    const route={id:'curve-v3',width:84,materialId:'road.dirt',points:[{x:55,y:115},{x:135,y:103},{x:170,y:105},{x:177,y:111},{x:180,y:119},{x:190,y:126},{x:209,y:140},{x:235,y:168},{x:270,y:220}],border:{enabled:true,left:style,right:style}};
+    const routes=Object.freeze([route]),tile={width:28,height:21,rise:18},terrain={width:13,height:15};
+    const w=terrain.width*tile.width,h=terrain.height*tile.height,scale=2;
+    const layer=document.createElement('canvas');layer.width=w*scale;layer.height=h*scale;
+    const ctx=layer.getContext('2d',{willReadFrequently:true});ctx.scale(scale,scale);
+    const painter=roadBorderCellPainter(ctx,terrain,tile,routes,new Map([[asset.id,[image]]]));
+    if(!painter)throw Error('V3 renderer unavailable');
+    for(let row=0;row<terrain.height;row++)for(let col=0;col<terrain.width;col++){
+      if(!painter.hasCell(col,row))continue;
+      ctx.save();ctx.beginPath();ctx.rect(col*tile.width,row*tile.height,tile.width,tile.height);ctx.clip();painter(col,row,0);ctx.restore();
+    }
+    const rgba=ctx.getImageData(0,0,layer.width,layer.height).data;
+    const d=(p,a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy)));return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);};
+    let visible=0,leak=0,core=0,corePainted=0,nearLeft=0,nearRight=0;
+    const field=roadBorderField(routes);
+    for(let y=0;y<layer.height;y++)for(let x=0;x<layer.width;x++){
+      const p={x:(x+.5)/scale,y:(y+.5)/scale},alpha=rgba[(y*layer.width+x)*4+3];
+      if(alpha>48){visible++;const dist=Math.min(...route.points.slice(1).map((b,i)=>d(p,route.points[i],b)));if(dist>route.width/2+9)leak++;}
+      if(x%4||y%4)continue;
+      const m=roadBorderTextureAt(field,p.x,p.y)[0];
+      if(!m||Math.abs(m.v-m.profile.anchor)>.035)continue;
+      core++;if(alpha>100){corePainted++;if(m.side===-1)nearLeft++;else nearRight++;}
+    }
+    // Compose the actual renderer output over the canonical road geometry;
+    // the background is deliberately plain to expose isolated pixels.
+    const preview=document.createElement('canvas');preview.width=layer.width;preview.height=layer.height;
+    const pc=preview.getContext('2d');pc.scale(scale,scale);pc.fillStyle='#718e49';pc.fillRect(0,0,w,h);
+    pc.strokeStyle='#96704a';pc.lineCap='round';pc.lineJoin='round';pc.lineWidth=route.width;
+    pc.beginPath();route.points.forEach((p,i)=>i?pc.lineTo(p.x,p.y):pc.moveTo(p.x,p.y));pc.stroke();
+    pc.setTransform(1,0,0,1,0,0);pc.drawImage(layer,0,0);
+    return {visible,leak,core,corePainted,nearLeft,nearRight,png:preview.toDataURL('image/png').split(',')[1]};
+  })()`);
+  await mkdir('artifacts',{recursive:true});await writeFile('artifacts/road-border-v3-real-preview.png',Buffer.from(curveV3.png,'base64'));delete curveV3.png;
+  if(curveV3.leak!==0||curveV3.visible<1000||curveV3.core<80||curveV3.corePainted/curveV3.core<.72||curveV3.nearLeft<20||curveV3.nearRight<20)
+    throw Error('V3 real thick curved border pixels: '+JSON.stringify(curveV3));
+  console.log('V3 real curved wood: '+JSON.stringify(curveV3));
+  // Actual horizontal stone asset: verify both sides' screen-space relief
+  // orientation via the production rasterizer and retain a visual preview.
+  const facing=await run(`(async()=>{
+    const {roadBorderCellPainter,ROAD_BORDER_ASSETS}=await import('./src/render/road-border-renderer-v1.js');
+    const asset=ROAD_BORDER_ASSETS.find(a=>a.id==='road-border.bordure_pierre_taillee');
+    const image=new Image();image.src=asset.path;await image.decode();
+    const style={assetId:asset.id,width:16,scale:1,offset:0,spacing:2,opacity:1};
+    const route={width:48,points:[{x:20,y:84},{x:260,y:84}],border:{enabled:true,left:style,right:style}};
+    const tile={width:28,height:21,rise:18},terrain={width:10,height:8};
+    const layer=document.createElement('canvas');layer.width=560;layer.height=336;
+    const ctx=layer.getContext('2d',{willReadFrequently:true});ctx.scale(2,2);
+    const paint=roadBorderCellPainter(ctx,terrain,tile,Object.freeze([route]),new Map([[asset.id,[image]]]));
+    for(let y=0;y<8;y++)for(let x=0;x<10;x++)if(paint.hasCell(x,y))paint(x,y,0);
+    // Both strips now have the same screen-space alpha profile, measured
+    // about their inward-shifted anchors, away from ends and tile edges.
+    const shift=16*.12,north=60+shift,south=108-shift;
+    const mass=(anchor,dy)=>{
+      const p=ctx.getImageData(100,Math.round((anchor+dy)*2),360,1).data;
+      let a=0;for(let i=3;i<p.length;i+=4)a+=p[i];return a;
+    };
+    let error=0,total=0;
+    for(let d=-7;d<=7;d++){const a=mass(north,d),b=mass(south,d);error+=Math.abs(a-b);total+=a+b;}
+    const preview=document.createElement('canvas');preview.width=560;preview.height=336;
+    const pc=preview.getContext('2d');pc.scale(2,2);pc.fillStyle='#718e49';pc.fillRect(0,0,280,168);
+    pc.strokeStyle='#96704a';pc.lineWidth=48;pc.lineCap='round';pc.beginPath();pc.moveTo(20,84);pc.lineTo(260,84);pc.stroke();
+    pc.setTransform(1,0,0,1,0,0);pc.drawImage(layer,0,0);
+    return {error,total,png:preview.toDataURL('image/png').split(',')[1]};
+  })()`);
+  await writeFile('artifacts/road-border-facing-real-preview.png',Buffer.from(facing.png,'base64'));delete facing.png;
+  if(facing.total<100000||facing.error/facing.total>.18)throw Error('Horizontal road facing mismatch: '+JSON.stringify(facing));
+  console.log('Horizontal stone facing: '+JSON.stringify(facing));
+  // Restore the precise original fixture for downstream historical tests.
+  await run(`(()=>{document.querySelector('#json').value=window.__v27Scene;document.querySelector('#import').click();
+    const action=document.querySelector('#surface-action');action.value='paint';action.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  console.log('Road borders: actual WebP decoding, canvas pixels, optional style and curve round trip');
   // #526 REAL Chromium: use the actual TEXTURE select and mouse pointer.
   // One square tap creates exactly one normal WorldSurface zone; never a copy
   // of the terrain painter, never a second encounter or collision authority.
