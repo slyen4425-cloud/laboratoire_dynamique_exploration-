@@ -453,9 +453,14 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     ctx.restore();
     if(!waterMask&&!lava)drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,foamPct:overlay.living?(terrain.waterFoamPct??60):60});
     if(waterMask){
-      waterMask.save();waterMask.clearRect(x,y,w+.65,h+.65);
-      if(shore.edges.length){sculptWetShorePath(waterMask,x,y,w,h,shore);waterMask.clip();}
-      waterMask.fillStyle='#fff';waterMask.fillRect(x,y,w+.65,h+.65);waterMask.restore();
+      waterMask.save();
+      // Only clear the current footprint when the real shoreline cuts it.
+      // Never partially erase an adjacent coplanar wet tile at its seam.
+      if(shore.edges.length){
+        waterMask.clearRect(x,y,w,h);
+        sculptWetShorePath(waterMask,x,y,w,h,shore);waterMask.clip();
+      }
+      waterMask.fillStyle='#fff';waterMask.fillRect(x,y,w,h);waterMask.restore();
     }
     if(visibleWall>0){
       const grad=ctx.createLinearGradient(x,y+h,x,y+h+visibleWall);
@@ -1048,25 +1053,44 @@ export function drawSculptLivingWaterLayer(ctx,{terrain,tile=SCULPT_TILE,timeSec
   const pattern=sprite?ctx.createPattern(sprite,'repeat'):null;
   const inView=c=>!viewport||(c.x+w>=viewport.minX&&c.x<=viewport.maxX&&c.y+h>=viewport.minY&&c.y<=viewport.maxY);
   if(pattern){
-   ctx.save();ctx.fillStyle=pattern;ctx.beginPath();ctx.globalAlpha=.84;
-   for(const cell of cells)if(inView(cell)){ctx.rect(cell.x,cell.y,w+.65,h+.65);visible++;}
-   ctx.fill();ctx.restore();
-   // Preserve depth/rivage on top of authored full-colour sprites; the
-   // existing visibility mask still excludes all dry ground and cliffs.
-   ctx.save();const lava=id==='water.lava';
+   // Authored RGB frames are opaque. The native visibility mask alone
+   // controls coverage; the old translucent backing showed its tile seams.
+   // A compound path paints the union once, rather than alpha stacking.
+   const depths=new Map(),shores=new Map(),lava=id==='water.lava';
+   ctx.save();ctx.fillStyle=pattern;ctx.beginPath();ctx.globalAlpha=1;
    for(const cell of cells)if(inView(cell)){
     const {x,y,depth}=cell;
-    ctx.globalAlpha=Math.min(.26,.035*depth);ctx.fillStyle=lava?'#40110a':'#102a51';ctx.fillRect(x,y,w+.65,h+.65);
-    if(cell.shore){ctx.globalAlpha=.68;
-     for(const edge of sculptWetShoreEdges(terrain,cell.col,cell.row)){
-      const horizontal=edge==='north'||edge==='south',sign=edge==='north'||edge==='west'?1:-1;
-      const gx=edge==='east'?x+w:x,gy=edge==='south'?y+h:y;
-      const gradient=ctx.createLinearGradient(gx,gy,gx+(horizontal?0:sign*w*.40),gy+(horizontal?sign*h*.45:0));
-      gradient.addColorStop(0,lava?'rgba(255,139,36,.78)':'rgba(79,209,197,.70)');
-      gradient.addColorStop(1,lava?'rgba(255,139,36,0)':'rgba(79,209,197,0)');
-      ctx.fillStyle=gradient;ctx.fillRect(x,y,w+.65,h+.65);
-     }
+    ctx.rect(x,y,w,h);visible++;
+    if(!depths.has(depth))depths.set(depth,[]);
+    depths.get(depth).push(cell);
+    if(cell.shore)for(const edge of sculptWetShoreEdges(terrain,cell.col,cell.row)){
+     const horizontal=edge==='north'||edge==='south';
+     const line=horizontal?y+(edge==='south'?h:0):x+(edge==='east'?w:0);
+     const key=edge+':'+line;
+     if(!shores.has(key))shores.set(key,{edge,line,cells:[]});
+     shores.get(key).cells.push(cell);
     }
+   }
+   ctx.fill();
+   // Each equal-depth region receives one tint, including at shared edges.
+   ctx.fillStyle=lava?'#40110a':'#102a51';
+   for(const [depth,region] of depths){
+    ctx.globalAlpha=Math.min(.26,.035*depth);ctx.beginPath();
+    for(const {x,y} of region)ctx.rect(x,y,w,h);
+    ctx.fill();
+   }
+   // A continuous gradient per aligned real shore, never per tile seam.
+   // Orthogonal gradients can still meet naturally at an outer corner.
+   ctx.globalAlpha=.68;
+   for(const {edge,line,cells:region} of shores.values()){
+    const horizontal=edge==='north'||edge==='south',sign=edge==='north'||edge==='west'?1:-1;
+    const gx=horizontal?0:line,gy=horizontal?line:0;
+    const gradient=ctx.createLinearGradient(gx,gy,gx+(horizontal?0:sign*w*.40),gy+(horizontal?sign*h*.45:0));
+    gradient.addColorStop(0,lava?'rgba(255,139,36,.78)':'rgba(79,209,197,.70)');
+    gradient.addColorStop(1,lava?'rgba(255,139,36,0)':'rgba(79,209,197,0)');
+    ctx.fillStyle=gradient;ctx.beginPath();
+    for(const {x,y} of region)ctx.rect(x,y,w,h);
+    ctx.fill();
    }
    ctx.restore();
   }

@@ -320,6 +320,57 @@ try{
   if(authorAtlases.length!==5||authorAtlases.some(a=>a.w!==1008||a.h!==756||a.frames!==36||a.motion<100||a.seam>1||a.minAdjacent<100||a.blendChanges<100))
     throw Error('Authored water/lava sprite decode, motion or tile edge regression: '+JSON.stringify(authorAtlases));
   console.log('Real Chromium five approved water/lava atlases:',JSON.stringify(authorAtlases));
+  // Reproduce the transparent checkerboard in the real water compositor.
+  // Use the actual atlas, actual terrain mask and actual animated renderer.
+  // In a homogeneous wet interior the result must match a single continuous
+  // RGB pattern and one depth tint at both integer and fractional zoom.
+  const seamlessWater=await run(`(async()=>{
+    const m=await import('./src/render/animated-surface-sprites-v1.js');
+    const r=await import('./src/render/sculpt-height-renderer.js');
+    const model=await import('./src/world/sculpt-height-model.js');
+    const w=28,h=21,rise=18,size=12,depth=2,timeSeconds=.5;
+    const waterLevels=Array.from({length:size*size},(_,i)=>{
+      const x=i%size,y=Math.floor(i/size);return x>=2&&x<10&&y>=2&&y<10?depth:-1;
+    });
+    const canvas=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+    const results=[];
+    for(const id of ['water.turquoise','water.lava']){
+      const runs=Array.from({length:8},(_,i)=>[(i+2)*size+2,8,id]);
+      const terrain=model.createSculptTerrain({width:size,height:size,levels:Array(size*size).fill(0),waterLevels,waterMaterialRuns:runs});
+      const mask=canvas(size*w,size*h),background=canvas(size*w,size*h);
+      const maskCtx=mask.getContext('2d');
+      r.drawSculptTerrain(background.getContext('2d'),{terrain,overlays:{water:{visible:true,living:true}},waterMask:maskCtx,drawOuterSouthRim:false});
+      const maskPixels=maskCtx.getImageData(0,0,mask.width,mask.height).data;
+      const alphaAt=(x,y)=>maskPixels[(y*mask.width+x)*4+3];
+      let maskMin=255;
+      for(let y=3*h-depth*rise+1;y<9*h-depth*rise-1;y++)for(let x=3*w+1;x<9*w-1;x++)maskMin=Math.min(maskMin,alphaAt(x,y));
+      const dryAlpha=alphaAt(w+4,6*h-depth*rise+4);
+      await m.loadAnimatedSurfaceAtlas(id);
+      for(const zoom of [1,1.75,2.35]){
+        const cw=Math.ceil(size*w*zoom),ch=Math.ceil(size*h*zoom);
+        const actual=canvas(cw,ch),reference=canvas(cw,ch);
+        const g=actual.getContext('2d'),ref=reference.getContext('2d');
+        for(const c of [g,ref])c.setTransform(zoom,0,0,zoom,.25,.4);
+        r.drawSculptLivingWaterLayer(g,{terrain,timeSeconds,fps:8,foamPct:0});
+        g.globalCompositeOperation='destination-in';g.drawImage(mask,0,0);g.globalCompositeOperation='source-over';
+        const sprite=m.animatedSurfaceSprite(id,m.surfaceMaterialFrame(id,timeSeconds,8));
+        ref.fillStyle=ref.createPattern(sprite,'repeat');ref.fillRect(2*w,2*h-depth*rise,8*w,8*h);
+        ref.globalAlpha=.035*depth;ref.fillStyle=id==='water.lava'?'#40110a':'#102a51';ref.fillRect(2*w,2*h-depth*rise,8*w,8*h);ref.globalAlpha=1;
+        const a=g.getImageData(0,0,cw,ch).data,b=ref.getImageData(0,0,cw,ch).data;
+        let maxDelta=0,bad=0,count=0;
+        for(let y=Math.ceil((3*h-depth*rise+2)*zoom);y<Math.floor((9*h-depth*rise-2)*zoom);y++)
+          for(let x=Math.ceil((3*w+2)*zoom);x<Math.floor((9*w-2)*zoom);x++){
+            const i=(y*cw+x)*4,d=Math.max(...[0,1,2,3].map(c=>Math.abs(a[i+c]-b[i+c])));
+            maxDelta=Math.max(maxDelta,d);if(d>2)bad++;count++;
+          }
+        results.push({id,zoom,maskMin,dryAlpha,maxDelta,bad,count});
+      }
+    }
+    return results;
+  })()`);
+  if(seamlessWater.length!==6||seamlessWater.some(x=>x.maskMin!==255||x.dryAlpha!==0||x.bad!==0||x.count<1000))
+    throw Error('Water/lava internal grid regression: '+JSON.stringify(seamlessWater));
+  console.log('Seamless native water/lava pixels at integer and fractional zoom:',JSON.stringify(seamlessWater));
   // Living water: a real mouse stroke changes only the painted material.
   // Pixel motion is measured at a stationary camera and no pointer movement.
   const livingBefore=await run(`(async()=>{
