@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {contourAt,chamferLoop,reliefPlan} from '../prototypes/organic-relief-pilot.mjs';
+import {contourAt,chamferLoop,reliefPlan,reliefWallPlan,organicPoint} from '../prototypes/organic-relief-pilot.mjs';
 const t=(rows)=>({width:rows[0].length,height:rows.length,levels:rows.flat()});
 test('single continuous contour for connected staircase; no input mutation',()=>{
  const m=t([[0,1,1],[1,1,0],[1,0,0]]),before=JSON.stringify(m);
@@ -28,4 +28,21 @@ test('full diagonal removes the micro stair between consecutive 1-cell turns',()
 test('chamfer keeps tiny diagonal-touching islands separate',()=>{
  const loops=contourAt(t([[1,0],[0,1]]),1).map(l=>chamferLoop(l,{amount:.5}));
  assert.equal(loops.length,2);assert.ok(loops.every(l=>l.length===4));
+});
+
+test('an unrelated height must not create a false horizontal cliff band',()=>{
+ const map=t([[0,0,0,0,0],[0,4,4,0,3],[0,4,4,0,0],[0,0,0,0,0]]);
+ const p=reliefWallPlan(map);
+ const front=p.edges.filter(e=>e.b[0]<e.a[0]&&e.a[0]<90&&e.a[0]>28&&e.a[1]>50);
+ assert.ok(front.length>0);
+ assert.ok(front.every(e=>e.lower===0&&e.upper===4));
+});
+test('actual adjoining terrace keeps the correct wall rise',()=>{
+ const p=reliefWallPlan(t([[0,0,0],[0,7,0],[0,4,0],[0,0,0]]),{amount:0});
+ assert.ok(p.edges.some(e=>e.a[1]===42&&e.b[0]<e.a[0]&&e.lower===4&&e.upper===7));
+});
+test('natural perturbation is deterministic, bounded and disabled at zero',()=>{
+ const a=[40,90],q=organicPoint(a);
+ assert.deepEqual(q,organicPoint(a));assert.deepEqual(organicPoint(a,0),a);
+ assert.ok(Math.abs(q[0]-a[0])<3&&Math.abs(q[1]-a[1])<3);
 });

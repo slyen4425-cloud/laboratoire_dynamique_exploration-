@@ -59,42 +59,114 @@ export function reliefPlan(terrain,{width=28,height=21,rise=18,amount=.5}={}){
     level,lower:levels[i],loops:contourAt(terrain,level).map(l=>chamferLoop(l,{width,height,amount}))
   }))};
 }
-function pathLoop(ctx,loop,z){ctx.moveTo(loop[0][0],loop[0][1]-z);
-  for(const [x,y] of loop.slice(1))ctx.lineTo(x,y-z);ctx.closePath();}
+
+// Split collinear contours at shared WORLD coordinates, so a long edge at a
+// lower threshold matches shorter pieces on a higher threshold. No ghost
+// terrace bands caused by unrelated elevations elsewhere in the map.
+function splitEdge(a,b){
+  const axis=Math.abs(b[0]-a[0])>1e-8?0:1;
+  const lo=Math.min(a[axis],b[axis]),hi=Math.max(a[axis],b[axis]),step=7;
+  const ts=[0,1];
+  for(let v=Math.floor(lo/step)*step+step;v<hi-1e-8;v+=step)
+    if(v>lo+1e-8)ts.push((v-a[axis])/(b[axis]-a[axis]));
+  ts.sort((a,b)=>a-b);
+  return ts.map(t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);
+}
+const pointKey=p=>p.map(n=>Math.round(n*1e5)).join(',');
+const edgeKey=(a,b)=>pointKey(a)+'>'+pointKey(b);
+export function reliefWallPlan(terrain,options={}){
+  const plan=reliefPlan(terrain,options),byEdge=new Map();
+  for(const terrace of plan.terraces){
+    for(const loop of terrace.loops)for(let i=0;i<loop.length;i++){
+      const pts=splitEdge(loop[i],loop[(i+1)%loop.length]);
+      for(let j=0;j<pts.length-1;j++){
+        const a=pts[j],b=pts[j+1],key=edgeKey(a,b);
+        let bands=byEdge.get(key);if(!bands)byEdge.set(key,bands=[]);
+        const last=bands.at(-1);
+        if(last&&last.upper===terrace.lower)last.upper=terrace.level;
+        else bands.push({a,b,lower:terrace.lower,upper:terrace.level});
+      }
+    }
+  }
+  return {...plan,edges:[...byEdge.values()].flat()};
+}
+// Deterministic smooth world-space perturbation. Identical points at any
+// elevation move identically, so cliff and cap never part company.
+// Less than 3 native pixels; texture sampling stays unchanged.
+export function organicPoint([x,y],strength=.7){
+  const s=Math.max(0,Math.min(1,Number(strength)||0));
+  return [x+s*(1.8*Math.sin(y*.085+x*.042)+.9*Math.sin(x*.23-y*.09)),
+    y+s*(2.1*Math.sin(x*.072-y*.037)+.7*Math.sin(y*.21+x*.11))];
+}
+function pathLoop(ctx,loop,z,strength){
+  let first=true;
+  for(let i=0;i<loop.length;i++)for(const point of splitEdge(loop[i],loop[(i+1)%loop.length]).slice(0,-1)){
+    const [x,y]=organicPoint(point,strength);
+    if(first){ctx.moveTo(x,y-z);first=false;}else ctx.lineTo(x,y-z);
+  }
+  ctx.closePath();
+}
 function quad(ctx,a,b,top,bottom){ctx.moveTo(a[0],a[1]-top);ctx.lineTo(b[0],b[1]-top);
   ctx.lineTo(b[0],b[1]-bottom);ctx.lineTo(a[0],a[1]-bottom);ctx.closePath();}
-export function drawOrganicPilot(ctx,terrain,{surface,rock,amount=.5,ambient=.35,lip=2}={}){
-  const p=reliefPlan(terrain,{amount});const {width:w,height:h,rise}=p;
+export function drawOrganicPilot(ctx,terrain,{surface,rock,amount=.5,ambient=.55,lip=1,organic=.7}={}){
+  const p=reliefWallPlan(terrain,{amount});const {width:w,height:h,rise}=p;
   const ground=ctx.createPattern(surface,'repeat'),wall=ctx.createPattern(rock,'repeat');
   if(!ground||!wall)throw Error('Canonical textures unavailable');
   if(ground.setTransform&&typeof DOMMatrix!=='undefined')ground.setTransform(new DOMMatrix().scale(.55));
+  const strength=amount>0?organic:0;
+  const shade=Math.max(0,Math.min(1,ambient));
+  const extent=[-4,-16*rise-4,terrain.width*w+8,terrain.height*h+16*rise+8];
+  const edges=p.edges.map(e=>({...e,front:e.b[0]<e.a[0]-1e-8,
+    a:organicPoint(e.a,strength),b:organicPoint(e.b,strength)}));
   ctx.save();ctx.fillStyle=ground;ctx.fillRect(0,-p.base*rise,terrain.width*w,terrain.height*h+p.base*rise);
-  for(const [index,t] of p.terraces.entries()){
-    const top=t.level*rise,bottom=t.lower*rise,segments=[];
-    const upper=p.terraces[index+1];
-    const covered=(a,b)=>upper?.loops.some(loop=>loop.some((u,i)=>{
-      const v=loop[(i+1)%loop.length],dx=v[0]-u[0],dy=v[1]-u[1],len=dx*dx+dy*dy;
-      if(!len)return false;
-      return [a,b].every(q=>{const x=q[0]-u[0],y=q[1]-u[1],dot=x*dx+y*dy;
-        return Math.abs(x*dy-y*dx)<1e-7&&dot>=-1e-7&&dot<=len+1e-7;});
-    }))??false;
-    for(const loop of t.loops)for(let i=0;i<loop.length;i++){
-      const a=loop[i],b=loop[(i+1)%loop.length];if(b[0]<a[0]-1e-8)segments.push([a,b]);
+  for(const t of p.terraces){
+    const top=t.level*rise,active=edges.filter(e=>e.upper===t.level);
+    const front=active.filter(e=>e.front);
+    // Contact shadow follows the ACTUAL local wall foot. No intermediate
+    // border or shadow when one wall spans several elevation thresholds.
+    for(const width of [14,9,4]){
+      ctx.save();ctx.globalAlpha=shade*(width===14?.05:width===9?.08:.12);
+      ctx.strokeStyle='#192125';ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();
+      for(const e of front){const z=e.lower*rise;ctx.moveTo(e.a[0],e.a[1]-z+2);ctx.lineTo(e.b[0],e.b[1]-z+2);}
+      ctx.stroke();ctx.restore();
     }
-    // Draw contact shadow only below the forward-facing wall; one continuous
-    // polygon pass, never a tile-by-tile texture stretch.
-    ctx.save();ctx.globalAlpha=ambient*.55;ctx.strokeStyle='#171c16';ctx.lineWidth=6;
-    ctx.lineJoin='round';ctx.beginPath();
-    for(const [a,b] of segments){ctx.moveTo(a[0],a[1]-bottom+2);ctx.lineTo(b[0],b[1]-bottom+2);}ctx.stroke();ctx.restore();
-    ctx.beginPath();for(const [a,b] of segments)quad(ctx,a,b,top,bottom);
+    // One opaque texture pass for the whole visible face union: no internal
+    // rock texture borders, no semi-transparent seams between segments.
+    ctx.beginPath();for(const e of front)quad(ctx,e.a,e.b,top,e.lower*rise);
     ctx.fillStyle=wall;ctx.fill();
-    ctx.save();ctx.clip();ctx.fillStyle='rgba(16,18,15,.18)';
-    ctx.fillRect(0,-16*rise,terrain.width*w,terrain.height*h+16*rise);ctx.restore();
-    // Plateau and wall use the SAME contour. Texture coordinates are global.
-    ctx.beginPath();for(const loop of t.loops)pathLoop(ctx,loop,top);
+    // Shade by normalized height within the full local cliff, not by
+    // global Y or intermediate terrace. The gradient follows the edge.
+    for(const e of front){
+      const a=e.a,b=e.b,d=(e.upper-e.lower)*rise;
+      if(d<=0)continue;
+      const dx=b[0]-a[0],dy=b[1]-a[1];
+      if(Math.abs(dx)<1e-5)continue;
+      const slope=dy/dx,den=1+slope*slope;
+      const ax=(a[0]+b[0])/2,ay=(a[1]+b[1])/2-top;
+      const g=ctx.createLinearGradient(ax,ay,ax-slope*d/den,ay+d/den);
+      g.addColorStop(0,'rgba(226,232,226,.20)');
+      g.addColorStop(.25,'rgba(226,232,226,.06)');
+      g.addColorStop(.60,'rgba(26,32,35,.09)');
+      g.addColorStop(1,'rgba(20,26,30,.38)');
+      ctx.beginPath();quad(ctx,a,b,top,e.lower*rise);ctx.fillStyle=g;ctx.fill();
+    }
+    // Same silhouette and same unwarped surface pattern as the wall.
+    ctx.beginPath();for(const loop of t.loops)pathLoop(ctx,loop,top,strength);
     ctx.fillStyle=ground;ctx.fill('evenodd');
-    if(lip>0){ctx.save();ctx.strokeStyle=ground;ctx.lineWidth=lip;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
-      for(const loop of t.loops)for(let i=0;i<loop.length;i++){const a=loop[i],b=loop[(i+1)%loop.length];if(!covered(a,b)){ctx.moveTo(a[0],a[1]-top);ctx.lineTo(b[0],b[1]-top);}}ctx.stroke();ctx.restore();}
+    // Altitude cue is subtle and continuous, not a per-tile tint.
+    ctx.save();ctx.clip('evenodd');
+    ctx.fillStyle='rgba(255,255,255,'+Math.min(.13,(t.level-p.base)*.015)+')';
+    ctx.fillRect(...extent);
+    // A restrained neutral rear-edge shadow restores the plateau silhouette.
+    // It stays INSIDE the upper surface; never paint a brown stripe on rock.
+    ctx.beginPath();for(const e of active.filter(e=>!e.front)){
+      ctx.moveTo(e.a[0],e.a[1]-top);ctx.lineTo(e.b[0],e.b[1]-top);
+    }
+    ctx.lineWidth=2.1;ctx.lineCap='round';ctx.strokeStyle='rgba(20,28,34,'+(.20+shade*.25)+')';ctx.stroke();
+    ctx.restore();
+    // Front crest is the terrain material itself, with no dark outline.
+    if(lip>0){ctx.save();ctx.strokeStyle=ground;ctx.lineWidth=Math.min(4,lip);
+      ctx.lineCap='round';ctx.beginPath();for(const e of front){ctx.moveTo(e.a[0],e.a[1]-top);ctx.lineTo(e.b[0],e.b[1]-top);}ctx.stroke();ctx.restore();}
   }
   ctx.restore();return p;
 }
