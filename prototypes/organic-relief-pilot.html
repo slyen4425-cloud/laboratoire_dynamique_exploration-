@@ -17,14 +17,14 @@ const terrain=createSculptTerrain({width:w,height:h,levels});
 const root='../assets/exploration/materials/forest/surfaces/';
 function load(path){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error(path));img.src=path;});}
 const cliffPromise=load('../assets/sculpt/cliff-base-hd-v49.webp');let serial=0;
-async function paint(){const n=++serial;$('val').textContent=$('amount').value+' %';
+async function paint(){const n=++serial;$('status').dataset.biome='';$('status').textContent='Chargement des textures…';$('val').textContent=$('amount').value+' %';
   try{const [surface,cliff]=await Promise.all([load(root+$('biome').value),cliffPromise]);if(n!==serial)return;
     const rock=document.createElement('canvas');rock.width=rock.height=256;rock.getContext('2d').drawImage(cliff,0,0,256,256,0,0,256,256);
     const old=$('old').getContext('2d'),fresh=$('new').getContext('2d');
     for(const ctx of [old,fresh])ctx.clearRect(0,0,672,420);
     drawSculptTerrain(old,{terrain,texture:surface,cliffHD:cliff,rockPalette:'gray',drawOuterSouthRim:false,ambientOcclusionPct:35});
     drawOrganicPilot(fresh,terrain,{surface,rock,amount:Number($('amount').value)/100,ambient:Number($('ambient').value)/100,lip:Number($('lip').value)});
-    $('status').textContent='Textures chargées — prototype C1, validation visuelle requise.';
+    $('status').dataset.biome=$('biome').value;$('status').textContent='Textures chargées — prototype C1, validation visuelle requise.';
   }catch(e){if(n===serial)$('status').textContent='Échec du rendu : '+e.message;}}
 for(const id of ['biome','amount','ambient','lip'])$(id).addEventListener('input',paint);paint();
 </script></html>
