@@ -82,6 +82,14 @@ jobs:
         run: node scripts/smoke-relief-canyon-pilot.mjs
       - name: Real Chromium sculptable terrain lab brush and material smoke
         run: node scripts/smoke-sculpt-terrain-lab.mjs
+      - name: Upload actual curved road preview for author review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gensrpg-road-curve-v3-${{ github.run_id }}
+          path: artifacts/road-border-v3-real-preview.png
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Real Chromium WorldArea fringe painting outside gameplay bounds
         run: node scripts/smoke-sculpt-decorative-fringe.mjs
       - name: Native Chromium Explorer music gesture and actual MP3 playback

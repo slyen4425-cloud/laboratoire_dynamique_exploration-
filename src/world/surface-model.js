@@ -1,3 +1,4 @@
+import {normalizeRouteKnots,routePointsFromKnots} from './road-edit-geometry-v1.js';
 const DEFAULT_BASE_MATERIAL = 'grass.forest';
 const DEFAULT_BASE_TERRAIN_FAMILY = 'forest';
 const DEFAULT_BASE_TRAVERSAL_RULE = 'terrain.ground';
@@ -41,6 +42,34 @@ function normalizePoint(point) {
   });
 }
 
+// Optional, purely visual road styling. Missing means no border (legacy maps).
+function normalizeRoadBorderSide(raw) {
+  if (!raw || typeof raw !== 'object' || typeof raw.assetId !== 'string' ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(raw.assetId)) return null;
+  const bounded = (v, fallback, min, max) =>
+    Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
+  return Object.freeze({
+    assetId: raw.assetId,
+    width: bounded(raw.width, 8, 1, 128),
+    scale: bounded(raw.scale, 1, .1, 4),
+    offset: bounded(raw.offset, 0, -64, 64),
+    spacing: bounded(raw.spacing, 2, 0, 128),
+    opacity: bounded(raw.opacity, 1, 0, 1)
+  });
+}
+
+function normalizeRoadBorder(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const left = normalizeRoadBorderSide(raw.left);
+  const right = normalizeRoadBorderSide(raw.right);
+  if (!left && !right) return null;
+  return Object.freeze({
+    enabled: raw.enabled === true,
+    ...(left ? {left} : {}),
+    ...(right ? {right} : {})
+  });
+}
+
 function normalizeStrokeItem(
   item,
   prefix,
@@ -60,7 +89,8 @@ function normalizeStrokeItem(
     return null;
   }
 
-  const points =
+  const knots = prefix === 'road' ? normalizeRouteKnots(item.knots) : null;
+  const points = knots ? routePointsFromKnots(knots).map(normalizePoint) :
     Array.isArray(item.points)
       ? item.points
           .map(normalizePoint)
@@ -102,6 +132,12 @@ function normalizeStrokeItem(
         item.traversalRuleId,
         defaultTraversalRuleId
       );
+  }
+
+  if (prefix === 'road') {
+    const border = normalizeRoadBorder(item.border);
+    if (border) normalized.border = border;
+    if (knots) normalized.knots = knots;
   }
 
   return Object.freeze(normalized);
