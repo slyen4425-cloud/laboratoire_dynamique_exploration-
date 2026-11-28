@@ -130,3 +130,36 @@ test('alpha cleanup preserves wood core, removes its detached top stripe and gro
     assert.equal(roadBorderSourceAlpha(profile,100/128),0);
   }
 });
+
+test('horizontal road relief faces the camera on both edges, regardless of drawing direction',()=>{
+  for(const reverse of [false,true]){
+    const original=straight().routes[0],r={...original,points:reverse?[...original.points].reverse():original.points};
+    const field=roadBorderField([r]),north=roadBorderTextureAt(field,100,88)[0],south=roadBorderTextureAt(field,100,112)[0];
+    assert.ok(north&&south);
+    assert.equal(north.flip,0);assert.equal(south.flip,1);
+    assert.equal(north.alternateV,null);assert.equal(south.alternateV,null);
+    assert.ok(north.v<north.profile.anchor&&south.v>south.profile.anchor);
+    assert.ok(Math.abs(north.v+south.v-2*north.profile.anchor)<1e-8);
+    for(const y of [89,111]){
+      const m=roadBorderTextureAt(field,100,y)[0];
+      assert.ok(m&&Math.abs(m.v-m.profile.anchor)<.02,'same fixed physical anchor');
+    }
+  }
+});
+test('vertical borders keep original mapping and diagonal transition never collapses the UV band',()=>{
+  const original=straight().routes[0];
+  const vertical=roadBorderField([{...original,points:[{x:100,y:10},{x:100,y:290}]}]);
+  for(const x of [88,112]){
+    const m=roadBorderTextureAt(vertical,x,100)[0];
+    assert.ok(m);assert.equal(m.flip,0);assert.equal(m.alternateV,null);
+    assert.equal(m.v,m.profile.anchor-(m.signed-m.center)/m.thick);
+  }
+  for(const reverse of [false,true]){
+    const points=[{x:40,y:40},{x:240,y:240}];
+    const diagonal=roadBorderField([{...original,points:reverse?points.reverse():points}]);
+    const m=roadBorderTextureAt(diagonal,100,117)[0];
+    assert.ok(m&&m.flip>0&&m.flip<1);
+    assert.ok(Math.abs(m.v+m.alternateV-2*m.profile.anchor)<1e-8);
+    assert.notEqual(m.v,m.alternateV);
+  }
+});
